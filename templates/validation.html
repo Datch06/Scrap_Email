@@ -1,0 +1,431 @@
+{% extends "base.html" %}
+
+{% block title %}Validation d'Emails - Scrap Email Manager{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h2">
+                <i class="bi bi-shield-check text-primary"></i>
+                Validation d'Emails
+            </h1>
+            <p class="text-muted">Vérification complète de la validité et délivrabilité des emails (Syntaxe + DNS + SMTP)</p>
+        </div>
+    </div>
+
+    <!-- Statistiques globales -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-white bg-primary">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-envelope-at"></i>
+                        Total Emails
+                    </h5>
+                    <h2 class="mb-0" id="total-emails">-</h2>
+                    <small>Emails extraits</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-info">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-hourglass-split"></i>
+                        Validés
+                    </h5>
+                    <h2 class="mb-0" id="emails-validated">-</h2>
+                    <small><span id="validation-rate">0</span>% du total</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-check-circle"></i>
+                        Valides
+                    </h5>
+                    <h2 class="mb-0" id="emails-valid">-</h2>
+                    <small><span id="valid-rate">0</span>% des validés</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-send-check"></i>
+                        Délivrables
+                    </h5>
+                    <h2 class="mb-0" id="emails-deliverable">-</h2>
+                    <small><span id="deliverable-rate">0</span>% des validés</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistiques détaillées -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-bar-chart"></i>
+                        Répartition par statut
+                    </h5>
+                    <canvas id="statusChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-speedometer"></i>
+                        Score moyen
+                    </h5>
+                    <div class="text-center py-4">
+                        <h1 class="display-3" id="avg-score">-</h1>
+                        <p class="text-muted">sur 100</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-list-ul"></i>
+                        Progression
+                    </h5>
+                    <div class="mb-3">
+                        <label class="form-label">Emails validés</label>
+                        <div class="progress" style="height: 30px;">
+                            <div id="progress-bar" class="progress-bar bg-success" role="progressbar" style="width: 0%">
+                                0%
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-muted mb-0">
+                        <span id="pending-validation">-</span> emails en attente de validation
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Actions de validation -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-play-circle"></i>
+                        Lancer une validation
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Nombre d'emails à valider</label>
+                                <input type="number" class="form-control" id="validation-limit" value="100" min="1" max="10000">
+                                <small class="form-text text-muted">
+                                    Temps estimé : ~2-3 secondes par email
+                                </small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Options</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="only-new" checked>
+                                    <label class="form-check-label" for="only-new">
+                                        Valider uniquement les nouveaux emails (non encore validés)
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-success" id="btn-start-validation">
+                            <i class="bi bi-play-fill"></i> Démarrer la validation
+                        </button>
+                        <button class="btn btn-primary" id="btn-refresh-stats">
+                            <i class="bi bi-arrow-clockwise"></i> Actualiser les stats
+                        </button>
+                        <button class="btn btn-info" id="btn-export-valid">
+                            <i class="bi bi-download"></i> Exporter les emails valides
+                        </button>
+                    </div>
+                    <div id="validation-alert" class="alert alert-info mt-3" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Détails par statut -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card border-success">
+                <div class="card-header bg-success text-white">
+                    <i class="bi bi-check-circle"></i> Emails Valides
+                </div>
+                <div class="card-body">
+                    <h3 class="text-success" id="count-valid">-</h3>
+                    <p class="text-muted mb-0">
+                        Score 100/100 - Boîte email existe et peut recevoir des messages
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <i class="bi bi-x-circle"></i> Emails Invalides
+                </div>
+                <div class="card-body">
+                    <h3 class="text-danger" id="count-invalid">-</h3>
+                    <p class="text-muted mb-0">
+                        Score 0-30/100 - Format invalide ou domaine inexistant
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-warning">
+                <div class="card-header bg-warning">
+                    <i class="bi bi-exclamation-triangle"></i> Emails Risqués
+                </div>
+                <div class="card-body">
+                    <h3 class="text-warning" id="count-risky">-</h3>
+                    <p class="text-muted mb-0">
+                        Score 20-60/100 - Email jetable ou serveur SMTP indisponible
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Guide rapide -->
+    <div class="row">
+        <div class="col">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-info-circle"></i>
+                        Guide rapide
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Comment ça marche ?</h6>
+                            <ol>
+                                <li><strong>Syntaxe</strong> - Vérification du format de l'email</li>
+                                <li><strong>DNS</strong> - Le domaine existe et a des serveurs mail (MX)</li>
+                                <li><strong>SMTP</strong> - La boîte email existe vraiment</li>
+                            </ol>
+                            <p class="text-muted mb-0">
+                                <strong>Score final :</strong> 0-100 points<br>
+                                • 100 points = Email valide et délivrable<br>
+                                • 60-90 points = Risqué (serveur temporairement indisponible)<br>
+                                • 0-30 points = Invalide
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Commandes utiles</h6>
+                            <pre class="bg-dark text-light p-3 rounded"><code>cd /var/www/Scrap_Email
+
+# Valider 100 emails
+python3 validate_emails.py --limit 100 --only-new
+
+# Exporter les emails valides
+python3 export_valid_emails.py --min-score 80
+
+# Voir les logs
+tail -f email_validation.log</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let statusChart = null;
+
+// Charger les statistiques
+async function loadStats() {
+    try {
+        const response = await fetch('/api/validation/stats');
+        const data = await response.json();
+
+        // Mettre à jour les statistiques principales
+        document.getElementById('total-emails').textContent = data.total_emails.toLocaleString();
+        document.getElementById('emails-validated').textContent = data.total_validated.toLocaleString();
+        document.getElementById('emails-valid').textContent = data.valid.toLocaleString();
+        document.getElementById('emails-deliverable').textContent = data.deliverable.toLocaleString();
+        document.getElementById('pending-validation').textContent = data.pending_validation.toLocaleString();
+
+        document.getElementById('validation-rate').textContent = data.validation_rate;
+        document.getElementById('valid-rate').textContent = data.valid_rate;
+        document.getElementById('deliverable-rate').textContent = data.deliverable_rate;
+        document.getElementById('avg-score').textContent = data.avg_score;
+
+        // Mettre à jour la barre de progression
+        const progressBar = document.getElementById('progress-bar');
+        progressBar.style.width = data.validation_rate + '%';
+        progressBar.textContent = data.validation_rate + '%';
+
+        // Mettre à jour les compteurs par statut
+        document.getElementById('count-valid').textContent = data.valid.toLocaleString();
+        document.getElementById('count-invalid').textContent = data.invalid.toLocaleString();
+        document.getElementById('count-risky').textContent = data.risky.toLocaleString();
+
+        // Mettre à jour le graphique
+        updateChart(data);
+
+    } catch (error) {
+        console.error('Erreur lors du chargement des stats:', error);
+    }
+}
+
+// Mettre à jour le graphique
+function updateChart(data) {
+    const ctx = document.getElementById('statusChart').getContext('2d');
+
+    if (statusChart) {
+        statusChart.destroy();
+    }
+
+    statusChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Valides', 'Invalides', 'Risqués', 'Non validés'],
+            datasets: [{
+                data: [
+                    data.valid,
+                    data.invalid,
+                    data.risky,
+                    data.pending_validation
+                ],
+                backgroundColor: [
+                    'rgba(25, 135, 84, 0.8)',
+                    'rgba(220, 53, 69, 0.8)',
+                    'rgba(255, 193, 7, 0.8)',
+                    'rgba(108, 117, 125, 0.3)'
+                ],
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+}
+
+// Démarrer la validation
+document.getElementById('btn-start-validation').addEventListener('click', async function() {
+    const limit = parseInt(document.getElementById('validation-limit').value);
+    const onlyNew = document.getElementById('only-new').checked;
+    const alertDiv = document.getElementById('validation-alert');
+    const btn = this;
+
+    // Désactiver le bouton
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Validation en cours...';
+
+    // Afficher le message
+    alertDiv.style.display = 'block';
+    alertDiv.className = 'alert alert-info mt-3';
+    alertDiv.innerHTML = `
+        <i class="bi bi-hourglass-split"></i>
+        <strong>Validation lancée !</strong>
+        Validation de ${limit} emails en arrière-plan...
+        <br><small>Cette opération peut prendre plusieurs minutes. Les statistiques seront mises à jour automatiquement.</small>
+    `;
+
+    try {
+        const response = await fetch('/api/validation/start', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                limit: limit,
+                only_new: onlyNew
+            })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            alertDiv.className = 'alert alert-success mt-3';
+            alertDiv.innerHTML = `
+                <i class="bi bi-check-circle"></i>
+                <strong>Validation démarrée avec succès !</strong>
+                <br>${result.message}
+                <br><small>Actualisez les statistiques dans quelques minutes pour voir les résultats.</small>
+            `;
+
+            // Actualiser les stats toutes les 10 secondes
+            const refreshInterval = setInterval(() => {
+                loadStats();
+            }, 10000);
+
+            // Arrêter après 5 minutes
+            setTimeout(() => {
+                clearInterval(refreshInterval);
+            }, 300000);
+        } else {
+            alertDiv.className = 'alert alert-danger mt-3';
+            alertDiv.innerHTML = '<i class="bi bi-x-circle"></i> <strong>Erreur :</strong> ' + (result.message || 'Erreur inconnue');
+        }
+    } catch (error) {
+        alertDiv.className = 'alert alert-danger mt-3';
+        alertDiv.innerHTML = '<i class="bi bi-x-circle"></i> <strong>Erreur :</strong> ' + error.message;
+    } finally {
+        // Réactiver le bouton après 5 secondes
+        setTimeout(() => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-play-fill"></i> Démarrer la validation';
+        }, 5000);
+    }
+});
+
+// Actualiser les stats
+document.getElementById('btn-refresh-stats').addEventListener('click', function() {
+    const btn = this;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-arrow-clockwise spinner-border spinner-border-sm"></i> Actualisation...';
+
+    loadStats().then(() => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Actualiser les stats';
+    });
+});
+
+// Exporter les emails valides
+document.getElementById('btn-export-valid').addEventListener('click', function() {
+    window.location.href = '/api/export/csv';
+});
+
+// Charger les stats au chargement de la page
+loadStats();
+
+// Actualiser automatiquement toutes les 30 secondes
+setInterval(loadStats, 30000);
+</script>
+{% endblock %}

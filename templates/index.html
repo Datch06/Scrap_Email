@@ -1,0 +1,315 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Scrap Email Manager{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1 class="display-5"><i class="bi bi-speedometer2"></i> Dashboard</h1>
+        <p class="text-muted">Vue d'ensemble de vos sites et statistiques de scraping</p>
+    </div>
+    <div class="col-auto">
+        <button class="btn btn-primary" onclick="refreshStats()">
+            <i class="bi bi-arrow-clockwise"></i> Actualiser
+        </button>
+    </div>
+</div>
+
+<!-- Statistiques principales -->
+<div class="row mb-4" id="stats-cards">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-subtitle mb-2">Total Sites</h6>
+                        <h2 class="card-title mb-0" id="total-sites">-</h2>
+                    </div>
+                    <div class="fs-1">
+                        <i class="bi bi-globe"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-subtitle mb-2">Avec Email</h6>
+                        <h2 class="card-title mb-0" id="sites-with-email">-</h2>
+                        <small id="email-rate">-</small>
+                    </div>
+                    <div class="fs-1">
+                        <i class="bi bi-envelope-check"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card text-white bg-info">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-subtitle mb-2">Avec SIRET</h6>
+                        <h2 class="card-title mb-0" id="sites-with-siret">-</h2>
+                        <small id="siret-rate">-</small>
+                    </div>
+                    <div class="fs-1">
+                        <i class="bi bi-building"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card text-white bg-warning">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-subtitle mb-2">Avec Dirigeants</h6>
+                        <h2 class="card-title mb-0" id="sites-with-leaders">-</h2>
+                        <small id="leaders-rate">-</small>
+                    </div>
+                    <div class="fs-1">
+                        <i class="bi bi-person-badge"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistiques secondaires -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-check-circle"></i> Sites Complets</h5>
+                <h3 id="sites-complete">-</h3>
+                <p class="text-muted mb-0">Email + SIRET + Dirigeants</p>
+                <div class="progress mt-2" style="height: 8px;">
+                    <div id="completion-progress" class="progress-bar bg-success" role="progressbar" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-exclamation-triangle"></i> Erreurs</h5>
+                <h3 id="sites-with-errors">-</h3>
+                <p class="text-muted mb-0">Sites avec erreurs</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card border-success">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-shield-check text-success"></i> Emails Validés</h5>
+                <h3 id="emails-validated" class="text-success">-</h3>
+                <p class="text-muted mb-0">
+                    <span id="emails-deliverable">-</span> délivrables
+                    <a href="/validation" class="btn btn-sm btn-outline-success float-end">Voir →</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Graphiques -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-pie-chart"></i> Répartition par Statut</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="statusChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Taux de Complétion</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="completionChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Actions rapides -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-lightning"></i> Actions Rapides</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2 d-md-flex">
+                    <a href="/sites?status=discovered" class="btn btn-outline-primary">
+                        <i class="bi bi-search"></i> Sites à traiter
+                    </a>
+                    <a href="/sites?has_email=false" class="btn btn-outline-success">
+                        <i class="bi bi-envelope"></i> Chercher emails
+                    </a>
+                    <a href="/sites?has_siret=false" class="btn btn-outline-info">
+                        <i class="bi bi-building"></i> Chercher SIRET
+                    </a>
+                    <a href="/sites?has_leaders=false" class="btn btn-outline-warning">
+                        <i class="bi bi-person"></i> Chercher dirigeants
+                    </a>
+                    <a href="/api/export/csv" class="btn btn-outline-secondary">
+                        <i class="bi bi-download"></i> Exporter CSV
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let statusChart, completionChart;
+
+// Charger les statistiques
+async function loadStats() {
+    try {
+        const response = await fetch('/api/stats');
+        const stats = await response.json();
+
+        // Mettre à jour les cartes
+        document.getElementById('total-sites').textContent = stats.total_sites.toLocaleString();
+        document.getElementById('sites-with-email').textContent = stats.sites_with_email.toLocaleString();
+        document.getElementById('email-rate').textContent = `${stats.email_rate}%`;
+        document.getElementById('sites-with-siret').textContent = stats.sites_with_siret.toLocaleString();
+        document.getElementById('siret-rate').textContent = `${stats.siret_rate}%`;
+        document.getElementById('sites-with-leaders').textContent = stats.sites_with_leaders.toLocaleString();
+        document.getElementById('leaders-rate').textContent = `${stats.leaders_rate}%`;
+        document.getElementById('sites-complete').textContent = stats.sites_complete.toLocaleString();
+        document.getElementById('sites-with-errors').textContent = stats.sites_with_errors.toLocaleString();
+
+        // Stats validation
+        document.getElementById('emails-validated').textContent = (stats.emails_validated || 0).toLocaleString();
+        document.getElementById('emails-deliverable').textContent = (stats.emails_deliverable || 0).toLocaleString();
+
+        // Barre de progression
+        document.getElementById('completion-progress').style.width = `${stats.completion_rate}%`;
+
+        // Graphique statuts
+        updateStatusChart(stats.status_counts);
+
+        // Graphique complétion
+        updateCompletionChart(stats);
+
+    } catch (error) {
+        console.error('Erreur lors du chargement des stats:', error);
+    }
+}
+
+// Graphique des statuts
+function updateStatusChart(statusCounts) {
+    const ctx = document.getElementById('statusChart');
+
+    if (statusChart) {
+        statusChart.destroy();
+    }
+
+    const labels = Object.keys(statusCounts);
+    const data = Object.values(statusCounts);
+    const colors = [
+        '#0d6efd', '#6c757d', '#198754', '#dc3545',
+        '#ffc107', '#0dcaf0', '#6610f2', '#fd7e14',
+        '#20c997', '#d63384'
+    ];
+
+    statusChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: data,
+                backgroundColor: colors
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+}
+
+// Graphique de complétion
+function updateCompletionChart(stats) {
+    const ctx = document.getElementById('completionChart');
+
+    if (completionChart) {
+        completionChart.destroy();
+    }
+
+    completionChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Email', 'SIRET', 'Dirigeants', 'Complet'],
+            datasets: [{
+                label: 'Nombre de sites',
+                data: [
+                    stats.sites_with_email,
+                    stats.sites_with_siret,
+                    stats.sites_with_leaders,
+                    stats.sites_complete
+                ],
+                backgroundColor: [
+                    '#198754',
+                    '#0dcaf0',
+                    '#ffc107',
+                    '#0d6efd'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+}
+
+// Rafraîchir les stats
+function refreshStats() {
+    loadStats();
+}
+
+// Charger au démarrage
+document.addEventListener('DOMContentLoaded', loadStats);
+
+// Auto-refresh toutes les 30 secondes
+setInterval(loadStats, 30000);
+</script>
+{% endblock %}

@@ -1,0 +1,22 @@
+[Unit]
+Description=Email Validation Daemon - Automatic email verification
+After=network.target
+
+[Service]
+Type=simple
+User=debian
+Group=debian
+WorkingDirectory=/var/www/Scrap_Email
+ExecStart=/usr/bin/python3 /var/www/Scrap_Email/validate_emails_daemon.py --batch-size 50 --check-interval 60
+Restart=always
+RestartSec=10
+StandardOutput=append:/var/www/Scrap_Email/email_validation_daemon.log
+StandardError=append:/var/www/Scrap_Email/email_validation_daemon.log
+
+# Limite de ressources
+Nice=10
+CPUQuota=50%
+MemoryLimit=512M
+
+[Install]
+WantedBy=multi-user.target

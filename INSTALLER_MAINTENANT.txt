@@ -1,0 +1,37 @@
+═══════════════════════════════════════════════════════════════════
+  COMMANDES À COPIER-COLLER UNE PAR UNE
+═══════════════════════════════════════════════════════════════════
+
+Copiez-collez chaque commande dans votre terminal SSH :
+
+─────────────────────────────────────────────────────────────────────
+COMMANDE 1 : Aller dans le bon dossier
+─────────────────────────────────────────────────────────────────────
+
+cd /var/www/Scrap_Email
+
+─────────────────────────────────────────────────────────────────────
+COMMANDE 2 : Lancer l'installation
+─────────────────────────────────────────────────────────────────────
+
+sudo bash INSTALLATION_MAINTENANT.sh
+
+─────────────────────────────────────────────────────────────────────
+
+C'EST TOUT !
+
+Le script va installer :
+✓ Nginx
+✓ Configuration reverse proxy
+✓ Service systemd
+✓ SSL avec Let's Encrypt
+
+Temps estimé : 2-3 minutes
+
+═══════════════════════════════════════════════════════════════════
+
+Si vous voyez une ERREUR, copiez-collez le message d'erreur.
+
+Si vous n'avez PAS les droits sudo, contactez votre administrateur système.
+
+═══════════════════════════════════════════════════════════════════

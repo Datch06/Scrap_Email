@@ -1,0 +1,7 @@
+Site: https://www.ladepeche.fr
+  Pages visited: 2001
+  External links (non-social): 2993
+  Errors:
+    https://www.ladepeche.fr/sports/resultats-sportifs/: HTTP Error 404: Not Found
+    https://www.ladepeche.fr/sport/sports-de-combats/: HTTP Error 404: Not Found
+

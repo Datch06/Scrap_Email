@@ -1,0 +1,1319 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+    <title>    Pages positionnées
+</title>
+
+            
+
+    <link href="/css/admin/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/admin/font-awesome/css/font-awesome.css" rel="stylesheet">
+    <link href="/css/admin/plugins/chosen/bootstrap-chosen.css" rel="stylesheet">
+    <link href="/css/admin/plugins/cropper/cropper.min.css" rel="stylesheet">
+    <link href="/css/admin/plugins/iCheck/custom.css" rel="stylesheet">
+    <link href="/css/admin/plugins/datapicker/datepicker3.css" rel="stylesheet">
+    <link href="//cdn.jsdelivr.net/bootstrap.daterangepicker/2/daterangepicker.css" rel="stylesheet">
+    <link href="/css/admin/plugins/toastr/toastr.min.css" rel="stylesheet">
+    <link href="/css/admin/plugins/bootstrap-tagsinput/bootstrap-tagsinput.css" rel="stylesheet">
+    <link href="/css/admin/plugins/jasny/jasny-bootstrap.min.css" rel="stylesheet">
+    <link href="/css/admin/plugins/footable/footable.core.css" rel="stylesheet">
+    <link href="/css/admin/plugins/blueimp/css/blueimp-gallery.min.css" rel="stylesheet">
+    <link href="/css/admin/plugins/sweetalert/sweetalert.css" rel="stylesheet">
+    <link href="/css/admin/plugins/touchspin/jquery.bootstrap-touchspin.min.css" rel="stylesheet">
+    <link href="/css/admin/plugins/slick/slick.css" rel="stylesheet">
+    <link href="/css/admin/plugins/slick/slick-theme.css" rel="stylesheet">
+    <link href="/css/admin/animate.css" rel="stylesheet">
+    <link href="/css/admin/style.css" rel="stylesheet">
+    <link href="/css/admin/custom.min.css" rel="stylesheet">
+    <link href="/css/front/style.css" rel="stylesheet">
+
+    <script src="/bundles/fosjsrouting/js/router.js?version=v16"></script>
+    <script src="/js/routing?callback=fos.Router.setData"></script>
+
+
+    <link href="/css/admin/plugins/dataTables/datatables.min.css?version=v16" rel="stylesheet">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&family=Nunito+Sans:ital,wght@0,200;0,300;0,400;0,600;0,700;0,800;0,900;1,200;1,300;1,400;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="/css/bootstrap5_2_1.css?version=v16">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.13.18/css/bootstrap-select.min.css" integrity="sha512-ARJR74swou2y0Q2V9k0GbzQ/5vJ2RBSoCWokg4zkfM29Fb3vZEQyv0iWBMW/yvKgyHSR/7D64pFMmU8nYmbRkg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.13.2/themes/base/jquery-ui.min.css" integrity="sha512-ELV+xyi8IhEApPS/pSj66+Jiw+sOT1Mqkzlh8ExXihe4zfqbWkxPRi8wptXIO9g73FSlhmquFlUOuMSoXz5IRw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="/css/front/existing_page_list.css?version=v16">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.9.1/font/bootstrap-icons.css">
+
+    <script>
+        window.paceOptions = {
+            ajax: {
+                trackMethods: ['GET', 'POST', 'PUT', 'DELETE', 'REMOVE'],
+                trackWebSockets: true,
+                ignoreURLs: []
+            }
+        }
+    </script>
+
+    <link rel="icon" type="image/png" href="/favicon.png?version=v16" />
+</head>
+
+<body id="" class=" visible-sidebar">
+
+            <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="0" height="0" style="position:absolute">
+	
+		<symbol id="de" viewBox="0 0 512.001 512.001">
+			<path d="M512 200.093H0V97.104a8.829 8.829 0 0 1 8.828-8.828h494.345a8.829 8.829 0 0 1 8.828 8.828L512 200.093z" fill="#464655"></path><path d="M503.172 423.725H8.828A8.829 8.829 0 0 1 0 414.897V311.909h512v102.988a8.828 8.828 0 0 1-8.828 8.828z" fill="#ffe15a"></path><path fill="#ff4b55" d="M0 200.091h512v111.81H0z"></path>
+		</symbol>
+	
+		<symbol id="en" viewBox="0 0 512.002 512.002">
+			<path d="M503.172 423.725H8.828A8.829 8.829 0 0 1 0 414.897V97.104a8.829 8.829 0 0 1 8.828-8.828h494.345a8.829 8.829 0 0 1 8.828 8.828v317.793a8.83 8.83 0 0 1-8.829 8.828z" fill="#41479b"></path><path d="M512 97.104a8.829 8.829 0 0 0-8.828-8.828h-39.495l-163.54 107.147V88.276h-88.276v107.147L48.322 88.276H8.828A8.829 8.829 0 0 0 0 97.104v22.831l140.309 91.927H0v88.276h140.309L0 392.066v22.831a8.829 8.829 0 0 0 8.828 8.828h39.495l163.54-107.147v107.147h88.276V316.578l163.54 107.147h39.495a8.829 8.829 0 0 0 8.828-8.828v-22.831l-140.309-91.927H512v-88.276H371.691L512 119.935V97.104z" fill="#f5f5f5"></path><g fill="#ff4b55"><path d="M512 229.518H282.483V88.276h-52.966v141.242H0v52.965h229.517v141.242h52.966V282.483H512z"></path><path d="M178.948 300.138L.25 416.135c.625 4.263 4.14 7.59 8.577 7.59h12.159l190.39-123.586h-32.428v-.001zM346.388 300.138H313.96l190.113 123.404c4.431-.472 7.928-4.09 7.928-8.646v-7.258l-165.613-107.5zM0 106.849l161.779 105.014h32.428L5.143 89.137C2.123 90.54 0 93.555 0 97.104v9.745zM332.566 211.863L511.693 95.586c-.744-4.122-4.184-7.309-8.521-7.309h-12.647L300.138 211.863h32.428z"></path></g>
+		</symbol>
+	
+		<symbol id="es" viewBox="0 0 512.001 512.001">
+			<path d="M8.828 423.725h494.345a8.829 8.829 0 0 0 8.828-8.828V97.104a8.829 8.829 0 0 0-8.828-8.828H8.828A8.83 8.83 0 0 0 0 97.104v317.793a8.828 8.828 0 0 0 8.828 8.828z" fill="#c8414b"></path><path fill="#ffd250" d="M0 158.901h512v194.21H0z"></path><path d="M216.276 256.001l7.485-33.681c.69-3.102-1.671-6.044-4.849-6.044h-5.272c-3.177 0-5.537 2.942-4.849 6.044l7.485 33.681z" fill="#c8414b"></path><path fill="#f5f5f5" d="M207.45 238.341h17.655v75.03H207.45z"></path><path fill="#fab446" d="M203.03 229.521h26.483v8.828H203.03z"></path><g fill="#c8414b"><path d="M185.38 256.001h44.14v8.828h-44.14zM229.517 291.311l-26.483-8.827v-8.828l26.483 8.828zM83.862 256.001l7.485-33.681c.69-3.102-1.671-6.044-4.849-6.044h-5.272c-3.177 0-5.537 2.942-4.849 6.044l7.485 33.681z"></path></g><path d="M114.759 229.518a8.829 8.829 0 0 0-8.828 8.828v57.379c0 10.725 10.01 30.897 44.138 30.897s44.138-20.171 44.138-30.897v-57.379a8.829 8.829 0 0 0-8.828-8.828h-70.62z" fill="#f5f5f5"></path><g fill="#c8414b"><path d="M150.069 273.656h-44.138v-35.31a8.829 8.829 0 0 1 8.828-8.828h35.31v44.138zM150.069 273.656h44.138v22.069c0 12.189-9.88 22.069-22.069 22.069-12.189 0-22.069-9.88-22.069-22.069v-22.069z"></path></g><path d="M105.931 273.656h44.138v22.069c0 12.189-9.88 22.069-22.069 22.069-12.189 0-22.069-9.88-22.069-22.069v-22.069z" fill="#fab446"></path><g fill="#c8414b"><path d="M141.241 313.281v-39.625h-8.828v43.693c3.284-.666 6.251-2.12 8.828-4.068zM123.586 317.349v-43.693h-8.828v39.625c2.578 1.948 5.545 3.402 8.828 4.068z"></path></g><path fill="#ffb441" d="M114.76 256.001h26.483v8.828H114.76z"></path><g fill="#fab446"><path d="M114.76 238.341h26.483v8.828H114.76z"></path><path d="M119.17 243.591h17.655v15.992H119.17z"></path></g><path fill="#f5f5f5" d="M75.03 238.341h17.655v75.03H75.03z"></path><g fill="#fab446"><path d="M70.62 308.971h26.483v8.828H70.62zM70.62 229.521h26.483v8.828H70.62z"></path></g><path fill="#5064aa" d="M66.21 317.791h35.31v8.828H66.21z"></path><path fill="#fab446" d="M207.45 308.971h26.483v8.828H207.45z"></path><path fill="#5064aa" d="M198.62 317.791h35.31v8.828h-35.31z"></path><path fill="#fab446" d="M123.59 220.691h52.966v8.828H123.59z"></path><path fill="#ffb441" d="M145.66 194.211h8.828v26.483h-8.828z"></path><g fill="#f5f5f5"><path d="M141.241 207.449c-7.302 0-13.241-5.94-13.241-13.241 0-7.302 5.94-13.241 13.241-13.241 7.302 0 13.241 5.94 13.241 13.241.001 7.301-5.939 13.241-13.241 13.241zm0-17.655a4.417 4.417 0 0 0-4.414 4.414c0 2.435 1.978 4.414 4.414 4.414s4.414-1.978 4.414-4.414a4.417 4.417 0 0 0-4.414-4.414z"></path><path d="M158.897 207.449c-7.302 0-13.241-5.94-13.241-13.241 0-7.302 5.94-13.241 13.241-13.241 7.302 0 13.241 5.94 13.241 13.241s-5.94 13.241-13.241 13.241zm0-17.655a4.417 4.417 0 0 0-4.414 4.414 4.417 4.417 0 0 0 4.414 4.414 4.417 4.417 0 0 0 4.414-4.414 4.418 4.418 0 0 0-4.414-4.414z"></path><path d="M176.552 216.277c-7.302 0-13.241-5.94-13.241-13.241 0-7.302 5.94-13.241 13.241-13.241 7.302 0 13.241 5.94 13.241 13.241s-5.94 13.241-13.241 13.241zm0-17.655a4.417 4.417 0 0 0-4.414 4.414 4.417 4.417 0 0 0 4.414 4.414c2.435 0 4.414-1.978 4.414-4.414s-1.979-4.414-4.414-4.414zM123.586 216.277c-7.302 0-13.241-5.94-13.241-13.241 0-7.302 5.94-13.241 13.241-13.241 7.302 0 13.241 5.94 13.241 13.241.001 7.301-5.939 13.241-13.241 13.241zm0-17.655a4.417 4.417 0 0 0-4.414 4.414c0 2.435 1.978 4.414 4.414 4.414s4.414-1.979 4.414-4.415a4.416 4.416 0 0 0-4.414-4.413z"></path></g><path d="M176.552 291.311v4.414c0 2.434-1.98 4.414-4.414 4.414s-4.414-1.98-4.414-4.414v-4.414h8.828m8.827-8.827h-26.483v13.241c0 7.302 5.94 13.241 13.241 13.241 7.302 0 13.241-5.94 13.241-13.241v-13.241h.001z" fill="#fab446"></path><path d="M172.138 264.829a8.829 8.829 0 0 1-8.828-8.828v-8.828a8.829 8.829 0 0 1 17.656 0v8.828a8.829 8.829 0 0 1-8.828 8.828z" fill="#ffa0d2"></path><circle cx="150.07" cy="273.651" r="13.241" fill="#5064aa"></circle><path fill="#fab446" d="M145.66 176.551h8.828v26.483h-8.828z"></path><path d="M123.586 220.691l-8.828-8.828 5.171-5.171a42.627 42.627 0 0 1 60.28 0l5.171 5.171-8.828 8.828h-52.966z" fill="#c8414b"></path><g fill="#ffd250"><circle cx="150.07" cy="211.861" r="4.414"></circle><circle cx="132.41" cy="211.861" r="4.414"></circle><circle cx="167.72" cy="211.861" r="4.414"></circle></g><g fill="#c8414b"><path d="M70.62 256.001h44.14v8.828H70.62zM70.621 291.311l26.482-8.827v-8.828l-26.482 8.828z"></path></g>
+		</symbol>
+	
+		<symbol id="fr" viewBox="0 0 512 512">
+			<path d="M170.667 423.721H8.828A8.829 8.829 0 0 1 0 414.893V97.1a8.829 8.829 0 0 1 8.828-8.828h161.839v335.449z" fill="#41479b"></path><path fill="#f5f5f5" d="M170.67 88.277h170.67v335.45H170.67z"></path><path d="M503.172 423.721H341.333V88.273h161.839A8.829 8.829 0 0 1 512 97.101v317.793a8.827 8.827 0 0 1-8.828 8.827z" fill="#ff4b55"></path>
+		</symbol>
+	
+		<symbol id="info-icon" viewBox="0 0 23.63 23.63">
+			<path d="M11.81 0a11.81 11.81 0 1 0 0 23.63 11.81 11.81 0 0 0 0-23.63zm2.46 18.3c-.6.25-1.1.43-1.45.55-.37.13-.79.2-1.27.2-.73 0-1.3-.19-1.71-.55s-.61-.8-.61-1.36a4.97 4.97 0 0 1 .19-1.42l.76-2.69.17-.73c.05-.23.07-.44.07-.63 0-.34-.07-.58-.21-.72-.15-.13-.42-.2-.82-.2-.2 0-.4.03-.6.09-.2.06-.39.12-.53.18l.2-.83c.5-.2.97-.38 1.43-.52.45-.15.88-.22 1.29-.22.73 0 1.3.18 1.7.53.39.35.59.81.59 1.37a8 8 0 0 1-.2 1.43l-.75 2.68a7.58 7.58 0 0 0-.24 1.36c0 .36.07.6.23.73s.44.2.83.2a3.56 3.56 0 0 0 1.13-.27l-.2.83zm-.13-10.87c-.36.33-.78.5-1.28.5s-.92-.17-1.28-.5a1.57 1.57 0 0 1-.53-1.2c0-.46.18-.86.53-1.19.36-.33.79-.5 1.28-.5.5 0 .93.17 1.28.5.35.33.53.73.53 1.2 0 .46-.18.86-.53 1.19z"></path>
+		</symbol>
+	
+		<symbol id="it" viewBox="0 0 512 512">
+			<path d="M170.667 423.721H8.828A8.829 8.829 0 0 1 0 414.893V97.1a8.829 8.829 0 0 1 8.828-8.828h161.839v335.449z" fill="#73af00"></path><path fill="#f5f5f5" d="M170.67 88.277h170.67v335.45H170.67z"></path><path d="M503.172 423.721H341.333V88.273h161.839A8.829 8.829 0 0 1 512 97.101v317.793a8.827 8.827 0 0 1-8.828 8.827z" fill="#ff4b55"></path>
+		</symbol>
+	
+		<symbol id="pt" viewBox="0 0 512.001 512.001">
+			<path d="M503.172 423.725H8.828A8.829 8.829 0 0 1 0 414.897V97.104a8.829 8.829 0 0 1 8.828-8.828h494.345a8.829 8.829 0 0 1 8.828 8.828v317.793a8.83 8.83 0 0 1-8.829 8.828z" fill="#ff4b55"></path><path d="M185.379 88.277H8.828A8.828 8.828 0 0 0 0 97.104v317.793a8.829 8.829 0 0 0 8.828 8.828H185.38V88.277h-.001z" fill="#73af00"></path><circle cx="185.45" cy="256.001" r="79.38" fill="#ffe15a"></circle><path d="M211.932 229.518v35.31c0 14.603-11.88 26.483-26.483 26.483s-26.483-11.88-26.483-26.483v-35.31h52.966m8.827-17.655h-70.621a8.829 8.829 0 0 0-8.828 8.828v44.138c0 24.376 19.762 44.138 44.138 44.138s44.138-19.762 44.138-44.138v-44.138a8.827 8.827 0 0 0-8.827-8.828z" fill="#ff4b55"></path><path d="M211.932 229.518v35.31c0 14.603-11.88 26.483-26.483 26.483s-26.483-11.88-26.483-26.483v-35.31h52.966" fill="#f5f5f5"></path><g fill="#ffe15a"><circle cx="150.07" cy="220.691" r="4.414"></circle><circle cx="220.69" cy="220.691" r="4.414"></circle><circle cx="150.07" cy="256.001" r="4.414"></circle><circle cx="220.69" cy="256.001" r="4.414"></circle><circle cx="185.38" cy="220.691" r="4.414"></circle><circle cx="211.88" cy="288.551" r="4.414"></circle><circle cx="159.4" cy="288.551" r="4.414"></circle></g><g fill="#41479b"><path d="M191.149 253.763v7.602c0 3.144-2.558 5.702-5.702 5.702s-5.702-2.558-5.702-5.702v-7.602h11.404M191.149 235.741v7.602c0 3.144-2.558 5.702-5.702 5.702s-5.702-2.558-5.702-5.702v-7.602h11.404M191.149 271.97v7.602c0 3.144-2.558 5.702-5.702 5.702s-5.702-2.558-5.702-5.702v-7.602h11.404M206.506 253.763v7.602c0 3.144-2.558 5.702-5.702 5.702s-5.702-2.558-5.702-5.702v-7.602h11.404M175.794 253.763v7.602c0 3.144-2.558 5.702-5.702 5.702s-5.702-2.558-5.702-5.702v-7.602h11.404"></path></g>
+		</symbol>
+	
+</svg>
+
+        <!-- Wrapper-->
+        <div id="wrapper" class="clearfix gray-bg">
+            <!-- Navigation -->
+                            <nav class="navbar-default navbar-static-side" role="navigation">
+  <div class="sidebar-collapse">
+    <ul class="nav metismenu">
+      <li class="nav-header">
+        <div class="dropdown profile-element">
+          <span>
+                          <img alt="image" class="img-circle img-sm" src="/img/avatar.png?version=v16"/>
+                      </span>
+          <span class="clear">
+            <span class="block m-t-xs">
+              <strong class="font-bold">David Muratori</strong>
+            </span>
+            <span class="text-muted text-xs block">
+              Solde:
+              <span class="text-info"><span id="user_balance">193.55</span> €</span>
+            </span>
+          </span>
+          <a id="logout-session" href="/logout">
+            <span class="text-muted text-xs block">Se déconnecter</span>
+          </a>
+                            </div>
+      </li>
+    </ul>
+            <ul class="nav metismenu" id="side-menu">
+            
+                <li class="first">        <a href="/bo/dashboard">    <div class="nav-item-col">
+          <i class="fa fa-th-large"></i>
+    
+          <span class="nav-label">            Tableau de bord
+    </span>
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                            <li>        <a href="#">    <div class="nav-item-col">
+          <i class="fa fa-user-circle"></i>
+    
+          <span class="nav-label">            Mon compte
+    </span>
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow"></span>
+            </div>
+</a>                <ul class="nav nav-second-level menu_level_1">
+            
+                <li class="first">        <a href="/bo/invoice/list">    <div class="nav-item-col">
+          <i class="fa fa-bank"></i>
+    
+                        Factures
+    
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li>        <a href="/bo/replenish-account/">    <div class="nav-item-col">
+          <i class="fa fa-euro"></i>
+    
+                        Recharger son compte
+    
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li>        <a href="/bo/transaction">    <div class="nav-item-col">
+          <i class="fa fa-bar-chart-o"></i>
+    
+                        Transactions
+    
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li>        <a href="/bo/withdraw/">    <div class="nav-item-col">
+          <i class="fa fa-money"></i>
+    
+                        Retirer ses gains
+    
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li>        <a href="/bo/email-notification">    <div class="nav-item-col">
+          <i class="fa fa-bell"></i>
+    
+                        Notifications
+    
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li class="last">        <a href="/bo/profile">    <div class="nav-item-col">
+          <i class="fa fa-id-card"></i>
+    
+                        Profils
+    
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+
+    </ul>
+
+    </li>
+
+    
+                            <li>        <a href="#">    <div class="nav-item-col">
+          <i class="fa fa-copy"></i>
+    
+          <span class="nav-label">            Ventes
+    </span>
+        </div>
+    <div class="nav-item-col">
+                    <span class="label-wrap pull-right">
+                                                                                </span>
+                            <span class="fa fa-fw arrow"></span>
+            </div>
+</a>                <ul class="nav nav-second-level menu_level_1">
+            
+                <li class="first">        <a href="/bo/exchange-site/">    <div class="nav-item-col">
+    
+                        Mes sites
+    
+        </div>
+    <div class="nav-item-col">
+                    <span class="label-wrap pull-right">
+                                    </span>
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li>        <a href="/bo/pack/">    <div class="nav-item-col">
+    
+                        Mes packs (Beta)
+    
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li>        <a href="/bo/exchange-site-proposals">    <div class="nav-item-col">
+    
+                        Propositions reçues
+    
+        </div>
+    <div class="nav-item-col">
+                    <span class="label-wrap pull-right">
+                                                                                </span>
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li class="last">        <a href="/bo/exchange-site/stats">    <div class="nav-item-col">
+    
+                        Statistiques
+    
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+
+    </ul>
+
+    </li>
+
+    
+                <li>        <a href="/bo/exchange-site-proposals-message">    <div class="nav-item-col">
+          <i class="fa fa-comments"></i>
+    
+          <span class="nav-label">            Message(s)
+    </span>
+        </div>
+    <div class="nav-item-col">
+                    <span class="label-wrap pull-right">
+                                                <span class="label label-info pull-right">0</span>
+                                                    </span>
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                            <li>        <a href="#">    <div class="nav-item-col">
+          <i class="fa fa-paper-plane"></i>
+    
+          <span class="nav-label">            Achat
+    </span>
+        </div>
+    <div class="nav-item-col">
+                    <span class="label-wrap pull-right">
+                                                <span class="label label-info pull-right">0</span>
+                                                    </span>
+                            <span class="fa fa-fw arrow"></span>
+            </div>
+</a>                <ul class="nav nav-second-level menu_level_1">
+            
+                <li class="first">        <a href="/bo/directories-list/">    <div class="nav-item-col">
+    
+                        liste de référencement
+    
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li>        <a href="/bo/netlinking/add">    <div class="nav-item-col">
+    
+                        Créer un projet
+    
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li>        <a href="/bo/netlinking/">    <div class="nav-item-col">
+    
+                        Projets en cours
+    
+        </div>
+    <div class="nav-item-col">
+                    <span class="label-wrap pull-right">
+                                                <span class="label label-info pull-right">0</span>
+                                                    </span>
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li>        <a href="/bo/netlinking/waiting">    <div class="nav-item-col">
+    
+                        Projets en attente
+    
+        </div>
+    <div class="nav-item-col">
+                    <span class="label-wrap pull-right">
+                                                <span class="label label-info pull-right">0</span>
+                                                    </span>
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li class="last">        <a href="/bo/netlinking/finished">    <div class="nav-item-col">
+    
+                        Projets terminés
+    
+        </div>
+    <div class="nav-item-col">
+                    <span class="label-wrap pull-right">
+                                                <span class="label label-info pull-right">0</span>
+                                                    </span>
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+
+    </ul>
+
+    </li>
+
+    
+                            <li class="active">        <a href="#">    <div class="nav-item-col">
+          <i class="fa fa-shopping-cart"></i>
+    
+          <span class="nav-label">            Achat rapide
+    </span>
+        </div>
+    <div class="nav-item-col">
+                    <span class="label-wrap pull-right">
+                                    </span>
+                            <span class="fa fa-fw arrow"></span>
+            </div>
+</a>                <ul class="nav nav-second-level menu_level_1">
+            
+                <li class="first">        <a href="/bo/exchange-site-find">    <div class="nav-item-col">
+    
+                        Trouver un site
+    
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li>        <a href="/bo/exchange-order">    <div class="nav-item-col">
+    
+                        Vos commandes
+    
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li>        <a href="/bo/exchange-group">    <div class="nav-item-col">
+    
+                        Vos groupes
+    
+        </div>
+    <div class="nav-item-col">
+                    <span class="label-wrap pull-right">
+                                    </span>
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li class="active last">        <a href="/bo/exchange-existing-page?page_keyword_filter%5Btype%5D=sales" id="existing_page_menu">    <div class="nav-item-col">
+    
+                        Pages positionnées
+    
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+
+    </ul>
+
+    </li>
+
+    
+                            <li>        <a href="#">    <div class="nav-item-col">
+          <i class="fa fa-pencil"></i>
+    
+          <span class="nav-label">            Rédaction
+    </span>
+        </div>
+    <div class="nav-item-col">
+                    <span class="label-wrap pull-right">
+                                                <span class="label label-info pull-right">0</span>
+                                                    </span>
+                            <span class="fa fa-fw arrow"></span>
+            </div>
+</a>                <ul class="nav nav-second-level menu_level_1">
+            
+                <li class="first">        <a href="/bo/copywriting-sites/">    <div class="nav-item-col">
+    
+                        Gérer les sites
+    
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li>        <a href="/bo/copywriting/project/create">    <div class="nav-item-col">
+    
+                        Créer un projet
+    
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li>        <a href="/bo/copywriting/order/list?status=waiting">    <div class="nav-item-col">
+    
+                        Projets en attente
+    
+        </div>
+    <div class="nav-item-col">
+                    <span class="label-wrap pull-right">
+                                                <span class="label label-info pull-right">0</span>
+                                                    </span>
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li>        <a href="/bo/copywriting/order/list?status%5B0%5D=progress&amp;status%5B1%5D=declined&amp;status%5B2%5D=submitted_to_admin">    <div class="nav-item-col">
+    
+                        Projets en cours
+    
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li class="last">        <a href="/bo/copywriting/order/list?status=completed">    <div class="nav-item-col">
+    
+                        Projets terminés
+    
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+
+    </ul>
+
+    </li>
+
+    
+                <li>        <a href="/bo/plugin/">    <div class="nav-item-col">
+          <i class="fa fa-globe"></i>
+    
+          <span class="nav-label">            Plugin
+    </span>
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                            <li>        <a href="#">    <div class="nav-item-col">
+          <i class="fa fa-envelope"></i>
+    
+          <span class="nav-label">            Nous contacter
+    </span>
+        </div>
+    <div class="nav-item-col">
+                    <span class="label-wrap pull-right">
+                                                <span class="label label-info pull-right">0</span>
+                                                    </span>
+                            <span class="fa fa-fw arrow"></span>
+            </div>
+</a>                <ul class="nav nav-second-level menu_level_1">
+            
+                <li class="first">        <a href="/bo/message/">    <div class="nav-item-col">
+    
+                        Voir Emails
+    
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li>        <a href="/bo/message/all/incoming">    <div class="nav-item-col">
+    
+                        Reçus
+    
+        </div>
+    <div class="nav-item-col">
+                    <span class="label-wrap pull-right">
+                                                <span class="label label-info pull-right">0</span>
+                                                    </span>
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li>        <a href="/bo/message/all/outgoing">    <div class="nav-item-col">
+    
+                        Envoyés
+    
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li class="last">        <a href="/bo/message/add">    <div class="nav-item-col">
+    
+                        Nouveau message
+    
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+
+    </ul>
+
+    </li>
+
+    
+                <li class="last">        <a href="/bo/faq">    <div class="nav-item-col">
+          <i class="fa fa-question-circle"></i>
+    
+          <span class="nav-label">            FAQ
+    </span>
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+
+    </ul>
+
+  </div>
+</nav>
+            
+            <!-- Page wraper -->
+            <div id="page-wrapper">
+                <div id="swipe-area"></div>
+                <!-- Top Navigation -->
+                                    <div class="clearfix border-bottom top-nav_wrapper">
+  <nav class="navbar navbar-static-top" role="navigation">
+    <div class="navbar-header">
+      <a class="navbar-minimalize minimalize-styl-2 btn btn-primary " href="#"><i class="fa fa-bars"></i> </a>
+      <button class="btn-link fa fa-search j-search-trigger"></button>
+      <form role="search" class="navbar-form-custom j-navbar-search" action="/bo/search">
+
+        <div class="input-group">
+          <input class="form-control" type="text" id="serch-query" name="query" placeholder="Recherche..." value="">
+                </div>
+        <input type="submit" hidden>
+      </form>
+    </div>
+    <ul class="nav navbar-top-links navbar-right">
+      <li>
+        <span class="m-r-sm text-muted welcome-message">Bienvenue sur Ereferer.</span>
+      </li>
+      <li>
+        <a class="count-info" href="/bo/message/all/incoming">
+          <i class="fa fa-envelope"></i>
+                            </a>
+      </li>
+      <li>
+                          <img src="/img/flags/France.png?version=v16" height="25" width="25"/>
+              </li>
+      <li>
+        <select class="topnav-lang-select">
+                <option value="fr" selected="selected">FR</option>
+            <option value="en" >EN</option>
+            <option value="es" >ES</option>
+            <option value="it" >IT</option>
+            <option value="pt" >PT</option>
+            <option value="de" >DE</option>
+            <option value="nl" >NL</option>
+            <option value="pl" >PL</option>
+            <option value="ae" >AE</option>
+            <option value="or" >OTHER</option>
+    </select>      </li>
+      <li>
+        <a id="logout-session" href="/logout">
+          <i class="fa fa-sign-out"></i> Se déconnecter
+        </a>
+      </li>
+    </ul>
+  </nav>
+</div>
+
+                
+                <div class="row wrapper border-bottom white-bg page-heading">
+                    <div class="">
+                        <!-- Page Heading -->
+                                                    <div class="col-sm-6">
+                                    <ol class="breadcrumb">
+    <li>
+            Ventes
+    </li>
+                        <li>
+                                        Pages positionnées
+
+                            </li>
+            </ol>
+                                <h2 class="head-title">    Pages positionnées
+</h2>
+                            </div>
+                                                
+                                            </div>
+                </div>
+
+                <!-- Main content  -->
+                <div class="wrapper wrapper-content">
+                                        
+            <div class="main-content dashboard-page">
+            <main class="d-flex flex-column">
+                <!-- Filter Bar -->
+
+                <div class="d-flex flex-row p-2 filter-bar">
+                    <form name="page_keyword_filter" method="get" id="page_keyword_filter_form" class="form-horizontal">
+                                        <div class="form-inline filter-kw-search">
+                        <div class="input-group input-group-inline shadow-none">
+                            <span class="input-group-text border-0 shadow-none ps-2 ps-xxl-3 pe-1"><i class="bi bi-search"></i> </span>
+                            <input type="text" id="page_keyword_filter_keyword" name="page_keyword_filter[keyword]" placeholder="Mot-clé de recherche" aria-label="Search" class="proposal_filter_text form-control form-control-flush border-0 ps-1 form-control" />
+                        </div>
+                    </div>
+                    <div class="form-inline filter-ex-kw-search">
+                        <div class="input-group input-group-inline shadow-none">
+                            <input type="text" id="page_keyword_filter_excludeKeyword" name="page_keyword_filter[excludeKeyword]" placeholder="Mot/domaine à exclure" aria-label="Search" class="proposal_filter_text form-control form-control-flush border-0 ps-1 form-control" />
+                        </div>
+                    </div>
+                    <div class="filter-by-traffic">
+                        <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+                            <svg width="25" height="24" viewBox="0 0 25 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M16.1915 12.26C19.0247 12.26 21.3215 9.96323 21.3215 7.13C21.3215 4.29678 19.0247 2 16.1915 2C13.3583 2 11.0615 4.29678 11.0615 7.13C11.0615 9.96323 13.3583 12.26 16.1915 12.26Z" stroke="#101010" stroke-width="1.5" stroke-miterlimit="10"/>
+                                <path d="M6.96158 19.44C8.66262 19.44 10.0416 18.0611 10.0416 16.36C10.0416 14.659 8.66262 13.28 6.96158 13.28C5.26054 13.28 3.88159 14.659 3.88159 16.36C3.88159 18.0611 5.26054 19.44 6.96158 19.44Z" stroke="#101010" stroke-width="1.5" stroke-miterlimit="10"/>
+                                <path d="M17.2216 22C18.6354 22 19.7816 20.8539 19.7816 19.44C19.7816 18.0262 18.6354 16.88 17.2216 16.88C15.8077 16.88 14.6616 18.0262 14.6616 19.44C14.6616 20.8539 15.8077 22 17.2216 22Z" stroke="#101010" stroke-width="1.5" stroke-miterlimit="10"/>
+                            </svg>
+                            <span>Trafic</span>
+                            <svg width="21" height="20" viewBox="0 0 21 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path fill-rule="evenodd" clip-rule="evenodd" d="M5.89446 7.29289C6.28498 6.90237 6.91814 6.90237 7.30867 7.29289L10.6016 10.5858L13.8944 7.29289C14.285 6.90237 14.9181 6.90237 15.3087 7.29289C15.6992 7.68342 15.6992 8.31658 15.3087 8.70711L11.3087 12.7071C10.9181 13.0976 10.285 13.0976 9.89445 12.7071L5.89446 8.70711C5.50393 8.31658 5.50393 7.68342 5.89446 7.29289Z" fill="black"/>
+                            </svg>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <div id="trafficSlider-range" class="rangeSlider" data-filter="totalTraffic" data-defmin=0 data-defmax=100000></div>
+                            <div class="minMaxVal">
+                                <input type="text" class="minVal me-1" value="0" data-filter="traffic"> To <input type="text" class="maxVal ms-1" value="100000" data-filter="totalTraffic">
+                            </div>
+                        </ul>
+                        <div style="display: none;">
+                                <div class="form-group input-group minmaxrange"><span class="input-group-btn"><input type="number" id="page_keyword_filter_totalTraffic_min" name="page_keyword_filter[totalTraffic][min]" placeholder="min" range-type="min" range="totalTraffic" class="form-control" /></span><span class="input-group-btn"><input type="number" id="page_keyword_filter_totalTraffic_max" name="page_keyword_filter[totalTraffic][max]" placeholder="max" range-type="max" range="totalTraffic" class="form-control" /></span></div>
+                        </div>
+                    </div>
+                    <div class="flexBreak d-block d-md-none mb-3"></div>
+                    <div class="filter-by-position">
+                        <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+                            <svg width="25" height="24" viewBox="0 0 25 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M17.1631 6.16998C19.1631 7.55998 20.5431 9.76998 20.8231 12.32" stroke="#101010" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M3.69312 12.37C3.95312 9.82997 5.31312 7.61997 7.29312 6.21997" stroke="#101010" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M8.39313 20.94C9.55313 21.53 10.8731 21.86 12.2631 21.86C13.6031 21.86 14.8631 21.56 15.9931 21.01" stroke="#101010" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M12.2632 7.70001C13.7985 7.70001 15.0432 6.45537 15.0432 4.92001C15.0432 3.38466 13.7985 2.14001 12.2632 2.14001C10.7278 2.14001 9.48315 3.38466 9.48315 4.92001C9.48315 6.45537 10.7278 7.70001 12.2632 7.70001Z" stroke="#101010" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M5.03311 19.92C6.56846 19.92 7.81311 18.6753 7.81311 17.14C7.81311 15.6046 6.56846 14.36 5.03311 14.36C3.49776 14.36 2.25311 15.6046 2.25311 17.14C2.25311 18.6753 3.49776 19.92 5.03311 19.92Z" stroke="#101010" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M19.3731 19.92C20.9085 19.92 22.1531 18.6753 22.1531 17.14C22.1531 15.6046 20.9085 14.36 19.3731 14.36C17.8378 14.36 16.5931 15.6046 16.5931 17.14C16.5931 18.6753 17.8378 19.92 19.3731 19.92Z" stroke="#101010" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            <span>Position</span>
+                            <svg width="21" height="20" viewBox="0 0 21 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path fill-rule="evenodd" clip-rule="evenodd" d="M5.89446 7.29289C6.28498 6.90237 6.91814 6.90237 7.30867 7.29289L10.6016 10.5858L13.8944 7.29289C14.285 6.90237 14.9181 6.90237 15.3087 7.29289C15.6992 7.68342 15.6992 8.31658 15.3087 8.70711L11.3087 12.7071C10.9181 13.0976 10.285 13.0976 9.89445 12.7071L5.89446 8.70711C5.50393 8.31658 5.50393 7.68342 5.89446 7.29289Z" fill="black"/>
+                            </svg>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <div id="positionSlider-range" class="rangeSlider" data-filter="position" data-defmin=0 data-defmax=120></div>
+                            <div class="minMaxVal">
+                                <input type="text" class="minVal me-1" value="0" data-filter="position"> To <input type="text" class="maxVal ms-1" value="120" data-filter="position">
+                            </div>
+                        </ul>
+                        <div style="display: none;">
+                                <div class="form-group input-group minmaxrange"><span class="input-group-btn"><input type="number" id="page_keyword_filter_position_min" name="page_keyword_filter[position][min]" placeholder="min" range-type="min" range="position" class="form-control" /></span><span class="input-group-btn"><input type="number" id="page_keyword_filter_position_max" name="page_keyword_filter[position][max]" placeholder="max" range-type="max" range="position" class="form-control" /></span></div>
+                        </div>
+                    </div>
+                    <div class="flexBreak d-none d-md-block d-lg-none mb-3"></div>
+                    <div class="filter-by-volume">
+                        <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+                            <svg width="25" height="24" viewBox="0 0 25 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M3.30469 8.25V15.75" stroke="#101010" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M7.80469 5.75V18.25" stroke="#101010" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M12.3047 3.25V20.75" stroke="#101010" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M16.8047 5.75V18.25" stroke="#101010" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M21.3047 8.25V15.75" stroke="#101010" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            <span>Volume</span>
+                            <svg width="21" height="20" viewBox="0 0 21 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path fill-rule="evenodd" clip-rule="evenodd" d="M5.89446 7.29289C6.28498 6.90237 6.91814 6.90237 7.30867 7.29289L10.6016 10.5858L13.8944 7.29289C14.285 6.90237 14.9181 6.90237 15.3087 7.29289C15.6992 7.68342 15.6992 8.31658 15.3087 8.70711L11.3087 12.7071C10.9181 13.0976 10.285 13.0976 9.89445 12.7071L5.89446 8.70711C5.50393 8.31658 5.50393 7.68342 5.89446 7.29289Z" fill="black"/>
+                            </svg>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <div id="volumeSlider-range" class="rangeSlider" data-filter="volume" data-defmin=0 data-defmax=100000></div>
+                            <div class="minMaxVal">
+                                <input type="text" class="minVal me-1" value="0" data-filter="volume"> To <input type="text" class="maxVal ms-1" value="100000" data-filter="volume">
+                            </div>
+                        </ul>
+                        <div style="display: none;">
+                                <div class="form-group input-group minmaxrange"><span class="input-group-btn"><input type="number" id="page_keyword_filter_volume_min" name="page_keyword_filter[volume][min]" placeholder="min" range-type="min" range="volume" class="form-control" /></span><span class="input-group-btn"><input type="number" id="page_keyword_filter_volume_max" name="page_keyword_filter[volume][max]" placeholder="max" range-type="max" range="volume" class="form-control" /></span></div>
+                        </div>
+                    </div>
+                    <div class="flexBreak d-block d-md-none mb-3"></div>
+                    <div class="filter-by-price">
+                        <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+                            <i class="fa fa-eur"></i>
+                            <span>Prix</span>
+                            <svg width="21" height="20" viewBox="0 0 21 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path fill-rule="evenodd" clip-rule="evenodd" d="M5.89446 7.29289C6.28498 6.90237 6.91814 6.90237 7.30867 7.29289L10.6016 10.5858L13.8944 7.29289C14.285 6.90237 14.9181 6.90237 15.3087 7.29289C15.6992 7.68342 15.6992 8.31658 15.3087 8.70711L11.3087 12.7071C10.9181 13.0976 10.285 13.0976 9.89445 12.7071L5.89446 8.70711C5.50393 8.31658 5.50393 7.68342 5.89446 7.29289Z" fill="black"/>
+                            </svg>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <div id="priceSlider-range" class="rangeSlider" data-filter="price" data-defmin=0 data-defmax=10000></div>
+                            <div class="minMaxVal">
+                                <input type="text" class="minVal me-1" value="0" data-filter="price"> To <input type="text" class="maxVal ms-1" value="10000" data-filter="price">
+                            </div>
+                        </ul>
+                        <div style="display: none;">
+                                <div class="form-group input-group minmaxrange"><span class="input-group-btn"><input type="number" id="page_keyword_filter_price_min" name="page_keyword_filter[price][min]" placeholder="min" range-type="min" range="price" class="form-control" /></span><span class="input-group-btn"><input type="number" id="page_keyword_filter_price_max" name="page_keyword_filter[price][max]" placeholder="max" range-type="max" range="price" class="form-control" /></span></div>
+                        </div>
+                    </div>
+                    <div class="filter-and-sort">
+                        <button type="submit" id="page_keyword_filter_save" class="btn btn-primary">
+                            <span class="pe-0">Filtrer</span>
+                        </button>
+                    </div>
+                    <div class="multiple-edit" style="display: none;">
+                        <button type="button" data-toggle="modal" data-target="#multipleEditPriceModal"  id="page_multiple_edit" class="btn btn-primary">
+                            <i class="fa fa-pencil-square-o visible-xxs" aria-hidden="true"></i>
+                            <span class="pe-0">Modifier la sélection</span>
+                        </button>
+                    </div>
+                                        <input type="hidden" id="page_keyword_filter_type" name="page_keyword_filter[type]" value="sales" /><input type="hidden" id="page_keyword_filter_exchangeSite" name="page_keyword_filter[exchangeSite]" /><input type="hidden" id="page_keyword_filter__token" name="page_keyword_filter[_token]" value="7f454868005.yp_XXOH5e4XNUOBjVdSBJnvBgM4OHdiygopXz9IBDiE.uq7uE7WMT7aKCNMwMLLyY0Oky7lXZKrd6MwnjYB7QnCo544fqcg6vIcdlw" /></form>
+                </div>
+
+                <!-- Data -->
+                <div class="d-flex flex-column table-data existing_page_table_wrapper sk-spinner_wrap">
+                    <div class="sk-spinner sk-spinner-double-bounce">
+                        <div class="sk-double-bounce1"></div>
+                        <div class="sk-double-bounce2"></div>
+                    </div>
+                                                                
+                                            <table data-empty="No results" class="footable table-striped table table-proposals dataTable footable-1 enabled breakpoint breakpoint-m" style="padding: 0px;">
+                            <tbody>
+                            <tr class="footable-empty">
+                                <td colspan="8">
+                                                                            Merci d&#039;indiquer un mot-clé
+                                                                    </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                                                                                    
+                </div>
+            </main>
+        </div>
+    
+    
+<div class="modal fade" id="exchangeSiteProposition" tabindex="-1" role="dialog">
+    <div class="modal-dialog high-inputs" role="document">
+        <div class="modal-content sk-spinner_wrap">
+            <div class="sk-spinner sk-spinner-double-bounce">
+                <div class="sk-double-bounce1"></div>
+                <div class="sk-double-bounce2"></div>
+            </div>
+            <div class="modal-header">
+                <h4 class="modal-title"></h4>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-errors alert-danger hidden"></div>
+            <div class="modal-body"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary">J&#039;accepte</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="exchangeSitePropositionApi" tabindex="-1" role="dialog">
+    <div class="modal-dialog high-inputs" role="document">
+        <div class="modal-content sk-spinner_wrap">
+            <div class="modal-header">
+                <h4 class="modal-title"></h4>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <p>Pour terminer votre commande, vous devez vous inscrire au préalable.<br> Vous pourrez ainsi récupérer votre facture et suivre le statut de votre commande.<br> Vous serez automatiquement redirigé vers la page d'inscription dans <span class="text-danger">10</span> secondes</p>
+                <div class="api-key-time"><h1 id="countdowntimer">10</h1></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="submitArticleProposition" tabindex="-1" role="dialog" data-keyboard="false">
+    <div class="modal-dialog high-inputs" role="document">
+        <div class="modal-content sk-spinner_wrap">
+            <div class="sk-spinner sk-spinner-double-bounce">
+                <div class="sk-double-bounce1"></div>
+                <div class="sk-double-bounce2"></div>
+            </div>
+            <div class="modal-header">
+                <h4 class="modal-title"></h4>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-errors alert-danger hidden"></div>
+            <div class="modal-body"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary">J&#039;accepte</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal inmodal" id="submitTextProposition" tabindex="-1" role="dialog" data-keyboard="false">
+    <div class="modal-dialog high-inputs modal-lg" role="document">
+        <div class="modal-content sk-spinner_wrap">
+            <div class="sk-spinner sk-spinner-double-bounce">
+                <div class="sk-double-bounce1"></div>
+                <div class="sk-double-bounce2"></div>
+            </div>
+            <div class="modal-header">
+                <h4 class="modal-title"></h4>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-errors alert-danger hidden"></div>
+            <div class="modal-body">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-white" data-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-primary">J&#039;accepte</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="exchangeSitePropositionPack" tabindex="-1" role="dialog">
+    <div class="modal-dialog high-inputs" role="document" style="width: 85%;">
+        <div class="modal-content sk-spinner_wrap">
+            <div class="sk-spinner sk-spinner-double-bounce">
+                <div class="sk-double-bounce1"></div>
+                <div class="sk-double-bounce2"></div>
+            </div>
+            <div class="modal-header">
+                <h4 class="modal-title"></h4>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-errors alert-danger hidden"></div>
+            <div class="modal-body"></div>
+            <div class="modal-footer"></div>
+        </div>
+    </div>
+</div>
+    <div class="modal" id="multipleEditPriceModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">Mise à jour du prix de vente</h4>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <div>
+                            <label for="multipleEditPrice">Nouveau prix</label>
+                        </div>
+                        <div>
+                            <input type="number" class="form-control" name="multipleEditPrice" id="multipleEditPriceInput"/>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary btn-sm m-t-md"
+                            id="multipleEditPriceSubmit">Soumettre</button>
+                </div>
+            </div>
+        </div>
+    </div>
+                </div>
+
+            </div>
+            <!-- End page wrapper-->
+
+            <!-- Footer -->
+                            <div class="footer">
+    <div class="pull-right">
+      <strong> &copy; Copyright</strong> 2017-2025  EREFERER
+    </div>
+</div>
+                    </div>
+        <!-- End wrapper-->
+    
+            
+    <!-- Mainly scripts -->
+    <script src="//cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+    <script src="/js/admin/jquery-3.1.1.min.js"></script>
+    <script src="/js/admin/bootstrap.min.js"></script>
+    <script src="/js/jquery-ui.min.js?version=v16"></script>
+    <script src="/js/admin/plugins/metisMenu/jquery.metisMenu.js"></script>
+    <script src="/js/admin/plugins/slimscroll/jquery.slimscroll.min.js"></script>
+
+
+
+    <!-- iCheck -->
+    <script src="/js/admin/plugins/iCheck/icheck.min.js"></script>
+
+    <!-- Chosen -->
+    <script src="/js/admin/plugins/chosen/chosen.jquery.js"></script>
+
+    <!-- Data picker -->
+    <script src="/js/admin/plugins/datapicker/bootstrap-datepicker.js"></script>
+    <script src="//cdn.jsdelivr.net/bootstrap.daterangepicker/2/daterangepicker.js"></script>
+    <script src="/js/admin/plugins/toastr/toastr.min.js"></script>
+    <script src="//js.pusher.com/2.2/pusher.min.js" type="text/javascript" type="text/javascript" ></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/bootbox.js/4.3.0/bootbox.min.js" type="text/javascript" ></script>  
+
+    <script src="/js/admin/plugins/bootstrap-tagsinput/bootstrap-tagsinput.js"></script>
+    <script src="/js/admin/plugins/jasny/jasny-bootstrap.min.js"></script>
+
+    <script src="/js/admin/plugins/moment/moment.min.js"></script>
+    <script src="/js/admin/plugins/footable/footable.all.min.js"></script>
+    <script src="/js/admin/plugins/blueimp/jquery.blueimp-gallery.min.js"></script>
+    <script src="/js/admin/plugins/sweetalert/sweetalert.min.js"></script>
+    <script src="/js/front/plugin/sticky-table-headers.js"></script>
+
+    <!-- Custom and plugin javascript -->
+
+    <script src="/js/admin/plugins/pace/pace.min.js"></script>
+    <script src="/js/front/plugin/resize-sensor.js"></script>
+    <script src="/js/front/plugin/sticky-sidebar.js"></script>
+    <script src="/js/main.js?version=v16"></script>
+    <script src="/js/front/minmax-validation.js?version=v16"></script>
+
+    <script type="text/javascript">
+        $body = $("body");
+        $(document).on({
+            ajaxStart: function () {
+                $body.addClass("loading");
+            },
+            ajaxStop: function () {
+                $body.removeClass("loading");
+            }
+        });
+
+        $(document).ready(function () {
+            $('.admin-search').chosen({
+                disable_search_threshold: 7,
+                width: "100%"
+            });
+
+            $('select.form-control[multiple!=multiple]')
+                .not("#filters_ageCondition").not('.footable select').not('.footable select').not('.ajax_chosen')
+                .chosen({
+                    width: "100%",
+                    search_contains: true
+                })
+                .on('chosen:showing_dropdown', function (evt, params) {
+                    checkChosenPosition(evt);
+                });
+
+            $('.chosen-select[multiple!=multiple]').chosen({
+                width: "100%",
+                search_contains: true
+            });
+
+            $('.input-group.date').datepicker({
+                todayBtn: "linked",
+                keyboardNavigation: false,
+                forceParse: false,
+                calendarWeeks: true,
+                autoclose: true
+            });
+        });
+
+        var translations = {
+            choose_an_option: 'choose_an_option',
+            excel_report: 'Exporter vers Excel les résultats',
+            pack: {
+                confirmation: {
+                    buy_pack_immediately: 'Vous\u0020serez\u0020d\u00E9bit\u00E9\u0020de\u0020\u0026pack_price\u0026\u20AC\u0020pour\u0020l\u0027int\u00E9gralit\u00E9\u0020du\u0020pack.\u0020Les\u0020articles\u0020non\u0020utilis\u00E9s\u0020\u00E0\u0020la\u0020fin\u0020du\u0020temps\u0020imparti\u0020seront\u0020pay\u00E9s\u0020\u00E0\u0020l\u0027\u00E9diteur\u0020et\u0020ne\u0020pourront\u0020\u00EAtre\u0020rembours\u00E9s.',
+                    buy_pack_each_item: 'Vous serez facturé à chaque article envoyé. Les articles non utilisés à la fin du temps vous seront débités et ne pourront être remboursés.',
+                    cancel: 'L\u0027annulation\u0020d\u0027un\u0020packentraine\u0020aussi\u0020l\u0027annulation\u0020de\u0020la\u0020remise\u0020dont\u0020vous\u0020avez\u0020b\u00E9n\u00E9fici\u00E9\u0020\u003Cbr\u003EVous\u0020serez\u0020donc\u0020rembours\u00E9\u0020de\u0020\u0026refund_price\u0026\u20AC\u0020\u003Cbr\u003E\u00CAtes\u002Dvous\u0020sur\u0020de\u0020vouloir\u0020annuler\u0020ce\u0020pack\u0020\u003F'
+                },
+                immediately: 'Immédiatement (24h)'
+            },
+            modal: {
+                delete: {
+                    title: 'Êtes vous sûr ?',
+                    text: 'Vous ne pourrez pas ensuite le récupérer !',
+                    confirmButtonText: 'Oui, le supprimer !'
+                },
+                confirmation: {
+                    title: 'Confirmation!',
+                    text: 'Êtes vous sûr de vouloir effectuer cette action ?',
+                    confirmButtonText: 'Oui !'
+                },
+                cancel: {
+                    text: 'Annuler',
+                },
+                error: 'Erreur !',
+                error_500: '500 Internal Server Error',
+                invalid_json: 'JSON invalide',
+            },
+            successCopied: 'A bien été copié !',
+            infoTitle: 'Information',
+            infoValidationText: 'Vous ne pouvez pas créer plusieurs projets pour le même site internet afin d&#039;éviter les doublons.',
+            validateTitle: 'Veuillez cocher cette case si vous souhaitez continuer',
+            noResults: 'Aucun résultat',
+            errors: {
+                writing_ereferer: {
+                    fields: 'Vous devez mentionner au moins 1 url et son ancre afin de pouvoir poursuivre.'
+                },
+                writing_webmaster: {
+                    fields: 'Vous devez mentionner au moins 1 url et son ancre afin de pouvoir poursuivre.'
+                },
+                submit_your_article: {
+                    fields: 'Vous devez mentionner au moins 1 url et son ancre afin de pouvoir poursuivre.'
+                },
+                create_group: {
+                    fields: 'Vous devez mentionner au moins 1 url et son ancre afin de pouvoir poursuivre.'
+                },
+                join_group: {
+                    fields: 'Vous devez mentionner au moins 1 url et son ancre afin de pouvoir poursuivre.',
+                    message: 'Vous devez entrer un message au partenaire.'
+                },
+                admin_proposal: {
+                    fields: 'errors.admin_proposal.fields'
+                },
+                contact_partner: {
+                    fields: 'Vous devez mentionner au moins 1 url et son ancre afin de pouvoir poursuivre.',
+                },
+                wrong_min_range: 'La valeur minimale ne peut être supérieure à la maximale',
+                wrong_max_range: 'La valeur maximale doit être supérieur à la minimale',
+                wrong_url: 'Url incorrecte',
+                checkedCondition: 'Veuillez vérifier cette condition si vous souhaitez continuer',
+                checkedRefuseCondition: 'Veuillez accepter la condition ci-dessus si vous souhaitez continuer.',
+                general_error: 'Résolvez les problèmes suivants pour continuer',
+                black_list_url: 'Désolé, cette thématique n’est pas acceptée sur ce site !'
+            }
+        };
+
+    </script>
+    <script src="/js/admin/inspinia.js"></script>
+
+            
+    <script  type="text/javascript">
+    translations.name = {
+        age: "Age",
+        archive: "Âge (Archive.org)",
+        whois: "Âge (Whois)",
+        y: "Année(s)",
+        d: "Jour(s)",
+        m: "Mois",
+        blog: "Blog",
+        directory: "Annuaire",
+        categories: "Catégories",
+        tags: "Tags",
+        type: "Type",
+        category: "Catégorie",
+        preferences: "Rédaction",
+        semrushTraffic: "Trafic",
+        emptyTable: "table.empty",
+
+        metaTitle: "Meta title",
+        metaDescription: "Meta description",
+        headerOneSet: "H1",
+        headerTwoStartEnd: "H2",
+        headerThreeStartEnd: "H3",
+        majesticTrustCitationRatio: "Trust flow/Citation flow ratio",
+
+
+        boldText: "Passages en gras",
+        italicText: "Passages en Italic",
+        ulTag: "Liste à puce",
+
+        semrushKeyword: "Mot-clés Semrush",
+        semrushTrafficCost: "Coût du trafic Semrush",
+        trustFlow: "Trust flow",
+        topictrustFlow: "Topical Trust Flow",
+        referringDomains: "Domaines référents",
+        price: "Prix",
+        language: "Langue",
+        googleNews: "Google News",
+        googleAnalytics: "Google analytics",
+        mozDomainAuthority: "Domain Authority",
+        mozPageAuthority: "Page authority",
+        alexaRank: "Alexa",
+        majesticCitation: "Citation Flow",
+        majesticRefDomains: "Domaines référents",
+        majesticBacklinks: "Liens",
+        majesticEduBacklinks: "Liens EDU",
+        majesticGovBacklinks: "Liens GOV",
+        authorizedAnchor: "Ancre autorisée",
+        words: "Mots",
+        links: "Liens",
+        images: "Images",
+        to: "à",
+        yes: "Oui",
+        no: "Non",
+        min: "min",
+        max: "max",
+        optional: "Optionnel",
+        validation_rate: "Taux de validation",
+        validation_time: "Temps pour valider",
+        accept_subdomains: "Accepte sous-domaines",
+        reject_subdomains: "Refuse sous-domaines",
+        legal: "Site avec mentions légales",
+        dont_legal: "Site sans mentions légales",
+        plugin: "Plugin",
+        publicationRequirements: "Critères de publication",
+        metrics: "Metrics",
+        showDetails: "Voir les détails",
+        hideDetails: "Cacher les details",
+        majestic_ttf_categories: "Trust flow categories",
+        majestic_metrics: "Majestic",
+        semrush_metrics: "Semrush",
+        moz_metrics: "Moz",
+        google_metrics: "Google",
+        other_metrics: "Autres metrics",
+        article: "form.article_filter",
+        hideUrlContent: "Disposant de l&#039;intégralité des médias et sites Premium ouverts au netlinking, Ereferer les protège et n&#039;affiche ces URLs qu&#039;aux partenaires ayant rechargé au moins 1000€ cumulés sur leur compte sur les 12 derniers mois. L&#039;accès est déverrouillé indépendamment en nous contactant.",
+        seeUrl: "(Voir l&#039;URL)",
+        visits: "Visites",
+        uniqueVisitors: "Visiteurs U.",
+        semrush: "Trafic Google",
+        prev: "Prev",
+        next: "Next",
+        downloadError: "Vous ne pouvez pas télécharger plus de 100 résultats.",
+    }
+</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui-touch-punch/0.2.3/jquery.ui.touch-punch.min.js" integrity="sha512-0bEtK0USNd96MnO4XhH8jhv3nyRF0eK87pJke6pkYf3cM0uDIhNJy9ltuzqgypoIFXw3JSuiy04tVk4AjpZdZw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-u1OknCvxWvY5kfmNBILK2hRnQC3Pr17a+RTT6rIHI7NnikvbZlHgTPOOmMi466C8" crossorigin="anonymous"></script>
+    <script src="/js/bootstrap-select.js?version=v16"></script>
+    <script type="text/javascript">
+        var userId = 69717;
+        var userLocale = "fr";
+    </script>
+    <script src="/js/admin/plugins/touchspin/jquery.bootstrap-touchspin.min.js?version=v16"></script>
+    <script src="/js/admin/jquery.collection.js?version=v16"></script>
+    <script src="/js/admin/jquery.twbsPagination.min.js?version=v16"></script>
+    <script src="/js/front/directory/custom-popup.js?version=v16"></script>
+    <script src="/js/front/directory/jquery-throttle-debounce.js?version=v16"></script>
+    <script src="/js/front/exchange_site/tooltip.js?version=v16"></script>
+    <script src="/js/front/directory/jquery.stickyheader.js?version=v16"></script>
+    <script src="/js/front/exchange_site/exchange_site_find.js?version=v16"></script>
+    <script src="/js/front/user.js?version=v16"></script>
+    <script src="/js/front/init_filters.js?version=v16"></script>
+    <script src="/js/front/existing_page_list.js?version=v16"></script>
+    <script type="text/javascript">
+        $('.exchange_site_order_by').click(function (event) {
+            $('.existing_page_table_wrapper').find('.sk-spinner_wrap').addClass('sk-loading');
+            var order = 'asc';
+
+            if (!$(this).hasClass('sorting_desc')) {
+                order = 'desc';
+            }
+
+            orderByName = $(this).attr('data-name');
+            const urlParams = new URLSearchParams(window.location.search);
+            urlParams.set('orderByName', orderByName);
+            urlParams.set('orderByOrder', order);
+            window.location.search = urlParams;
+            event.preventDefault();
+        });
+
+        tooltipshow();
+    </script>
+
+    <div class="modal fade" id="erefererAlerts" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title"></h4>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                </div>
+                <div class="modal-body"></div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
+
+<script type="text/javascript">
+    var userId = 69717;
+
+    console.log("test" + userId);
+
+    var pusher = new Pusher('e68c91eed5f6fc664eda', {
+        cluster: 'eu'
+    });
+    // Enter a unique channel you wish your users to be subscribed in.
+    var channel = pusher.subscribe('user-channel');
+    channel.bind('user_event', function(data) {
+        console.log("User:" + data.user_id);
+        if (data.user_id == userId) {
+            window.location.href = '/logout';
+        }
+    });
+</script>

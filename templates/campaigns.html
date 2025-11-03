@@ -1,0 +1,488 @@
+{% extends "base.html" %}
+
+{% block title %}Campagnes d'Emails - Scrap Email Manager{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h2">
+                <i class="bi bi-send-fill text-primary"></i>
+                Campagnes d'Emails
+            </h1>
+            <p class="text-muted">Créez et gérez vos campagnes d'envoi d'emails</p>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createCampaignModal">
+                <i class="bi bi-plus-circle"></i> Nouvelle Campagne
+            </button>
+        </div>
+    </div>
+
+    <!-- Liste des campagnes -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-list-ul"></i> Mes Campagnes</h5>
+                </div>
+                <div class="card-body">
+                    <div id="campaigns-list">
+                        <div class="text-center py-5">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Chargement...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Créer une campagne -->
+<div class="modal fade" id="createCampaignModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-plus-circle"></i> Nouvelle Campagne</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="createCampaignForm">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Nom de la campagne *</label>
+                                <input type="text" class="form-control" id="campaign-name" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Template</label>
+                                <select class="form-select" id="campaign-template">
+                                    <option value="">Personnalisé</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" id="campaign-description" rows="2"></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Sujet de l'email *</label>
+                        <input type="text" class="form-control" id="campaign-subject" required
+                               placeholder="Ex: Collaboration SEO - {{domain}}">
+                        <small class="text-muted">Variables disponibles: {{domain}}, {{email}}, {{siret}}, {{leaders}}</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Corps HTML de l'email *</label>
+                        <textarea class="form-control font-monospace" id="campaign-html" rows="15" required></textarea>
+                        <small class="text-muted">Utilisez {{domain}}, {{email}}, etc. et {{unsubscribe_link}}</small>
+                    </div>
+
+                    <hr>
+
+                    <h6>⚙️ Options d'envoi</h6>
+
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Score de validation minimum</label>
+                                <input type="number" class="form-control" id="campaign-min-score" value="80" min="0" max="100">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Emails par jour (max)</label>
+                                <input type="number" class="form-control" id="campaign-max-per-day" value="200" min="1">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Délai entre emails (s)</label>
+                                <input type="number" class="form-control" id="campaign-delay" value="2" min="1">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="campaign-deliverable" checked>
+                        <label class="form-check-label" for="campaign-deliverable">
+                            Envoyer uniquement aux emails délivrables (recommandé)
+                        </label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-primary" id="btn-create-campaign">
+                    <i class="bi bi-check-circle"></i> Créer la Campagne
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Détails d'une campagne -->
+<div class="modal fade" id="campaignDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="campaign-details-title"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="campaign-details-body">
+                <!-- Contenu dynamique -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                <button type="button" class="btn btn-warning" id="btn-prepare-campaign" style="display:none">
+                    <i class="bi bi-gear"></i> Préparer la Campagne
+                </button>
+                <button type="button" class="btn btn-success" id="btn-send-campaign" style="display:none">
+                    <i class="bi bi-send"></i> Lancer l'Envoi
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentCampaignId = null;
+let templates = [];
+
+// Charger les templates
+async function loadTemplates() {
+    try {
+        const response = await fetch('/api/templates');
+        templates = await response.json();
+
+        const select = document.getElementById('campaign-template');
+        templates.forEach(template => {
+            const option = document.createElement('option');
+            option.value = template.id;
+            option.textContent = template.name;
+            select.appendChild(option);
+        });
+
+        // Event listener pour charger le template
+        select.addEventListener('change', function() {
+            if (this.value) {
+                const template = templates.find(t => t.id == this.value);
+                if (template) {
+                    document.getElementById('campaign-subject').value = template.subject;
+                    document.getElementById('campaign-html').value = template.html_body;
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Erreur chargement templates:', error);
+    }
+}
+
+// Charger les campagnes
+async function loadCampaigns() {
+    try {
+        const response = await fetch('/api/campaigns');
+        const campaigns = await response.json();
+
+        const listDiv = document.getElementById('campaigns-list');
+
+        if (campaigns.length === 0) {
+            listDiv.innerHTML = `
+                <div class="text-center py-5">
+                    <i class="bi bi-inbox" style="font-size: 48px; color: #ccc;"></i>
+                    <p class="text-muted mt-3">Aucune campagne créée</p>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createCampaignModal">
+                        <i class="bi bi-plus-circle"></i> Créer ma première campagne
+                    </button>
+                </div>
+            `;
+            return;
+        }
+
+        let html = '<div class="table-responsive"><table class="table table-hover">';
+        html += `
+            <thead>
+                <tr>
+                    <th>Nom</th>
+                    <th>Statut</th>
+                    <th>Destinataires</th>
+                    <th>Envoyés</th>
+                    <th>Ouverts</th>
+                    <th>Cliqués</th>
+                    <th>Créée le</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+        `;
+
+        campaigns.forEach(campaign => {
+            const statusBadge = getStatusBadge(campaign.status);
+            const createdDate = new Date(campaign.created_at).toLocaleDateString('fr-FR');
+
+            html += `
+                <tr>
+                    <td>
+                        <strong>${campaign.name}</strong>
+                        ${campaign.description ? '<br><small class="text-muted">' + campaign.description + '</small>' : ''}
+                    </td>
+                    <td>${statusBadge}</td>
+                    <td>${campaign.total_recipients}</td>
+                    <td>${campaign.emails_sent}</td>
+                    <td>${campaign.emails_opened} <small class="text-muted">(${campaign.open_rate}%)</small></td>
+                    <td>${campaign.emails_clicked} <small class="text-muted">(${campaign.click_rate}%)</small></td>
+                    <td>${createdDate}</td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" onclick="viewCampaign(${campaign.id})">
+                            <i class="bi bi-eye"></i> Voir
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+
+        html += '</tbody></table></div>';
+        listDiv.innerHTML = html;
+
+    } catch (error) {
+        console.error('Erreur chargement campagnes:', error);
+        document.getElementById('campaigns-list').innerHTML = `
+            <div class="alert alert-danger">
+                Erreur lors du chargement des campagnes: ${error.message}
+            </div>
+        `;
+    }
+}
+
+function getStatusBadge(status) {
+    const badges = {
+        'draft': '<span class="badge bg-secondary">Brouillon</span>',
+        'scheduled': '<span class="badge bg-info">Planifiée</span>',
+        'running': '<span class="badge bg-warning">En cours</span>',
+        'paused': '<span class="badge bg-warning">En pause</span>',
+        'completed': '<span class="badge bg-success">Terminée</span>',
+        'cancelled': '<span class="badge bg-danger">Annulée</span>'
+    };
+    return badges[status] || status;
+}
+
+// Créer une campagne
+document.getElementById('btn-create-campaign').addEventListener('click', async function() {
+    const btn = this;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Création...';
+
+    try {
+        const data = {
+            name: document.getElementById('campaign-name').value,
+            description: document.getElementById('campaign-description').value,
+            subject: document.getElementById('campaign-subject').value,
+            html_body: document.getElementById('campaign-html').value,
+            min_validation_score: parseInt(document.getElementById('campaign-min-score').value),
+            only_deliverable: document.getElementById('campaign-deliverable').checked,
+            max_emails_per_day: parseInt(document.getElementById('campaign-max-per-day').value),
+            delay_between_emails: parseInt(document.getElementById('campaign-delay').value)
+        };
+
+        const response = await fetch('/api/campaigns', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+
+        if (response.ok) {
+            const campaign = await response.json();
+            const modal = bootstrap.Modal.getInstance(document.getElementById('createCampaignModal'));
+            modal.hide();
+
+            document.getElementById('createCampaignForm').reset();
+
+            alert('✅ Campagne créée avec succès!');
+            loadCampaigns();
+        } else {
+            const error = await response.json();
+            alert('❌ Erreur: ' + error.error);
+        }
+    } catch (error) {
+        alert('❌ Erreur: ' + error.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-check-circle"></i> Créer la Campagne';
+    }
+});
+
+// Voir les détails d'une campagne
+async function viewCampaign(campaignId) {
+    currentCampaignId = campaignId;
+
+    try {
+        const response = await fetch(`/api/campaigns/${campaignId}`);
+        const campaign = await response.json();
+
+        document.getElementById('campaign-details-title').textContent = campaign.name;
+
+        let html = `
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h3>${campaign.total_recipients}</h3>
+                            <small class="text-muted">Destinataires</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h3>${campaign.emails_sent}</h3>
+                            <small class="text-muted">Envoyés</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h3>${campaign.open_rate}%</h3>
+                            <small class="text-muted">Taux d'ouverture</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h3>${campaign.click_rate}%</h3>
+                            <small class="text-muted">Taux de clic</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <h6>📧 Détails de l'email</h6>
+            <p><strong>Sujet:</strong> ${campaign.subject}</p>
+            <p><strong>De:</strong> ${campaign.from_name} &lt;${campaign.from_email}&gt;</p>
+
+            <h6 class="mt-3">⚙️ Configuration</h6>
+            <ul>
+                <li>Score minimum: ${campaign.min_validation_score}</li>
+                <li>Uniquement délivrables: ${campaign.only_deliverable ? 'Oui' : 'Non'}</li>
+                <li>Max par jour: ${campaign.max_emails_per_day}</li>
+            </ul>
+        `;
+
+        document.getElementById('campaign-details-body').innerHTML = html;
+
+        // Afficher les boutons appropriés
+        const btnPrepare = document.getElementById('btn-prepare-campaign');
+        const btnSend = document.getElementById('btn-send-campaign');
+
+        if (campaign.status === 'draft') {
+            btnPrepare.style.display = 'inline-block';
+            btnSend.style.display = 'none';
+        } else if (campaign.status === 'scheduled' || campaign.status === 'paused') {
+            btnPrepare.style.display = 'none';
+            btnSend.style.display = 'inline-block';
+        } else {
+            btnPrepare.style.display = 'none';
+            btnSend.style.display = 'none';
+        }
+
+        const modal = new bootstrap.Modal(document.getElementById('campaignDetailsModal'));
+        modal.show();
+
+    } catch (error) {
+        alert('Erreur: ' + error.message);
+    }
+}
+
+// Préparer la campagne
+document.getElementById('btn-prepare-campaign').addEventListener('click', async function() {
+    if (!currentCampaignId) return;
+
+    if (!confirm('Préparer cette campagne? Cela va sélectionner les destinataires éligibles.')) return;
+
+    const btn = this;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Préparation...';
+
+    try {
+        const response = await fetch(`/api/campaigns/${currentCampaignId}/prepare`, {
+            method: 'POST'
+        });
+
+        if (response.ok) {
+            const result = await response.json();
+            alert(`✅ Campagne préparée!\n${result.total_recipients} destinataires sélectionnés.`);
+            viewCampaign(currentCampaignId);
+            loadCampaigns();
+        } else {
+            const error = await response.json();
+            alert('❌ Erreur: ' + error.error);
+        }
+    } catch (error) {
+        alert('❌ Erreur: ' + error.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-gear"></i> Préparer la Campagne';
+    }
+});
+
+// Lancer l'envoi
+document.getElementById('btn-send-campaign').addEventListener('click', async function() {
+    if (!currentCampaignId) return;
+
+    const limit = prompt('Combien d\'emails envoyer? (Vide = tous)', '100');
+    if (limit === null) return;
+
+    const btn = this;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Envoi...';
+
+    try {
+        const response = await fetch(`/api/campaigns/${currentCampaignId}/send`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ limit: limit ? parseInt(limit) : null })
+        });
+
+        if (response.ok) {
+            const result = await response.json();
+            alert('✅ ' + result.message + '\nLes statistiques seront mises à jour progressivement.');
+
+            // Actualiser toutes les 5 secondes
+            const interval = setInterval(() => {
+                viewCampaign(currentCampaignId);
+                loadCampaigns();
+            }, 5000);
+
+            // Arrêter après 2 minutes
+            setTimeout(() => clearInterval(interval), 120000);
+        } else {
+            const error = await response.json();
+            alert('❌ Erreur: ' + error.error);
+        }
+    } catch (error) {
+        alert('❌ Erreur: ' + error.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-send"></i> Lancer l\'Envoi';
+    }
+});
+
+// Initialisation
+loadTemplates();
+loadCampaigns();
+
+// Actualiser toutes les 30 secondes
+setInterval(loadCampaigns, 30000);
+</script>
+{% endblock %}

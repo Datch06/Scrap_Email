@@ -1,0 +1,378 @@
+{% extends "base.html" %}
+
+{% block title %}Sites - Scrap Email Manager{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1 class="display-5"><i class="bi bi-globe"></i> Gestion des Sites</h1>
+        <p class="text-muted">Liste complète de tous les sites découverts</p>
+    </div>
+</div>
+
+<!-- Filtres et recherche -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">Rechercher</label>
+                <input type="text" class="form-control" id="search-input" placeholder="Domaine...">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Statut</label>
+                <select class="form-select" id="status-filter">
+                    <option value="">Tous</option>
+                    <option value="discovered">Découvert</option>
+                    <option value="email_found">Email trouvé</option>
+                    <option value="email_not_found">Email non trouvé</option>
+                    <option value="siret_found">SIRET trouvé</option>
+                    <option value="siret_not_found">SIRET non trouvé</option>
+                    <option value="leaders_found">Dirigeants trouvés</option>
+                    <option value="completed">Complet</option>
+                    <option value="error">Erreur</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Email</label>
+                <select class="form-select" id="email-filter">
+                    <option value="">Tous</option>
+                    <option value="true">Avec email</option>
+                    <option value="false">Sans email</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">SIRET</label>
+                <select class="form-select" id="siret-filter">
+                    <option value="">Tous</option>
+                    <option value="true">Avec SIRET</option>
+                    <option value="false">Sans SIRET</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Dirigeants</label>
+                <select class="form-select" id="leaders-filter">
+                    <option value="">Tous</option>
+                    <option value="true">Avec dirigeants</option>
+                    <option value="false">Sans dirigeants</option>
+                </select>
+            </div>
+        </div>
+        <div class="mt-3">
+            <button class="btn btn-primary" onclick="applyFilters()">
+                <i class="bi bi-funnel"></i> Appliquer
+            </button>
+            <button class="btn btn-secondary" onclick="resetFilters()">
+                <i class="bi bi-x-circle"></i> Réinitialiser
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Tableau des sites -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Sites (<span id="total-count">0</span>)</h5>
+        <div>
+            <button class="btn btn-sm btn-success" onclick="showAddModal()">
+                <i class="bi bi-plus-circle"></i> Ajouter
+            </button>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Domaine</th>
+                        <th>Statut</th>
+                        <th>Email</th>
+                        <th>SIRET</th>
+                        <th>Dirigeants</th>
+                        <th>Mis à jour</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="sites-table-body">
+                    <tr>
+                        <td colspan="7" class="text-center">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Chargement...</span>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        <nav>
+            <ul class="pagination justify-content-center" id="pagination">
+            </ul>
+        </nav>
+    </div>
+</div>
+
+<!-- Modal Ajout Site -->
+<div class="modal fade" id="addSiteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Ajouter un site</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Domaine *</label>
+                    <input type="text" class="form-control" id="new-domain" placeholder="example.fr">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Source URL</label>
+                    <input type="text" class="form-control" id="new-source" placeholder="https://...">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-primary" onclick="addSite()">Ajouter</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Détails Site -->
+<div class="modal fade" id="siteDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Détails du site</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="site-details-content">
+                <!-- Contenu chargé dynamiquement -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentPage = 1;
+let currentFilters = {};
+
+// Charger les sites
+async function loadSites(page = 1) {
+    currentPage = page;
+
+    const params = new URLSearchParams({
+        page: page,
+        per_page: 50,
+        ...currentFilters
+    });
+
+    try {
+        const response = await fetch(`/api/sites?${params}`);
+        const data = await response.json();
+
+        renderSitesTable(data.sites);
+        renderPagination(data.page, data.total_pages);
+        document.getElementById('total-count').textContent = data.total;
+
+    } catch (error) {
+        console.error('Erreur:', error);
+        document.getElementById('sites-table-body').innerHTML = `
+            <tr><td colspan="7" class="text-center text-danger">Erreur de chargement</td></tr>
+        `;
+    }
+}
+
+// Afficher les sites dans le tableau
+function renderSitesTable(sites) {
+    const tbody = document.getElementById('sites-table-body');
+
+    if (sites.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center">Aucun site trouvé</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = sites.map(site => `
+        <tr>
+            <td>
+                <a href="https://${site.domain}" target="_blank">
+                    <i class="bi bi-box-arrow-up-right"></i> ${site.domain}
+                </a>
+            </td>
+            <td>${getStatusBadge(site.status)}</td>
+            <td>${site.emails ? '<i class="bi bi-check-circle text-success"></i>' : '<i class="bi bi-x-circle text-muted"></i>'}</td>
+            <td>${site.siret ? '<i class="bi bi-check-circle text-success"></i>' : '<i class="bi bi-x-circle text-muted"></i>'}</td>
+            <td>${site.leaders ? '<i class="bi bi-check-circle text-success"></i>' : '<i class="bi bi-x-circle text-muted"></i>'}</td>
+            <td>${new Date(site.updated_at).toLocaleString('fr-FR')}</td>
+            <td>
+                <button class="btn btn-sm btn-info" onclick="viewSite(${site.id})">
+                    <i class="bi bi-eye"></i>
+                </button>
+                <button class="btn btn-sm btn-danger" onclick="deleteSite(${site.id})">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+// Badge de statut
+function getStatusBadge(status) {
+    const badges = {
+        'discovered': '<span class="badge bg-secondary">Découvert</span>',
+        'email_found': '<span class="badge bg-success">Email trouvé</span>',
+        'email_not_found': '<span class="badge bg-warning">Email non trouvé</span>',
+        'siret_found': '<span class="badge bg-info">SIRET trouvé</span>',
+        'siret_not_found': '<span class="badge bg-warning">SIRET non trouvé</span>',
+        'leaders_found': '<span class="badge bg-primary">Dirigeants trouvés</span>',
+        'completed': '<span class="badge bg-success">Complet</span>',
+        'error': '<span class="badge bg-danger">Erreur</span>',
+    };
+    return badges[status] || '<span class="badge bg-secondary">-</span>';
+}
+
+// Pagination
+function renderPagination(current, total) {
+    const pagination = document.getElementById('pagination');
+    let html = '';
+
+    if (current > 1) {
+        html += `<li class="page-item"><a class="page-link" href="#" onclick="loadSites(${current - 1}); return false;">Précédent</a></li>`;
+    }
+
+    const start = Math.max(1, current - 2);
+    const end = Math.min(total, current + 2);
+
+    for (let i = start; i <= end; i++) {
+        html += `<li class="page-item ${i === current ? 'active' : ''}">
+            <a class="page-link" href="#" onclick="loadSites(${i}); return false;">${i}</a>
+        </li>`;
+    }
+
+    if (current < total) {
+        html += `<li class="page-item"><a class="page-link" href="#" onclick="loadSites(${current + 1}); return false;">Suivant</a></li>`;
+    }
+
+    pagination.innerHTML = html;
+}
+
+// Appliquer les filtres
+function applyFilters() {
+    currentFilters = {
+        search: document.getElementById('search-input').value,
+        status: document.getElementById('status-filter').value,
+        has_email: document.getElementById('email-filter').value,
+        has_siret: document.getElementById('siret-filter').value,
+        has_leaders: document.getElementById('leaders-filter').value,
+    };
+    loadSites(1);
+}
+
+// Réinitialiser les filtres
+function resetFilters() {
+    document.getElementById('search-input').value = '';
+    document.getElementById('status-filter').value = '';
+    document.getElementById('email-filter').value = '';
+    document.getElementById('siret-filter').value = '';
+    document.getElementById('leaders-filter').value = '';
+    currentFilters = {};
+    loadSites(1);
+}
+
+// Afficher modal ajout
+function showAddModal() {
+    const modal = new bootstrap.Modal(document.getElementById('addSiteModal'));
+    modal.show();
+}
+
+// Ajouter un site
+async function addSite() {
+    const domain = document.getElementById('new-domain').value.trim();
+    const source = document.getElementById('new-source').value.trim();
+
+    if (!domain) {
+        alert('Le domaine est requis');
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/sites', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({domain, source_url: source})
+        });
+
+        if (response.ok) {
+            bootstrap.Modal.getInstance(document.getElementById('addSiteModal')).hide();
+            document.getElementById('new-domain').value = '';
+            document.getElementById('new-source').value = '';
+            loadSites(currentPage);
+        } else {
+            const error = await response.json();
+            alert(error.error || 'Erreur lors de l\'ajout');
+        }
+    } catch (error) {
+        console.error('Erreur:', error);
+        alert('Erreur lors de l\'ajout du site');
+    }
+}
+
+// Voir détails
+async function viewSite(id) {
+    try {
+        const response = await fetch(`/api/sites/${id}`);
+        const site = await response.json();
+
+        const content = `
+            <table class="table">
+                <tr><th>Domaine</th><td><a href="https://${site.domain}" target="_blank">${site.domain}</a></td></tr>
+                <tr><th>Statut</th><td>${getStatusBadge(site.status)}</td></tr>
+                <tr><th>Emails</th><td>${site.emails || '-'}</td></tr>
+                <tr><th>SIRET</th><td>${site.siret || '-'}</td></tr>
+                <tr><th>SIREN</th><td>${site.siren || '-'}</td></tr>
+                <tr><th>Dirigeants</th><td>${site.leaders || '-'}</td></tr>
+                <tr><th>Source</th><td>${site.source_url || '-'}</td></tr>
+                <tr><th>Créé le</th><td>${new Date(site.created_at).toLocaleString('fr-FR')}</td></tr>
+                <tr><th>Mis à jour le</th><td>${new Date(site.updated_at).toLocaleString('fr-FR')}</td></tr>
+                ${site.last_error ? `<tr><th>Erreur</th><td class="text-danger">${site.last_error}</td></tr>` : ''}
+            </table>
+        `;
+
+        document.getElementById('site-details-content').innerHTML = content;
+        const modal = new bootstrap.Modal(document.getElementById('siteDetailsModal'));
+        modal.show();
+
+    } catch (error) {
+        console.error('Erreur:', error);
+    }
+}
+
+// Supprimer un site
+async function deleteSite(id) {
+    if (!confirm('Voulez-vous vraiment supprimer ce site ?')) return;
+
+    try {
+        const response = await fetch(`/api/sites/${id}`, {method: 'DELETE'});
+        if (response.ok) {
+            loadSites(currentPage);
+        }
+    } catch (error) {
+        console.error('Erreur:', error);
+    }
+}
+
+// Charger au démarrage
+document.addEventListener('DOMContentLoaded', () => {
+    // Lire les paramètres URL
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('status')) document.getElementById('status-filter').value = params.get('status');
+    if (params.has('has_email')) document.getElementById('email-filter').value = params.get('has_email');
+    if (params.has('has_siret')) document.getElementById('siret-filter').value = params.get('has_siret');
+    if (params.has('has_leaders')) document.getElementById('leaders-filter').value = params.get('has_leaders');
+
+    applyFilters();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,20 @@
+# Requirements pour l'interface de gestion
+
+# Base de données
+sqlalchemy==2.0.23
+
+# Framework web
+flask==3.0.0
+flask-cors==4.0.0
+
+# Google Sheets (déjà installé)
+gspread==5.12.0
+oauth2client==4.1.3
+
+# Web scraping (déjà installé)
+playwright==1.40.0
+selenium==4.15.2
+undetected-chromedriver==3.5.4
+
+# Utilitaires
+certifi==2023.11.17

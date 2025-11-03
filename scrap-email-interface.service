@@ -1,0 +1,18 @@
+[Unit]
+Description=Scrap Email Interface Web
+After=network.target
+
+[Service]
+Type=simple
+User=debian
+Group=debian
+WorkingDirectory=/var/www/Scrap_Email
+Environment="FLASK_HOST=127.0.0.1"
+Environment="FLASK_PORT=5002"
+Environment="FLASK_DEBUG=False"
+ExecStart=/usr/bin/python3 /var/www/Scrap_Email/app.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

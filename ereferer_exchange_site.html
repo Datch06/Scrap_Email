@@ -1,0 +1,1344 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+    <title>    Mes sites
+</title>
+
+          
+
+    <link href="/css/admin/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/admin/font-awesome/css/font-awesome.css" rel="stylesheet">
+    <link href="/css/admin/plugins/chosen/bootstrap-chosen.css" rel="stylesheet">
+    <link href="/css/admin/plugins/cropper/cropper.min.css" rel="stylesheet">
+    <link href="/css/admin/plugins/iCheck/custom.css" rel="stylesheet">
+    <link href="/css/admin/plugins/datapicker/datepicker3.css" rel="stylesheet">
+    <link href="//cdn.jsdelivr.net/bootstrap.daterangepicker/2/daterangepicker.css" rel="stylesheet">
+    <link href="/css/admin/plugins/toastr/toastr.min.css" rel="stylesheet">
+    <link href="/css/admin/plugins/bootstrap-tagsinput/bootstrap-tagsinput.css" rel="stylesheet">
+    <link href="/css/admin/plugins/jasny/jasny-bootstrap.min.css" rel="stylesheet">
+    <link href="/css/admin/plugins/footable/footable.core.css" rel="stylesheet">
+    <link href="/css/admin/plugins/blueimp/css/blueimp-gallery.min.css" rel="stylesheet">
+    <link href="/css/admin/plugins/sweetalert/sweetalert.css" rel="stylesheet">
+    <link href="/css/admin/plugins/touchspin/jquery.bootstrap-touchspin.min.css" rel="stylesheet">
+    <link href="/css/admin/plugins/slick/slick.css" rel="stylesheet">
+    <link href="/css/admin/plugins/slick/slick-theme.css" rel="stylesheet">
+    <link href="/css/admin/animate.css" rel="stylesheet">
+    <link href="/css/admin/style.css" rel="stylesheet">
+    <link href="/css/admin/custom.min.css" rel="stylesheet">
+    <link href="/css/front/style.css" rel="stylesheet">
+
+    <script src="/bundles/fosjsrouting/js/router.js?version=v16"></script>
+    <script src="/js/routing?callback=fos.Router.setData"></script>
+
+
+  <link href="/css/admin/plugins/OverlayScrollbars/OverlayScrollbars.min.css" rel="stylesheet">
+
+    <link rel="icon" type="image/png" href="/favicon.png?version=v16" />
+</head>
+
+<body id="" class=" visible-sidebar">
+
+            <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="0" height="0" style="position:absolute">
+	
+		<symbol id="de" viewBox="0 0 512.001 512.001">
+			<path d="M512 200.093H0V97.104a8.829 8.829 0 0 1 8.828-8.828h494.345a8.829 8.829 0 0 1 8.828 8.828L512 200.093z" fill="#464655"></path><path d="M503.172 423.725H8.828A8.829 8.829 0 0 1 0 414.897V311.909h512v102.988a8.828 8.828 0 0 1-8.828 8.828z" fill="#ffe15a"></path><path fill="#ff4b55" d="M0 200.091h512v111.81H0z"></path>
+		</symbol>
+	
+		<symbol id="en" viewBox="0 0 512.002 512.002">
+			<path d="M503.172 423.725H8.828A8.829 8.829 0 0 1 0 414.897V97.104a8.829 8.829 0 0 1 8.828-8.828h494.345a8.829 8.829 0 0 1 8.828 8.828v317.793a8.83 8.83 0 0 1-8.829 8.828z" fill="#41479b"></path><path d="M512 97.104a8.829 8.829 0 0 0-8.828-8.828h-39.495l-163.54 107.147V88.276h-88.276v107.147L48.322 88.276H8.828A8.829 8.829 0 0 0 0 97.104v22.831l140.309 91.927H0v88.276h140.309L0 392.066v22.831a8.829 8.829 0 0 0 8.828 8.828h39.495l163.54-107.147v107.147h88.276V316.578l163.54 107.147h39.495a8.829 8.829 0 0 0 8.828-8.828v-22.831l-140.309-91.927H512v-88.276H371.691L512 119.935V97.104z" fill="#f5f5f5"></path><g fill="#ff4b55"><path d="M512 229.518H282.483V88.276h-52.966v141.242H0v52.965h229.517v141.242h52.966V282.483H512z"></path><path d="M178.948 300.138L.25 416.135c.625 4.263 4.14 7.59 8.577 7.59h12.159l190.39-123.586h-32.428v-.001zM346.388 300.138H313.96l190.113 123.404c4.431-.472 7.928-4.09 7.928-8.646v-7.258l-165.613-107.5zM0 106.849l161.779 105.014h32.428L5.143 89.137C2.123 90.54 0 93.555 0 97.104v9.745zM332.566 211.863L511.693 95.586c-.744-4.122-4.184-7.309-8.521-7.309h-12.647L300.138 211.863h32.428z"></path></g>
+		</symbol>
+	
+		<symbol id="es" viewBox="0 0 512.001 512.001">
+			<path d="M8.828 423.725h494.345a8.829 8.829 0 0 0 8.828-8.828V97.104a8.829 8.829 0 0 0-8.828-8.828H8.828A8.83 8.83 0 0 0 0 97.104v317.793a8.828 8.828 0 0 0 8.828 8.828z" fill="#c8414b"></path><path fill="#ffd250" d="M0 158.901h512v194.21H0z"></path><path d="M216.276 256.001l7.485-33.681c.69-3.102-1.671-6.044-4.849-6.044h-5.272c-3.177 0-5.537 2.942-4.849 6.044l7.485 33.681z" fill="#c8414b"></path><path fill="#f5f5f5" d="M207.45 238.341h17.655v75.03H207.45z"></path><path fill="#fab446" d="M203.03 229.521h26.483v8.828H203.03z"></path><g fill="#c8414b"><path d="M185.38 256.001h44.14v8.828h-44.14zM229.517 291.311l-26.483-8.827v-8.828l26.483 8.828zM83.862 256.001l7.485-33.681c.69-3.102-1.671-6.044-4.849-6.044h-5.272c-3.177 0-5.537 2.942-4.849 6.044l7.485 33.681z"></path></g><path d="M114.759 229.518a8.829 8.829 0 0 0-8.828 8.828v57.379c0 10.725 10.01 30.897 44.138 30.897s44.138-20.171 44.138-30.897v-57.379a8.829 8.829 0 0 0-8.828-8.828h-70.62z" fill="#f5f5f5"></path><g fill="#c8414b"><path d="M150.069 273.656h-44.138v-35.31a8.829 8.829 0 0 1 8.828-8.828h35.31v44.138zM150.069 273.656h44.138v22.069c0 12.189-9.88 22.069-22.069 22.069-12.189 0-22.069-9.88-22.069-22.069v-22.069z"></path></g><path d="M105.931 273.656h44.138v22.069c0 12.189-9.88 22.069-22.069 22.069-12.189 0-22.069-9.88-22.069-22.069v-22.069z" fill="#fab446"></path><g fill="#c8414b"><path d="M141.241 313.281v-39.625h-8.828v43.693c3.284-.666 6.251-2.12 8.828-4.068zM123.586 317.349v-43.693h-8.828v39.625c2.578 1.948 5.545 3.402 8.828 4.068z"></path></g><path fill="#ffb441" d="M114.76 256.001h26.483v8.828H114.76z"></path><g fill="#fab446"><path d="M114.76 238.341h26.483v8.828H114.76z"></path><path d="M119.17 243.591h17.655v15.992H119.17z"></path></g><path fill="#f5f5f5" d="M75.03 238.341h17.655v75.03H75.03z"></path><g fill="#fab446"><path d="M70.62 308.971h26.483v8.828H70.62zM70.62 229.521h26.483v8.828H70.62z"></path></g><path fill="#5064aa" d="M66.21 317.791h35.31v8.828H66.21z"></path><path fill="#fab446" d="M207.45 308.971h26.483v8.828H207.45z"></path><path fill="#5064aa" d="M198.62 317.791h35.31v8.828h-35.31z"></path><path fill="#fab446" d="M123.59 220.691h52.966v8.828H123.59z"></path><path fill="#ffb441" d="M145.66 194.211h8.828v26.483h-8.828z"></path><g fill="#f5f5f5"><path d="M141.241 207.449c-7.302 0-13.241-5.94-13.241-13.241 0-7.302 5.94-13.241 13.241-13.241 7.302 0 13.241 5.94 13.241 13.241.001 7.301-5.939 13.241-13.241 13.241zm0-17.655a4.417 4.417 0 0 0-4.414 4.414c0 2.435 1.978 4.414 4.414 4.414s4.414-1.978 4.414-4.414a4.417 4.417 0 0 0-4.414-4.414z"></path><path d="M158.897 207.449c-7.302 0-13.241-5.94-13.241-13.241 0-7.302 5.94-13.241 13.241-13.241 7.302 0 13.241 5.94 13.241 13.241s-5.94 13.241-13.241 13.241zm0-17.655a4.417 4.417 0 0 0-4.414 4.414 4.417 4.417 0 0 0 4.414 4.414 4.417 4.417 0 0 0 4.414-4.414 4.418 4.418 0 0 0-4.414-4.414z"></path><path d="M176.552 216.277c-7.302 0-13.241-5.94-13.241-13.241 0-7.302 5.94-13.241 13.241-13.241 7.302 0 13.241 5.94 13.241 13.241s-5.94 13.241-13.241 13.241zm0-17.655a4.417 4.417 0 0 0-4.414 4.414 4.417 4.417 0 0 0 4.414 4.414c2.435 0 4.414-1.978 4.414-4.414s-1.979-4.414-4.414-4.414zM123.586 216.277c-7.302 0-13.241-5.94-13.241-13.241 0-7.302 5.94-13.241 13.241-13.241 7.302 0 13.241 5.94 13.241 13.241.001 7.301-5.939 13.241-13.241 13.241zm0-17.655a4.417 4.417 0 0 0-4.414 4.414c0 2.435 1.978 4.414 4.414 4.414s4.414-1.979 4.414-4.415a4.416 4.416 0 0 0-4.414-4.413z"></path></g><path d="M176.552 291.311v4.414c0 2.434-1.98 4.414-4.414 4.414s-4.414-1.98-4.414-4.414v-4.414h8.828m8.827-8.827h-26.483v13.241c0 7.302 5.94 13.241 13.241 13.241 7.302 0 13.241-5.94 13.241-13.241v-13.241h.001z" fill="#fab446"></path><path d="M172.138 264.829a8.829 8.829 0 0 1-8.828-8.828v-8.828a8.829 8.829 0 0 1 17.656 0v8.828a8.829 8.829 0 0 1-8.828 8.828z" fill="#ffa0d2"></path><circle cx="150.07" cy="273.651" r="13.241" fill="#5064aa"></circle><path fill="#fab446" d="M145.66 176.551h8.828v26.483h-8.828z"></path><path d="M123.586 220.691l-8.828-8.828 5.171-5.171a42.627 42.627 0 0 1 60.28 0l5.171 5.171-8.828 8.828h-52.966z" fill="#c8414b"></path><g fill="#ffd250"><circle cx="150.07" cy="211.861" r="4.414"></circle><circle cx="132.41" cy="211.861" r="4.414"></circle><circle cx="167.72" cy="211.861" r="4.414"></circle></g><g fill="#c8414b"><path d="M70.62 256.001h44.14v8.828H70.62zM70.621 291.311l26.482-8.827v-8.828l-26.482 8.828z"></path></g>
+		</symbol>
+	
+		<symbol id="fr" viewBox="0 0 512 512">
+			<path d="M170.667 423.721H8.828A8.829 8.829 0 0 1 0 414.893V97.1a8.829 8.829 0 0 1 8.828-8.828h161.839v335.449z" fill="#41479b"></path><path fill="#f5f5f5" d="M170.67 88.277h170.67v335.45H170.67z"></path><path d="M503.172 423.721H341.333V88.273h161.839A8.829 8.829 0 0 1 512 97.101v317.793a8.827 8.827 0 0 1-8.828 8.827z" fill="#ff4b55"></path>
+		</symbol>
+	
+		<symbol id="info-icon" viewBox="0 0 23.63 23.63">
+			<path d="M11.81 0a11.81 11.81 0 1 0 0 23.63 11.81 11.81 0 0 0 0-23.63zm2.46 18.3c-.6.25-1.1.43-1.45.55-.37.13-.79.2-1.27.2-.73 0-1.3-.19-1.71-.55s-.61-.8-.61-1.36a4.97 4.97 0 0 1 .19-1.42l.76-2.69.17-.73c.05-.23.07-.44.07-.63 0-.34-.07-.58-.21-.72-.15-.13-.42-.2-.82-.2-.2 0-.4.03-.6.09-.2.06-.39.12-.53.18l.2-.83c.5-.2.97-.38 1.43-.52.45-.15.88-.22 1.29-.22.73 0 1.3.18 1.7.53.39.35.59.81.59 1.37a8 8 0 0 1-.2 1.43l-.75 2.68a7.58 7.58 0 0 0-.24 1.36c0 .36.07.6.23.73s.44.2.83.2a3.56 3.56 0 0 0 1.13-.27l-.2.83zm-.13-10.87c-.36.33-.78.5-1.28.5s-.92-.17-1.28-.5a1.57 1.57 0 0 1-.53-1.2c0-.46.18-.86.53-1.19.36-.33.79-.5 1.28-.5.5 0 .93.17 1.28.5.35.33.53.73.53 1.2 0 .46-.18.86-.53 1.19z"></path>
+		</symbol>
+	
+		<symbol id="it" viewBox="0 0 512 512">
+			<path d="M170.667 423.721H8.828A8.829 8.829 0 0 1 0 414.893V97.1a8.829 8.829 0 0 1 8.828-8.828h161.839v335.449z" fill="#73af00"></path><path fill="#f5f5f5" d="M170.67 88.277h170.67v335.45H170.67z"></path><path d="M503.172 423.721H341.333V88.273h161.839A8.829 8.829 0 0 1 512 97.101v317.793a8.827 8.827 0 0 1-8.828 8.827z" fill="#ff4b55"></path>
+		</symbol>
+	
+		<symbol id="pt" viewBox="0 0 512.001 512.001">
+			<path d="M503.172 423.725H8.828A8.829 8.829 0 0 1 0 414.897V97.104a8.829 8.829 0 0 1 8.828-8.828h494.345a8.829 8.829 0 0 1 8.828 8.828v317.793a8.83 8.83 0 0 1-8.829 8.828z" fill="#ff4b55"></path><path d="M185.379 88.277H8.828A8.828 8.828 0 0 0 0 97.104v317.793a8.829 8.829 0 0 0 8.828 8.828H185.38V88.277h-.001z" fill="#73af00"></path><circle cx="185.45" cy="256.001" r="79.38" fill="#ffe15a"></circle><path d="M211.932 229.518v35.31c0 14.603-11.88 26.483-26.483 26.483s-26.483-11.88-26.483-26.483v-35.31h52.966m8.827-17.655h-70.621a8.829 8.829 0 0 0-8.828 8.828v44.138c0 24.376 19.762 44.138 44.138 44.138s44.138-19.762 44.138-44.138v-44.138a8.827 8.827 0 0 0-8.827-8.828z" fill="#ff4b55"></path><path d="M211.932 229.518v35.31c0 14.603-11.88 26.483-26.483 26.483s-26.483-11.88-26.483-26.483v-35.31h52.966" fill="#f5f5f5"></path><g fill="#ffe15a"><circle cx="150.07" cy="220.691" r="4.414"></circle><circle cx="220.69" cy="220.691" r="4.414"></circle><circle cx="150.07" cy="256.001" r="4.414"></circle><circle cx="220.69" cy="256.001" r="4.414"></circle><circle cx="185.38" cy="220.691" r="4.414"></circle><circle cx="211.88" cy="288.551" r="4.414"></circle><circle cx="159.4" cy="288.551" r="4.414"></circle></g><g fill="#41479b"><path d="M191.149 253.763v7.602c0 3.144-2.558 5.702-5.702 5.702s-5.702-2.558-5.702-5.702v-7.602h11.404M191.149 235.741v7.602c0 3.144-2.558 5.702-5.702 5.702s-5.702-2.558-5.702-5.702v-7.602h11.404M191.149 271.97v7.602c0 3.144-2.558 5.702-5.702 5.702s-5.702-2.558-5.702-5.702v-7.602h11.404M206.506 253.763v7.602c0 3.144-2.558 5.702-5.702 5.702s-5.702-2.558-5.702-5.702v-7.602h11.404M175.794 253.763v7.602c0 3.144-2.558 5.702-5.702 5.702s-5.702-2.558-5.702-5.702v-7.602h11.404"></path></g>
+		</symbol>
+	
+</svg>
+
+        <!-- Wrapper-->
+        <div id="wrapper" class="clearfix gray-bg">
+            <!-- Navigation -->
+                            <nav class="navbar-default navbar-static-side" role="navigation">
+  <div class="sidebar-collapse">
+    <ul class="nav metismenu">
+      <li class="nav-header">
+        <div class="dropdown profile-element">
+          <span>
+                          <img alt="image" class="img-circle img-sm" src="/img/avatar.png?version=v16"/>
+                      </span>
+          <span class="clear">
+            <span class="block m-t-xs">
+              <strong class="font-bold">David Muratori</strong>
+            </span>
+            <span class="text-muted text-xs block">
+              Solde:
+              <span class="text-info"><span id="user_balance">193.55</span> €</span>
+            </span>
+          </span>
+          <a id="logout-session" href="/logout">
+            <span class="text-muted text-xs block">Se déconnecter</span>
+          </a>
+                            </div>
+      </li>
+    </ul>
+            <ul class="nav metismenu" id="side-menu">
+            
+                <li class="first">        <a href="/bo/dashboard">    <div class="nav-item-col">
+          <i class="fa fa-th-large"></i>
+    
+          <span class="nav-label">            Tableau de bord
+    </span>
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                            <li>        <a href="#">    <div class="nav-item-col">
+          <i class="fa fa-user-circle"></i>
+    
+          <span class="nav-label">            Mon compte
+    </span>
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow"></span>
+            </div>
+</a>                <ul class="nav nav-second-level menu_level_1">
+            
+                <li class="first">        <a href="/bo/invoice/list">    <div class="nav-item-col">
+          <i class="fa fa-bank"></i>
+    
+                        Factures
+    
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li>        <a href="/bo/replenish-account/">    <div class="nav-item-col">
+          <i class="fa fa-euro"></i>
+    
+                        Recharger son compte
+    
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li>        <a href="/bo/transaction">    <div class="nav-item-col">
+          <i class="fa fa-bar-chart-o"></i>
+    
+                        Transactions
+    
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li>        <a href="/bo/withdraw/">    <div class="nav-item-col">
+          <i class="fa fa-money"></i>
+    
+                        Retirer ses gains
+    
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li>        <a href="/bo/email-notification">    <div class="nav-item-col">
+          <i class="fa fa-bell"></i>
+    
+                        Notifications
+    
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li class="last">        <a href="/bo/profile">    <div class="nav-item-col">
+          <i class="fa fa-id-card"></i>
+    
+                        Profils
+    
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+
+    </ul>
+
+    </li>
+
+    
+                            <li class="active">        <a href="#">    <div class="nav-item-col">
+          <i class="fa fa-copy"></i>
+    
+          <span class="nav-label">            Ventes
+    </span>
+        </div>
+    <div class="nav-item-col">
+                    <span class="label-wrap pull-right">
+                                                                                </span>
+                            <span class="fa fa-fw arrow"></span>
+            </div>
+</a>                <ul class="nav nav-second-level menu_level_1">
+            
+                <li class="active first">        <a href="/bo/exchange-site/">    <div class="nav-item-col">
+    
+                        Mes sites
+    
+        </div>
+    <div class="nav-item-col">
+                    <span class="label-wrap pull-right">
+                                    </span>
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li>        <a href="/bo/pack/">    <div class="nav-item-col">
+    
+                        Mes packs (Beta)
+    
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li>        <a href="/bo/exchange-site-proposals">    <div class="nav-item-col">
+    
+                        Propositions reçues
+    
+        </div>
+    <div class="nav-item-col">
+                    <span class="label-wrap pull-right">
+                                                                                </span>
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li class="last">        <a href="/bo/exchange-site/stats">    <div class="nav-item-col">
+    
+                        Statistiques
+    
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+
+    </ul>
+
+    </li>
+
+    
+                <li>        <a href="/bo/exchange-site-proposals-message">    <div class="nav-item-col">
+          <i class="fa fa-comments"></i>
+    
+          <span class="nav-label">            Message(s)
+    </span>
+        </div>
+    <div class="nav-item-col">
+                    <span class="label-wrap pull-right">
+                                                <span class="label label-info pull-right">0</span>
+                                                    </span>
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                            <li>        <a href="#">    <div class="nav-item-col">
+          <i class="fa fa-paper-plane"></i>
+    
+          <span class="nav-label">            Achat
+    </span>
+        </div>
+    <div class="nav-item-col">
+                    <span class="label-wrap pull-right">
+                                                <span class="label label-info pull-right">0</span>
+                                                    </span>
+                            <span class="fa fa-fw arrow"></span>
+            </div>
+</a>                <ul class="nav nav-second-level menu_level_1">
+            
+                <li class="first">        <a href="/bo/directories-list/">    <div class="nav-item-col">
+    
+                        liste de référencement
+    
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li>        <a href="/bo/netlinking/add">    <div class="nav-item-col">
+    
+                        Créer un projet
+    
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li>        <a href="/bo/netlinking/">    <div class="nav-item-col">
+    
+                        Projets en cours
+    
+        </div>
+    <div class="nav-item-col">
+                    <span class="label-wrap pull-right">
+                                                <span class="label label-info pull-right">0</span>
+                                                    </span>
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li>        <a href="/bo/netlinking/waiting">    <div class="nav-item-col">
+    
+                        Projets en attente
+    
+        </div>
+    <div class="nav-item-col">
+                    <span class="label-wrap pull-right">
+                                                <span class="label label-info pull-right">0</span>
+                                                    </span>
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li class="last">        <a href="/bo/netlinking/finished">    <div class="nav-item-col">
+    
+                        Projets terminés
+    
+        </div>
+    <div class="nav-item-col">
+                    <span class="label-wrap pull-right">
+                                                <span class="label label-info pull-right">0</span>
+                                                    </span>
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+
+    </ul>
+
+    </li>
+
+    
+                            <li>        <a href="#">    <div class="nav-item-col">
+          <i class="fa fa-shopping-cart"></i>
+    
+          <span class="nav-label">            Achat rapide
+    </span>
+        </div>
+    <div class="nav-item-col">
+                    <span class="label-wrap pull-right">
+                                    </span>
+                            <span class="fa fa-fw arrow"></span>
+            </div>
+</a>                <ul class="nav nav-second-level menu_level_1">
+            
+                <li class="first">        <a href="/bo/exchange-site-find">    <div class="nav-item-col">
+    
+                        Trouver un site
+    
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li>        <a href="/bo/exchange-order">    <div class="nav-item-col">
+    
+                        Vos commandes
+    
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li>        <a href="/bo/exchange-group">    <div class="nav-item-col">
+    
+                        Vos groupes
+    
+        </div>
+    <div class="nav-item-col">
+                    <span class="label-wrap pull-right">
+                                    </span>
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li class="last">        <a href="/bo/exchange-existing-page?page_keyword_filter%5Btype%5D=sales" id="existing_page_menu">    <div class="nav-item-col">
+    
+                        Pages positionnées
+    
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+
+    </ul>
+
+    </li>
+
+    
+                            <li>        <a href="#">    <div class="nav-item-col">
+          <i class="fa fa-pencil"></i>
+    
+          <span class="nav-label">            Rédaction
+    </span>
+        </div>
+    <div class="nav-item-col">
+                    <span class="label-wrap pull-right">
+                                                <span class="label label-info pull-right">0</span>
+                                                    </span>
+                            <span class="fa fa-fw arrow"></span>
+            </div>
+</a>                <ul class="nav nav-second-level menu_level_1">
+            
+                <li class="first">        <a href="/bo/copywriting-sites/">    <div class="nav-item-col">
+    
+                        Gérer les sites
+    
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li>        <a href="/bo/copywriting/project/create">    <div class="nav-item-col">
+    
+                        Créer un projet
+    
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li>        <a href="/bo/copywriting/order/list?status=waiting">    <div class="nav-item-col">
+    
+                        Projets en attente
+    
+        </div>
+    <div class="nav-item-col">
+                    <span class="label-wrap pull-right">
+                                                <span class="label label-info pull-right">0</span>
+                                                    </span>
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li>        <a href="/bo/copywriting/order/list?status%5B0%5D=progress&amp;status%5B1%5D=declined&amp;status%5B2%5D=submitted_to_admin">    <div class="nav-item-col">
+    
+                        Projets en cours
+    
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li class="last">        <a href="/bo/copywriting/order/list?status=completed">    <div class="nav-item-col">
+    
+                        Projets terminés
+    
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+
+    </ul>
+
+    </li>
+
+    
+                <li>        <a href="/bo/plugin/">    <div class="nav-item-col">
+          <i class="fa fa-globe"></i>
+    
+          <span class="nav-label">            Plugin
+    </span>
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                            <li>        <a href="#">    <div class="nav-item-col">
+          <i class="fa fa-envelope"></i>
+    
+          <span class="nav-label">            Nous contacter
+    </span>
+        </div>
+    <div class="nav-item-col">
+                    <span class="label-wrap pull-right">
+                                                <span class="label label-info pull-right">0</span>
+                                                    </span>
+                            <span class="fa fa-fw arrow"></span>
+            </div>
+</a>                <ul class="nav nav-second-level menu_level_1">
+            
+                <li class="first">        <a href="/bo/message/">    <div class="nav-item-col">
+    
+                        Voir Emails
+    
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li>        <a href="/bo/message/all/incoming">    <div class="nav-item-col">
+    
+                        Reçus
+    
+        </div>
+    <div class="nav-item-col">
+                    <span class="label-wrap pull-right">
+                                                <span class="label label-info pull-right">0</span>
+                                                    </span>
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li>        <a href="/bo/message/all/outgoing">    <div class="nav-item-col">
+    
+                        Envoyés
+    
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li class="last">        <a href="/bo/message/add">    <div class="nav-item-col">
+    
+                        Nouveau message
+    
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+
+    </ul>
+
+    </li>
+
+    
+                <li class="last">        <a href="/bo/faq">    <div class="nav-item-col">
+          <i class="fa fa-question-circle"></i>
+    
+          <span class="nav-label">            FAQ
+    </span>
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+
+    </ul>
+
+  </div>
+</nav>
+            
+            <!-- Page wraper -->
+            <div id="page-wrapper">
+                <div id="swipe-area"></div>
+                <!-- Top Navigation -->
+                                    <div class="clearfix border-bottom top-nav_wrapper">
+  <nav class="navbar navbar-static-top" role="navigation">
+    <div class="navbar-header">
+      <a class="navbar-minimalize minimalize-styl-2 btn btn-primary " href="#"><i class="fa fa-bars"></i> </a>
+      <button class="btn-link fa fa-search j-search-trigger"></button>
+      <form role="search" class="navbar-form-custom j-navbar-search" action="/bo/search">
+
+        <div class="input-group">
+          <input class="form-control" type="text" id="serch-query" name="query" placeholder="Recherche..." value="">
+                </div>
+        <input type="submit" hidden>
+      </form>
+    </div>
+    <ul class="nav navbar-top-links navbar-right">
+      <li>
+        <span class="m-r-sm text-muted welcome-message">Bienvenue sur Ereferer.</span>
+      </li>
+      <li>
+        <a class="count-info" href="/bo/message/all/incoming">
+          <i class="fa fa-envelope"></i>
+                            </a>
+      </li>
+      <li>
+                          <img src="/img/flags/France.png?version=v16" height="25" width="25"/>
+              </li>
+      <li>
+        <select class="topnav-lang-select">
+                <option value="fr" selected="selected">FR</option>
+            <option value="en" >EN</option>
+            <option value="es" >ES</option>
+            <option value="it" >IT</option>
+            <option value="pt" >PT</option>
+            <option value="de" >DE</option>
+            <option value="nl" >NL</option>
+            <option value="pl" >PL</option>
+            <option value="ae" >AE</option>
+            <option value="or" >OTHER</option>
+    </select>      </li>
+      <li>
+        <a id="logout-session" href="/logout">
+          <i class="fa fa-sign-out"></i> Se déconnecter
+        </a>
+      </li>
+    </ul>
+  </nav>
+</div>
+
+                
+                <div class="row wrapper border-bottom white-bg page-heading">
+                    <div class="">
+                        <!-- Page Heading -->
+                                                    <div class="col-sm-6">
+                                    <ol class="breadcrumb">
+    <li>
+            Ventes
+    </li>
+                        <li>
+                                        Mes sites
+
+                            </li>
+            </ol>
+                                <h2 class="head-title">    Mes sites
+</h2>
+                            </div>
+                                                    <div class="col-sm-6">
+        <div class="title-action">
+            <a href="/bo/exchange-site/add" class="btn btn-primary"><strong>Ajouter</strong></a>
+        </div>
+    </div>
+                    </div>
+                </div>
+
+                <!-- Main content  -->
+                <div class="wrapper wrapper-content">
+                                                <div class="row">
+        <div class="col-lg-12">
+            <div class="ibox-content">
+                <form name="exchange_site_filter" method="get" class="form-horizontal"><div id="exchange_site_filter"><div class="form-group"><label class="col-sm-3 control-label" for="exchange_site_filter_search_query">Rechercher</label><div class="col-sm-9"><input type="text" id="exchange_site_filter_search_query" name="exchange_site_filter[search_query]" class="form-control" /></div>
+    </div><input type="hidden" id="exchange_site_filter__token" name="exchange_site_filter[_token]" value="034a9fe72d2.aiDfQrYdjQLW2v9nmsvbC5WRQlrkm-g-9ErB_Yu1PiQ.R26ZJvtVwWOUoMsW9KiSTuKhEmqp641vhgiOybPeZ0EmdKl611zZdaCpzw" /></div></form>
+            </div>
+        </div>
+    </div>.<div class="row">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="ibox">
+                <div class="ibox-content">
+                                        <div class="pagerfanta"></div>
+                    <div id="exchange_sites_collection" class="">
+                        
+    <div class="directories-table-wrap">
+        <table class="footable table-striped table table-hover" id="salesWebsiteTable">
+            <thead>
+            <tr>
+                                <th>Site</th>
+                <th data-breakpoints="xs">Trafic Google</th>
+                <th data-breakpoints="m">Âge</th>
+                <th data-breakpoints="s">Prix</th>
+                <th data-breakpoints="xxs" class="text-right">Action</th>
+            </tr>
+            </thead>
+            <tbody>
+                            <tr class="">
+                    
+                    <td>
+                                                <div class="main-site-info">
+                                                            <a  class="underlined-link" href="https://fr.bijouxenvogue.com/" target="_blank" rel="noreferrer">https://fr.bijouxenvogue.com/</a><br>
+                                                                                                                                                                                                                                            <span class="label label-article-green-tag">
+                                                                Taux de publication: 100%</span>
+                                                                                                                                                        <span class="label label-article-blue-tag">
+                                                                Délai de publication : 2 jour(s)</span>
+                                                        
+                            
+                            
+                                                                                                                                                <span class="label label-article-green-tag">Indexation rapide</span><br>
+                                                                                        <span class="label label-article-orange-tag">Français</span>
+                                                        <span class="directories-list_badge blogs-badge"><b>Catégories:</b> E-commerce/ Mariage/ Mode</span><br>
+                            <button class="btn btn-link toggle-details" data-key="193915" data-time="2" data-rate="100" data-toggle="modal" data-target="#details" >
+                                <span class="show-detail">Voir les détails</span>
+                                <span class="hide-detail">Cacher les details</span>
+                                <i class="fa fa-chevron-up"></i>
+                                <i class="fa fa-chevron-down"></i>
+                            </button>
+                        </div>
+                    </td>
+                    <td>3733</td>
+                    <td class="publication-age">
+                        <p>Whois:<br>
+                            <span> 10 mois</span></p>
+                        <p>Archive.org:<br>
+                            </p>
+                    </td>
+                    <td>
+                        <b class="text-primary text-bigger no-wrap">130€</b>
+                                            </td>
+                    <td class="text-right action">
+                        <div class="buttons-wrapper">
+                            <a href="/bo/exchange-site/endis/193915" onclick = "activefunction(this, event)" class="btn btn-warning state" title="Désactiver">
+            <i class="fa fa-eye-slash"></i><span>Désactiver</span>
+    </a>
+                            <a href="/bo/exchange-site/edit/193915" class="btn btn-primary" title="Modifier">
+                                <i class="fa fa-edit"></i>Modifier
+                            </a>
+                            <a href="/bo/exchange-site/delete/193915" class="btn btn-danger delete" title="Supprimer">
+                                <i class="fa fa-trash"></i>Supprimer
+                            </a>
+                            <button class="btn btn-default toggle-details" data-key="193915" data-time="2" data-rate="100" data-toggle="modal" data-target="#details" title="Voir les détails">
+                                <i class="fa fa-list-alt"></i>Voir les détails
+                            </button>
+                                                    </div>
+                    </td>
+                </tr>
+                            <tr class="">
+                    
+                    <td>
+                                                <div class="main-site-info">
+                                                            <a  class="underlined-link" href="http://ad-bijoux.com/" target="_blank" rel="noreferrer">http://ad-bijoux.com/</a><br>
+                                                                                                                                                                                                                                                            
+                            
+                            
+                                                                                                                                                                            <span class="label label-article-orange-tag">Français</span>
+                                                        <span class="directories-list_badge blogs-badge"><b>Catégories:</b> Cadeaux/ Mode</span><br>
+                            <button class="btn btn-link toggle-details" data-key="205778" data-time="" data-rate="" data-toggle="modal" data-target="#details" >
+                                <span class="show-detail">Voir les détails</span>
+                                <span class="hide-detail">Cacher les details</span>
+                                <i class="fa fa-chevron-up"></i>
+                                <i class="fa fa-chevron-down"></i>
+                            </button>
+                        </div>
+                    </td>
+                    <td>0</td>
+                    <td class="publication-age">
+                        <p>Whois:<br>
+                            <span> 8 mois</span></p>
+                        <p>Archive.org:<br>
+                            </p>
+                    </td>
+                    <td>
+                        <b class="text-primary text-bigger no-wrap">10€</b>
+                                            </td>
+                    <td class="text-right action">
+                        <div class="buttons-wrapper">
+                            <a href="/bo/exchange-site/endis/205778" onclick = "activefunction(this, event)" class="btn btn-warning state" title="Désactiver">
+            <i class="fa fa-eye-slash"></i><span>Désactiver</span>
+    </a>
+                            <a href="/bo/exchange-site/edit/205778" class="btn btn-primary" title="Modifier">
+                                <i class="fa fa-edit"></i>Modifier
+                            </a>
+                            <a href="/bo/exchange-site/delete/205778" class="btn btn-danger delete" title="Supprimer">
+                                <i class="fa fa-trash"></i>Supprimer
+                            </a>
+                            <button class="btn btn-default toggle-details" data-key="205778" data-time="" data-rate="" data-toggle="modal" data-target="#details" title="Voir les détails">
+                                <i class="fa fa-list-alt"></i>Voir les détails
+                            </button>
+                                                    </div>
+                    </td>
+                </tr>
+                            <tr class="">
+                    
+                    <td>
+                                                <div class="main-site-info">
+                                                            <a  class="underlined-link" href="https://www.lahsrobotics.org/" target="_blank" rel="noreferrer">https://www.lahsrobotics.org/</a><br>
+                                                                                                                                                                                                                                                            
+                            
+                            
+                                                                                                                                                                            <span class="label label-article-orange-tag">Français</span>
+                                                        <span class="directories-list_badge blogs-badge"><b>Catégories:</b> Entreprise/ High-Tech</span><br>
+                            <button class="btn btn-link toggle-details" data-key="205781" data-time="" data-rate="" data-toggle="modal" data-target="#details" >
+                                <span class="show-detail">Voir les détails</span>
+                                <span class="hide-detail">Cacher les details</span>
+                                <i class="fa fa-chevron-up"></i>
+                                <i class="fa fa-chevron-down"></i>
+                            </button>
+                        </div>
+                    </td>
+                    <td></td>
+                    <td class="publication-age">
+                        <p>Whois:<br>
+                            <span> 8 mois</span></p>
+                        <p>Archive.org:<br>
+                            </p>
+                    </td>
+                    <td>
+                        <b class="text-primary text-bigger no-wrap">20€</b>
+                                            </td>
+                    <td class="text-right action">
+                        <div class="buttons-wrapper">
+                            <a href="/bo/exchange-site/endis/205781" onclick = "activefunction(this, event)" class="btn btn-warning state" title="Désactiver">
+            <i class="fa fa-eye-slash"></i><span>Désactiver</span>
+    </a>
+                            <a href="/bo/exchange-site/edit/205781" class="btn btn-primary" title="Modifier">
+                                <i class="fa fa-edit"></i>Modifier
+                            </a>
+                            <a href="/bo/exchange-site/delete/205781" class="btn btn-danger delete" title="Supprimer">
+                                <i class="fa fa-trash"></i>Supprimer
+                            </a>
+                            <button class="btn btn-default toggle-details" data-key="205781" data-time="" data-rate="" data-toggle="modal" data-target="#details" title="Voir les détails">
+                                <i class="fa fa-list-alt"></i>Voir les détails
+                            </button>
+                                                    </div>
+                    </td>
+                </tr>
+                            <tr class="">
+                    
+                    <td>
+                                                <div class="main-site-info">
+                                                            <a  class="underlined-link" href="https://www.institut-beaute-nice.com/fr/" target="_blank" rel="noreferrer">https://www.institut-beaute-nice.com/fr/</a><br>
+                                                                                                                                                                                                                                                            
+                            
+                            
+                                                                                                                                                                            <span class="label label-article-orange-tag">Français</span>
+                                                        <span class="directories-list_badge blogs-badge"><b>Catégories:</b> Mode/ Beauté</span><br>
+                            <button class="btn btn-link toggle-details" data-key="205782" data-time="" data-rate="" data-toggle="modal" data-target="#details" >
+                                <span class="show-detail">Voir les détails</span>
+                                <span class="hide-detail">Cacher les details</span>
+                                <i class="fa fa-chevron-up"></i>
+                                <i class="fa fa-chevron-down"></i>
+                            </button>
+                        </div>
+                    </td>
+                    <td>0</td>
+                    <td class="publication-age">
+                        <p>Whois:<br>
+                            <span> 8 mois</span></p>
+                        <p>Archive.org:<br>
+                            </p>
+                    </td>
+                    <td>
+                        <b class="text-primary text-bigger no-wrap">20€</b>
+                                            </td>
+                    <td class="text-right action">
+                        <div class="buttons-wrapper">
+                            <a href="/bo/exchange-site/endis/205782" onclick = "activefunction(this, event)" class="btn btn-warning state" title="Désactiver">
+            <i class="fa fa-eye-slash"></i><span>Désactiver</span>
+    </a>
+                            <a href="/bo/exchange-site/edit/205782" class="btn btn-primary" title="Modifier">
+                                <i class="fa fa-edit"></i>Modifier
+                            </a>
+                            <a href="/bo/exchange-site/delete/205782" class="btn btn-danger delete" title="Supprimer">
+                                <i class="fa fa-trash"></i>Supprimer
+                            </a>
+                            <button class="btn btn-default toggle-details" data-key="205782" data-time="" data-rate="" data-toggle="modal" data-target="#details" title="Voir les détails">
+                                <i class="fa fa-list-alt"></i>Voir les détails
+                            </button>
+                                                    </div>
+                    </td>
+                </tr>
+                        </tbody>
+        </table>
+    </div>
+<script>
+    var maxPerPage = 100;
+    var countResults = 4;
+    var responseGlobalItems = {"193915":{"_type":"exchangeSite","id":193915,"name":"fr.bijouxenvogue.com","hideUrl":false,"favoriteFlag":false,"url":"https:\/\/fr.bijouxenvogue.com\/","partnership":"Non","price":130,"tags":"bijoux,homme,personnalisation","selected":false,"checkboxName":"blogs_id[]","checkboxClass":"blogs_checkbox","language":"fr","plugin":"<span class=\"glyphicon glyphicon-remove text-danger\" aria-hidden=\"true\"><\/span>","categories":"E-commerce\/ Mariage\/ Mode","metrics":{"majestic":{"citation":39,"backlinks":"1448","govBacklinks":0,"eduBacklinks":0,"trustFlow":18,"refDomains":149,"categories":"Shopping: 9: 0.04; Computers\/Education: 19: 1.32; Shopping\/Jewelry: 18: 75.87; Shopping\/Clothing: 13: 3.83; Business\/Consumer Goods and Services: 11: 0.25; Society\/Philanthropy: 11: 0.33; Recreation\/Travel: 12: 0.06; Society\/People: 10: 0.08; Home\/Gardening: 9: 0.05; Home\/Family: 9: 0.04; Regional\/Europe: 9: 0.06; Shopping\/Sports: 8: 0.02; Society\/Ethnicity: 8: 0.01; Shopping\/Directories: 11: 0.01; Business: 8: 0.01; Business\/Industrial Goods and Services: 8: 0.01; Computers\/Internet\/On the Web: 14: 6.92; Arts\/Crafts: 15: 10.51; Society: 11: 0.32; Health\/Reproductive Health: 10: 0.13; Health\/Conditions and Diseases: 10: 0.10; Shopping\/Home and Garden: 10: 0.10; Health: 10: 0.13; Health\/Alternative: 12: 0.70; Business\/Healthcare: 11: 0.37"},"semrush":{"traffic":3733,"keyword":5907,"trafficCost":1308},"moz":{"pageAuthority":43,"domainAuthority":30},"google":{"news":0,"analytics":false},"other":{"alexaRank":0},"age":{"whoisAge":{"m":10,"d":24},"archiveAge":[],"whoisAgeDateFormat":"2024-11-07T00:00:00+01:00","archiveAgeDateFormat":null}},"publicationRequirements":{"words":800,"links":1,"images":{"min":1,"max":1},"metaTitle":false,"metaDescription":false,"h1":false,"h2":{"min":null,"max":null},"h3":{"min":null,"max":null},"boldText":null,"italicText":null,"ulTag":null,"authorizedAnchor":"optimized","webmasterAnchor":true},"sponsoredTrans":"","noFollowTrans":"","googleNews":"","freePublication":"","immediatePublication":"","ugcLink":"","sponsoredLink":"","limitedTimeValue":"","delayValue":"","visits":1435,"uniqueVisitors":null,"bestPrice":"Meilleur prix","numberPlaces":"","createdAt":{"date":"2024-11-07 10:25:39.000000","timezone_type":3,"timezone":"Europe\/Paris"}},"205778":{"_type":"exchangeSite","id":205778,"name":"ad-bijoux.com","hideUrl":false,"favoriteFlag":false,"url":"http:\/\/ad-bijoux.com\/","partnership":"Non","price":10,"tags":"Bijoux,bracelet,gravure","selected":false,"checkboxName":"blogs_id[]","checkboxClass":"blogs_checkbox","language":"fr","plugin":"<span class=\"glyphicon glyphicon-remove text-danger\" aria-hidden=\"true\"><\/span>","categories":"Cadeaux\/ Mode","metrics":{"majestic":{"citation":8,"backlinks":"17","govBacklinks":0,"eduBacklinks":0,"trustFlow":5,"refDomains":6,"categories":"Health\/Mental Health: 2: 68.30; Arts\/Crafts: 2: 17.33; Science\/Reference: 2: 5.28; Business\/Textiles and Nonwovens: 2: 3.11; Shopping\/Visual Arts: 2: 2.62; Business\/Business Services: 2: 1.83; Adult\/World: 5: 100.00; Computers\/Internet\/Searching: 5: 0.02; Games\/Video Games\/Shooter: 4: 99.84; Regional\/Europe: 3: 0.14; Recreation\/Autos: 7: 1.15; Business: 5: 72.45; Sports\/Soccer: 1: 0.62; Recreation\/Travel: 4: 26.88"},"semrush":{"traffic":0,"keyword":4,"trafficCost":0},"moz":{"pageAuthority":19,"domainAuthority":6},"google":{"news":0,"analytics":false},"other":{"alexaRank":0},"age":{"whoisAge":{"m":8,"d":21},"archiveAge":[],"whoisAgeDateFormat":"2025-01-10T00:00:00+01:00","archiveAgeDateFormat":null}},"publicationRequirements":{"words":1200,"links":2,"images":{"min":1,"max":2},"metaTitle":false,"metaDescription":false,"h1":false,"h2":{"min":null,"max":null},"h3":{"min":null,"max":null},"boldText":null,"italicText":null,"ulTag":null,"authorizedAnchor":"unoptimized","webmasterAnchor":true},"sponsoredTrans":"","noFollowTrans":"","googleNews":"","freePublication":"","immediatePublication":"","ugcLink":"","sponsoredLink":"","limitedTimeValue":"","delayValue":"","visits":325,"uniqueVisitors":null,"bestPrice":"","numberPlaces":"","createdAt":{"date":"2025-01-10 11:29:00.000000","timezone_type":3,"timezone":"Europe\/Paris"}},"205781":{"_type":"exchangeSite","id":205781,"name":"www.lahsrobotics.org","hideUrl":false,"favoriteFlag":false,"url":"https:\/\/www.lahsrobotics.org\/","partnership":"Non","price":20,"tags":"Robotique,transport,informatique","selected":false,"checkboxName":"blogs_id[]","checkboxClass":"blogs_checkbox","language":"fr","plugin":"<span class=\"glyphicon glyphicon-remove text-danger\" aria-hidden=\"true\"><\/span>","categories":"Entreprise\/ High-Tech","metrics":{"majestic":{"citation":25,"backlinks":"55","govBacklinks":0,"eduBacklinks":0,"trustFlow":30,"refDomains":32,"categories":"Computers\/Robotics: 30: 99.99"},"semrush":{"traffic":null,"keyword":null,"trafficCost":null},"moz":{"pageAuthority":42,"domainAuthority":6},"google":{"news":0,"analytics":false},"other":{"alexaRank":0},"age":{"whoisAge":{"m":8,"d":21},"archiveAge":[],"whoisAgeDateFormat":"2025-01-10T00:00:00+01:00","archiveAgeDateFormat":null}},"publicationRequirements":{"words":1000,"links":2,"images":{"min":1,"max":1},"metaTitle":false,"metaDescription":false,"h1":false,"h2":{"min":null,"max":null},"h3":{"min":null,"max":null},"boldText":null,"italicText":null,"ulTag":null,"authorizedAnchor":"unoptimized","webmasterAnchor":true},"sponsoredTrans":"","noFollowTrans":"","googleNews":"","freePublication":"","immediatePublication":"","ugcLink":"","sponsoredLink":"","limitedTimeValue":"","delayValue":"","visits":0,"uniqueVisitors":null,"bestPrice":"Meilleur prix","numberPlaces":"","createdAt":{"date":"2025-01-10 11:32:22.000000","timezone_type":3,"timezone":"Europe\/Paris"}},"205782":{"_type":"exchangeSite","id":205782,"name":"www.institut-beaute-nice.com","hideUrl":false,"favoriteFlag":false,"url":"https:\/\/www.institut-beaute-nice.com\/fr\/","partnership":"Non","price":20,"tags":"institut,beaute,mode","selected":false,"checkboxName":"blogs_id[]","checkboxClass":"blogs_checkbox","language":"fr","plugin":"<span class=\"glyphicon glyphicon-remove text-danger\" aria-hidden=\"true\"><\/span>","categories":"Mode\/ Beaut\u00e9","metrics":{"majestic":{"citation":29,"backlinks":"235","govBacklinks":0,"eduBacklinks":0,"trustFlow":38,"refDomains":72,"categories":"Business: 38: 99.98"},"semrush":{"traffic":0,"keyword":1,"trafficCost":0},"moz":{"pageAuthority":32,"domainAuthority":23},"google":{"news":0,"analytics":false},"other":{"alexaRank":0},"age":{"whoisAge":{"m":8,"d":21},"archiveAge":[],"whoisAgeDateFormat":"2025-01-10T00:00:00+01:00","archiveAgeDateFormat":null}},"publicationRequirements":{"words":1000,"links":2,"images":{"min":1,"max":1},"metaTitle":false,"metaDescription":false,"h1":false,"h2":{"min":null,"max":null},"h3":{"min":null,"max":null},"boldText":null,"italicText":null,"ulTag":null,"authorizedAnchor":"unoptimized","webmasterAnchor":true},"sponsoredTrans":"","noFollowTrans":"","googleNews":"","freePublication":"","immediatePublication":"","ugcLink":"","sponsoredLink":"","limitedTimeValue":"","delayValue":"","visits":278,"uniqueVisitors":null,"bestPrice":"Meilleur prix","numberPlaces":"","createdAt":{"date":"2025-01-10 11:35:05.000000","timezone_type":3,"timezone":"Europe\/Paris"}}};
+</script>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade moreDetail" id="details" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title"></h4>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                </div>
+                <div class="modal-body"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Fermer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+<div class="modal fade" id="userProfile" tabindex="-1" role="dialog" data-backdrop="static">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title"></h4>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-body horizontal-line"></div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addSubAccount" tabindex="-1" role="dialog" data-backdrop="static">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title"></h4>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-errors alert-danger hidden"></div>
+            <div class="modal-body horizontal-line">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Fermer</button>
+                <button type="button" class="btn btn-primary">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addSubAmount" tabindex="-1" role="dialog" data-backdrop="static">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title"></h4>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-body horizontal-line">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Fermer</button>
+                <button type="button" class="btn btn-primary">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="removeSubAmount" tabindex="-1" role="dialog" data-backdrop="static">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title"></h4>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-body horizontal-line">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Fermer</button>
+                <button type="button" class="btn btn-primary">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="messagesHistory" tabindex="-1" role="dialog" data-backdrop="static">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">Message History</h4>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-body horizontal-line">
+                <div class="row">
+                    <div class="col-lg-12 animated fadeInRight">
+                        <div class="message-container">
+                        </div>
+
+                        <div class="mail-body text-center">
+                            <button class="btn btn-primary view_message_history"
+                                    data-id="" page-id="2">
+                                Loading...
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+                </div>
+
+            </div>
+            <!-- End page wrapper-->
+
+            <!-- Footer -->
+                            <div class="footer">
+    <div class="pull-right">
+      <strong> &copy; Copyright</strong> 2017-2025  EREFERER
+    </div>
+</div>
+                    </div>
+        <!-- End wrapper-->
+    
+            
+    <!-- Mainly scripts -->
+    <script src="//cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+    <script src="/js/admin/jquery-3.1.1.min.js"></script>
+    <script src="/js/admin/bootstrap.min.js"></script>
+    <script src="/js/jquery-ui.min.js?version=v16"></script>
+    <script src="/js/admin/plugins/metisMenu/jquery.metisMenu.js"></script>
+    <script src="/js/admin/plugins/slimscroll/jquery.slimscroll.min.js"></script>
+
+
+
+    <!-- iCheck -->
+    <script src="/js/admin/plugins/iCheck/icheck.min.js"></script>
+
+    <!-- Chosen -->
+    <script src="/js/admin/plugins/chosen/chosen.jquery.js"></script>
+
+    <!-- Data picker -->
+    <script src="/js/admin/plugins/datapicker/bootstrap-datepicker.js"></script>
+    <script src="//cdn.jsdelivr.net/bootstrap.daterangepicker/2/daterangepicker.js"></script>
+    <script src="/js/admin/plugins/toastr/toastr.min.js"></script>
+    <script src="//js.pusher.com/2.2/pusher.min.js" type="text/javascript" type="text/javascript" ></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/bootbox.js/4.3.0/bootbox.min.js" type="text/javascript" ></script>  
+
+    <script src="/js/admin/plugins/bootstrap-tagsinput/bootstrap-tagsinput.js"></script>
+    <script src="/js/admin/plugins/jasny/jasny-bootstrap.min.js"></script>
+
+    <script src="/js/admin/plugins/moment/moment.min.js"></script>
+    <script src="/js/admin/plugins/footable/footable.all.min.js"></script>
+    <script src="/js/admin/plugins/blueimp/jquery.blueimp-gallery.min.js"></script>
+    <script src="/js/admin/plugins/sweetalert/sweetalert.min.js"></script>
+    <script src="/js/front/plugin/sticky-table-headers.js"></script>
+
+    <!-- Custom and plugin javascript -->
+
+    <script src="/js/admin/plugins/pace/pace.min.js"></script>
+    <script src="/js/front/plugin/resize-sensor.js"></script>
+    <script src="/js/front/plugin/sticky-sidebar.js"></script>
+    <script src="/js/main.js?version=v16"></script>
+    <script src="/js/front/minmax-validation.js?version=v16"></script>
+
+    <script type="text/javascript">
+        $body = $("body");
+        $(document).on({
+            ajaxStart: function () {
+                $body.addClass("loading");
+            },
+            ajaxStop: function () {
+                $body.removeClass("loading");
+            }
+        });
+
+        $(document).ready(function () {
+            $('.admin-search').chosen({
+                disable_search_threshold: 7,
+                width: "100%"
+            });
+
+            $('select.form-control[multiple!=multiple]')
+                .not("#filters_ageCondition").not('.footable select').not('.footable select').not('.ajax_chosen')
+                .chosen({
+                    width: "100%",
+                    search_contains: true
+                })
+                .on('chosen:showing_dropdown', function (evt, params) {
+                    checkChosenPosition(evt);
+                });
+
+            $('.chosen-select[multiple!=multiple]').chosen({
+                width: "100%",
+                search_contains: true
+            });
+
+            $('.input-group.date').datepicker({
+                todayBtn: "linked",
+                keyboardNavigation: false,
+                forceParse: false,
+                calendarWeeks: true,
+                autoclose: true
+            });
+        });
+
+        var translations = {
+            choose_an_option: 'choose_an_option',
+            excel_report: 'Exporter vers Excel les résultats',
+            pack: {
+                confirmation: {
+                    buy_pack_immediately: 'Vous\u0020serez\u0020d\u00E9bit\u00E9\u0020de\u0020\u0026pack_price\u0026\u20AC\u0020pour\u0020l\u0027int\u00E9gralit\u00E9\u0020du\u0020pack.\u0020Les\u0020articles\u0020non\u0020utilis\u00E9s\u0020\u00E0\u0020la\u0020fin\u0020du\u0020temps\u0020imparti\u0020seront\u0020pay\u00E9s\u0020\u00E0\u0020l\u0027\u00E9diteur\u0020et\u0020ne\u0020pourront\u0020\u00EAtre\u0020rembours\u00E9s.',
+                    buy_pack_each_item: 'Vous serez facturé à chaque article envoyé. Les articles non utilisés à la fin du temps vous seront débités et ne pourront être remboursés.',
+                    cancel: 'L\u0027annulation\u0020d\u0027un\u0020packentraine\u0020aussi\u0020l\u0027annulation\u0020de\u0020la\u0020remise\u0020dont\u0020vous\u0020avez\u0020b\u00E9n\u00E9fici\u00E9\u0020\u003Cbr\u003EVous\u0020serez\u0020donc\u0020rembours\u00E9\u0020de\u0020\u0026refund_price\u0026\u20AC\u0020\u003Cbr\u003E\u00CAtes\u002Dvous\u0020sur\u0020de\u0020vouloir\u0020annuler\u0020ce\u0020pack\u0020\u003F'
+                },
+                immediately: 'Immédiatement (24h)'
+            },
+            modal: {
+                delete: {
+                    title: 'Êtes vous sûr ?',
+                    text: 'Vous ne pourrez pas ensuite le récupérer !',
+                    confirmButtonText: 'Oui, le supprimer !'
+                },
+                confirmation: {
+                    title: 'Confirmation!',
+                    text: 'Êtes vous sûr de vouloir effectuer cette action ?',
+                    confirmButtonText: 'Oui !'
+                },
+                cancel: {
+                    text: 'Annuler',
+                },
+                error: 'Erreur !',
+                error_500: '500 Internal Server Error',
+                invalid_json: 'JSON invalide',
+            },
+            successCopied: 'A bien été copié !',
+            infoTitle: 'Information',
+            infoValidationText: 'Vous ne pouvez pas créer plusieurs projets pour le même site internet afin d&#039;éviter les doublons.',
+            validateTitle: 'Veuillez cocher cette case si vous souhaitez continuer',
+            noResults: 'Aucun résultat',
+            errors: {
+                writing_ereferer: {
+                    fields: 'Vous devez mentionner au moins 1 url et son ancre afin de pouvoir poursuivre.'
+                },
+                writing_webmaster: {
+                    fields: 'Vous devez mentionner au moins 1 url et son ancre afin de pouvoir poursuivre.'
+                },
+                submit_your_article: {
+                    fields: 'Vous devez mentionner au moins 1 url et son ancre afin de pouvoir poursuivre.'
+                },
+                create_group: {
+                    fields: 'Vous devez mentionner au moins 1 url et son ancre afin de pouvoir poursuivre.'
+                },
+                join_group: {
+                    fields: 'Vous devez mentionner au moins 1 url et son ancre afin de pouvoir poursuivre.',
+                    message: 'Vous devez entrer un message au partenaire.'
+                },
+                admin_proposal: {
+                    fields: 'errors.admin_proposal.fields'
+                },
+                contact_partner: {
+                    fields: 'Vous devez mentionner au moins 1 url et son ancre afin de pouvoir poursuivre.',
+                },
+                wrong_min_range: 'La valeur minimale ne peut être supérieure à la maximale',
+                wrong_max_range: 'La valeur maximale doit être supérieur à la minimale',
+                wrong_url: 'Url incorrecte',
+                checkedCondition: 'Veuillez vérifier cette condition si vous souhaitez continuer',
+                checkedRefuseCondition: 'Veuillez accepter la condition ci-dessus si vous souhaitez continuer.',
+                general_error: 'Résolvez les problèmes suivants pour continuer',
+                black_list_url: 'Désolé, cette thématique n’est pas acceptée sur ce site !'
+            }
+        };
+
+    </script>
+    <script src="/js/admin/inspinia.js"></script>
+
+        
+    <script  type="text/javascript">
+    translations.name = {
+        age: "Age",
+        archive: "Âge (Archive.org)",
+        whois: "Âge (Whois)",
+        y: "Année(s)",
+        d: "Jour(s)",
+        m: "Mois",
+        blog: "Blog",
+        directory: "Annuaire",
+        categories: "Catégories",
+        tags: "Tags",
+        type: "Type",
+        category: "Catégorie",
+        preferences: "Rédaction",
+        semrushTraffic: "Trafic",
+        emptyTable: "table.empty",
+
+        metaTitle: "Meta title",
+        metaDescription: "Meta description",
+        headerOneSet: "H1",
+        headerTwoStartEnd: "H2",
+        headerThreeStartEnd: "H3",
+        majesticTrustCitationRatio: "Trust flow/Citation flow ratio",
+
+
+        boldText: "Passages en gras",
+        italicText: "Passages en Italic",
+        ulTag: "Liste à puce",
+
+        semrushKeyword: "Mot-clés Semrush",
+        semrushTrafficCost: "Coût du trafic Semrush",
+        trustFlow: "Trust flow",
+        topictrustFlow: "Topical Trust Flow",
+        referringDomains: "Domaines référents",
+        price: "Prix",
+        language: "Langue",
+        googleNews: "Google News",
+        googleAnalytics: "Google analytics",
+        mozDomainAuthority: "Domain Authority",
+        mozPageAuthority: "Page authority",
+        alexaRank: "Alexa",
+        majesticCitation: "Citation Flow",
+        majesticRefDomains: "Domaines référents",
+        majesticBacklinks: "Liens",
+        majesticEduBacklinks: "Liens EDU",
+        majesticGovBacklinks: "Liens GOV",
+        authorizedAnchor: "Ancre autorisée",
+        words: "Mots",
+        links: "Liens",
+        images: "Images",
+        to: "à",
+        yes: "Oui",
+        no: "Non",
+        min: "min",
+        max: "max",
+        optional: "Optionnel",
+        validation_rate: "Taux de validation",
+        validation_time: "Temps pour valider",
+        accept_subdomains: "Accepte sous-domaines",
+        reject_subdomains: "Refuse sous-domaines",
+        legal: "Site avec mentions légales",
+        dont_legal: "Site sans mentions légales",
+        plugin: "Plugin",
+        publicationRequirements: "Critères de publication",
+        metrics: "Metrics",
+        showDetails: "Voir les détails",
+        hideDetails: "Cacher les details",
+        majestic_ttf_categories: "Trust flow categories",
+        majestic_metrics: "Majestic",
+        semrush_metrics: "Semrush",
+        moz_metrics: "Moz",
+        google_metrics: "Google",
+        other_metrics: "Autres metrics",
+        article: "form.article_filter",
+        hideUrlContent: "Disposant de l&#039;intégralité des médias et sites Premium ouverts au netlinking, Ereferer les protège et n&#039;affiche ces URLs qu&#039;aux partenaires ayant rechargé au moins 1000€ cumulés sur leur compte sur les 12 derniers mois. L&#039;accès est déverrouillé indépendamment en nous contactant.",
+        seeUrl: "(Voir l&#039;URL)",
+        visits: "Visites",
+        uniqueVisitors: "Visiteurs U.",
+        semrush: "Trafic Google",
+        prev: "Prev",
+        next: "Next",
+        downloadError: "Vous ne pouvez pas télécharger plus de 100 résultats.",
+    }
+</script>
+
+    <script src="/js/admin/plugins/OverlayScrollbars/jquery.overlayScrollbars.min.js"></script>
+    <script src="/js/front/directory/jquery-throttle-debounce.js"></script>
+    <script src="/js/front/directory/jquery.stickyheader.js"></script>
+    <script src="/js/front/directory/custom-popup.js?version=v16"></script>
+    <script src="https://www.amcharts.com/lib/4/core.js"></script>
+    <script src="https://www.amcharts.com/lib/4/charts.js"></script>
+    <script src="https://www.amcharts.com/lib/4/themes/animated.js"></script>
+    <script src="/js/admin/jquery.twbsPagination.min.js?version=v16"></script>
+    <script src="/js/front/exchange_site/filter.js?version=v16"></script>
+    <script src="/js/front/user.js?version=v16"></script>
+    <script type="text/javascript">
+        initFreeze();
+        var responseGlobalItems = {"193915":{"_type":"exchangeSite","id":193915,"name":"fr.bijouxenvogue.com","hideUrl":false,"favoriteFlag":false,"url":"https:\/\/fr.bijouxenvogue.com\/","partnership":"Non","price":130,"tags":"bijoux,homme,personnalisation","selected":false,"checkboxName":"blogs_id[]","checkboxClass":"blogs_checkbox","language":"fr","plugin":"<span class=\"glyphicon glyphicon-remove text-danger\" aria-hidden=\"true\"><\/span>","categories":"E-commerce\/ Mariage\/ Mode","metrics":{"majestic":{"citation":39,"backlinks":"1448","govBacklinks":0,"eduBacklinks":0,"trustFlow":18,"refDomains":149,"categories":"Shopping: 9: 0.04; Computers\/Education: 19: 1.32; Shopping\/Jewelry: 18: 75.87; Shopping\/Clothing: 13: 3.83; Business\/Consumer Goods and Services: 11: 0.25; Society\/Philanthropy: 11: 0.33; Recreation\/Travel: 12: 0.06; Society\/People: 10: 0.08; Home\/Gardening: 9: 0.05; Home\/Family: 9: 0.04; Regional\/Europe: 9: 0.06; Shopping\/Sports: 8: 0.02; Society\/Ethnicity: 8: 0.01; Shopping\/Directories: 11: 0.01; Business: 8: 0.01; Business\/Industrial Goods and Services: 8: 0.01; Computers\/Internet\/On the Web: 14: 6.92; Arts\/Crafts: 15: 10.51; Society: 11: 0.32; Health\/Reproductive Health: 10: 0.13; Health\/Conditions and Diseases: 10: 0.10; Shopping\/Home and Garden: 10: 0.10; Health: 10: 0.13; Health\/Alternative: 12: 0.70; Business\/Healthcare: 11: 0.37"},"semrush":{"traffic":3733,"keyword":5907,"trafficCost":1308},"moz":{"pageAuthority":43,"domainAuthority":30},"google":{"news":0,"analytics":false},"other":{"alexaRank":0},"age":{"whoisAge":{"m":10,"d":24},"archiveAge":[],"whoisAgeDateFormat":"2024-11-07T00:00:00+01:00","archiveAgeDateFormat":null}},"publicationRequirements":{"words":800,"links":1,"images":{"min":1,"max":1},"metaTitle":false,"metaDescription":false,"h1":false,"h2":{"min":null,"max":null},"h3":{"min":null,"max":null},"boldText":null,"italicText":null,"ulTag":null,"authorizedAnchor":"optimized","webmasterAnchor":true},"sponsoredTrans":"","noFollowTrans":"","googleNews":"","freePublication":"","immediatePublication":"","ugcLink":"","sponsoredLink":"","limitedTimeValue":"","delayValue":"","visits":1435,"uniqueVisitors":null,"bestPrice":"Meilleur prix","numberPlaces":"","createdAt":{"date":"2024-11-07 10:25:39.000000","timezone_type":3,"timezone":"Europe\/Paris"}},"205778":{"_type":"exchangeSite","id":205778,"name":"ad-bijoux.com","hideUrl":false,"favoriteFlag":false,"url":"http:\/\/ad-bijoux.com\/","partnership":"Non","price":10,"tags":"Bijoux,bracelet,gravure","selected":false,"checkboxName":"blogs_id[]","checkboxClass":"blogs_checkbox","language":"fr","plugin":"<span class=\"glyphicon glyphicon-remove text-danger\" aria-hidden=\"true\"><\/span>","categories":"Cadeaux\/ Mode","metrics":{"majestic":{"citation":8,"backlinks":"17","govBacklinks":0,"eduBacklinks":0,"trustFlow":5,"refDomains":6,"categories":"Health\/Mental Health: 2: 68.30; Arts\/Crafts: 2: 17.33; Science\/Reference: 2: 5.28; Business\/Textiles and Nonwovens: 2: 3.11; Shopping\/Visual Arts: 2: 2.62; Business\/Business Services: 2: 1.83; Adult\/World: 5: 100.00; Computers\/Internet\/Searching: 5: 0.02; Games\/Video Games\/Shooter: 4: 99.84; Regional\/Europe: 3: 0.14; Recreation\/Autos: 7: 1.15; Business: 5: 72.45; Sports\/Soccer: 1: 0.62; Recreation\/Travel: 4: 26.88"},"semrush":{"traffic":0,"keyword":4,"trafficCost":0},"moz":{"pageAuthority":19,"domainAuthority":6},"google":{"news":0,"analytics":false},"other":{"alexaRank":0},"age":{"whoisAge":{"m":8,"d":21},"archiveAge":[],"whoisAgeDateFormat":"2025-01-10T00:00:00+01:00","archiveAgeDateFormat":null}},"publicationRequirements":{"words":1200,"links":2,"images":{"min":1,"max":2},"metaTitle":false,"metaDescription":false,"h1":false,"h2":{"min":null,"max":null},"h3":{"min":null,"max":null},"boldText":null,"italicText":null,"ulTag":null,"authorizedAnchor":"unoptimized","webmasterAnchor":true},"sponsoredTrans":"","noFollowTrans":"","googleNews":"","freePublication":"","immediatePublication":"","ugcLink":"","sponsoredLink":"","limitedTimeValue":"","delayValue":"","visits":325,"uniqueVisitors":null,"bestPrice":"","numberPlaces":"","createdAt":{"date":"2025-01-10 11:29:00.000000","timezone_type":3,"timezone":"Europe\/Paris"}},"205781":{"_type":"exchangeSite","id":205781,"name":"www.lahsrobotics.org","hideUrl":false,"favoriteFlag":false,"url":"https:\/\/www.lahsrobotics.org\/","partnership":"Non","price":20,"tags":"Robotique,transport,informatique","selected":false,"checkboxName":"blogs_id[]","checkboxClass":"blogs_checkbox","language":"fr","plugin":"<span class=\"glyphicon glyphicon-remove text-danger\" aria-hidden=\"true\"><\/span>","categories":"Entreprise\/ High-Tech","metrics":{"majestic":{"citation":25,"backlinks":"55","govBacklinks":0,"eduBacklinks":0,"trustFlow":30,"refDomains":32,"categories":"Computers\/Robotics: 30: 99.99"},"semrush":{"traffic":null,"keyword":null,"trafficCost":null},"moz":{"pageAuthority":42,"domainAuthority":6},"google":{"news":0,"analytics":false},"other":{"alexaRank":0},"age":{"whoisAge":{"m":8,"d":21},"archiveAge":[],"whoisAgeDateFormat":"2025-01-10T00:00:00+01:00","archiveAgeDateFormat":null}},"publicationRequirements":{"words":1000,"links":2,"images":{"min":1,"max":1},"metaTitle":false,"metaDescription":false,"h1":false,"h2":{"min":null,"max":null},"h3":{"min":null,"max":null},"boldText":null,"italicText":null,"ulTag":null,"authorizedAnchor":"unoptimized","webmasterAnchor":true},"sponsoredTrans":"","noFollowTrans":"","googleNews":"","freePublication":"","immediatePublication":"","ugcLink":"","sponsoredLink":"","limitedTimeValue":"","delayValue":"","visits":0,"uniqueVisitors":null,"bestPrice":"Meilleur prix","numberPlaces":"","createdAt":{"date":"2025-01-10 11:32:22.000000","timezone_type":3,"timezone":"Europe\/Paris"}},"205782":{"_type":"exchangeSite","id":205782,"name":"www.institut-beaute-nice.com","hideUrl":false,"favoriteFlag":false,"url":"https:\/\/www.institut-beaute-nice.com\/fr\/","partnership":"Non","price":20,"tags":"institut,beaute,mode","selected":false,"checkboxName":"blogs_id[]","checkboxClass":"blogs_checkbox","language":"fr","plugin":"<span class=\"glyphicon glyphicon-remove text-danger\" aria-hidden=\"true\"><\/span>","categories":"Mode\/ Beaut\u00e9","metrics":{"majestic":{"citation":29,"backlinks":"235","govBacklinks":0,"eduBacklinks":0,"trustFlow":38,"refDomains":72,"categories":"Business: 38: 99.98"},"semrush":{"traffic":0,"keyword":1,"trafficCost":0},"moz":{"pageAuthority":32,"domainAuthority":23},"google":{"news":0,"analytics":false},"other":{"alexaRank":0},"age":{"whoisAge":{"m":8,"d":21},"archiveAge":[],"whoisAgeDateFormat":"2025-01-10T00:00:00+01:00","archiveAgeDateFormat":null}},"publicationRequirements":{"words":1000,"links":2,"images":{"min":1,"max":1},"metaTitle":false,"metaDescription":false,"h1":false,"h2":{"min":null,"max":null},"h3":{"min":null,"max":null},"boldText":null,"italicText":null,"ulTag":null,"authorizedAnchor":"unoptimized","webmasterAnchor":true},"sponsoredTrans":"","noFollowTrans":"","googleNews":"","freePublication":"","immediatePublication":"","ugcLink":"","sponsoredLink":"","limitedTimeValue":"","delayValue":"","visits":278,"uniqueVisitors":null,"bestPrice":"Meilleur prix","numberPlaces":"","createdAt":{"date":"2025-01-10 11:35:05.000000","timezone_type":3,"timezone":"Europe\/Paris"}}};
+    </script>
+
+
+    <div class="modal fade" id="erefererAlerts" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title"></h4>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                </div>
+                <div class="modal-body"></div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
+
+<script type="text/javascript">
+    var userId = 69717;
+
+    console.log("test" + userId);
+
+    var pusher = new Pusher('e68c91eed5f6fc664eda', {
+        cluster: 'eu'
+    });
+    // Enter a unique channel you wish your users to be subscribed in.
+    var channel = pusher.subscribe('user-channel');
+    channel.bind('user_event', function(data) {
+        console.log("User:" + data.user_id);
+        if (data.user_id == userId) {
+            window.location.href = '/logout';
+        }
+    });
+</script>

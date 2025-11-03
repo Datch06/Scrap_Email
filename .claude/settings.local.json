@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3:*)",
+      "Bash(cat:*)",
+      "Bash(tee:*)",
+      "Bash(chmod:*)",
+      "Bash(curl -s 'https://www.20minutes.fr')",
+      "Bash(curl -s 'https://www.20minutes.fr/mentions')",
+      "Bash(curl -s 'https://uscb117.ffr.fr/')",
+      "Bash(curl -s 'https://politicae.fr/wp-content/uploads/2025/06/CGU-Politicae.pdf' -o /tmp/cgu.pdf)",
+      "Bash(pip3 install:*)",
+      "Bash(curl -s 'https://politicae.fr/wp-content/uploads/2025/10/CGV_Politicae.pdf' -o /tmp/cgv.pdf)",
+      "Bash(curl -s 'https://mesinfos.fr/page/cgv.html')"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+
+{% block title %}Jobs - Scrap Email Manager{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1 class="display-5"><i class="bi bi-gear-fill"></i> Gestion des Jobs</h1>
+        <p class="text-muted">Contrôlez et supervisez vos tâches de scraping</p>
+    </div>
+</div>
+
+<!-- Lancer un nouveau job -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-play-circle"></i> Lancer un Job</h5>
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-12">
+                <p class="text-muted">
+                    <i class="bi bi-info-circle"></i> Pour lancer les scripts de scraping avec la base de données,
+                    utilisez les nouveaux wrappers disponibles dans le répertoire.
+                </p>
+            </div>
+        </div>
+        <div class="row g-2">
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="bi bi-globe fs-1 text-primary"></i>
+                        <h6 class="mt-2">Crawl Backlinks</h6>
+                        <p class="small text-muted">Découvrir nouveaux sites</p>
+                        <button class="btn btn-sm btn-primary" disabled>
+                            <i class="bi bi-terminal"></i> CLI uniquement
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="bi bi-envelope fs-1 text-success"></i>
+                        <h6 class="mt-2">Extract Emails</h6>
+                        <p class="small text-muted">Extraire les emails</p>
+                        <button class="btn btn-sm btn-success" disabled>
+                            <i class="bi bi-terminal"></i> CLI uniquement
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="bi bi-building fs-1 text-info"></i>
+                        <h6 class="mt-2">Find SIRET</h6>
+                        <p class="small text-muted">Chercher SIRET/SIREN</p>
+                        <button class="btn btn-sm btn-info" disabled>
+                            <i class="bi bi-terminal"></i> CLI uniquement
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="bi bi-person-badge fs-1 text-warning"></i>
+                        <h6 class="mt-2">Find Leaders</h6>
+                        <p class="small text-muted">Chercher dirigeants</p>
+                        <button class="btn btn-sm btn-warning" disabled>
+                            <i class="bi bi-terminal"></i> CLI uniquement
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Historique des jobs -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-clock-history"></i> Historique des Jobs</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Type</th>
+                        <th>Statut</th>
+                        <th>Progression</th>
+                        <th>Succès</th>
+                        <th>Erreurs</th>
+                        <th>Durée</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody id="jobs-table-body">
+                    <tr>
+                        <td colspan="8" class="text-center">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Chargement...</span>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Charger les jobs
+async function loadJobs() {
+    try {
+        const response = await fetch('/api/jobs');
+        const jobs = await response.json();
+
+        renderJobsTable(jobs);
+
+    } catch (error) {
+        console.error('Erreur:', error);
+        document.getElementById('jobs-table-body').innerHTML = `
+            <tr><td colspan="8" class="text-center text-danger">Erreur de chargement</td></tr>
+        `;
+    }
+}
+
+// Afficher les jobs
+function renderJobsTable(jobs) {
+    const tbody = document.getElementById('jobs-table-body');
+
+    if (jobs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center">Aucun job trouvé</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = jobs.map(job => {
+        const duration = calculateDuration(job.start_time, job.end_time);
+        const progress = job.total_sites > 0 ? Math.round((job.processed_sites / job.total_sites) * 100) : 0;
+
+        return `
+            <tr>
+                <td>${job.id}</td>
+                <td>${getJobTypeBadge(job.job_type)}</td>
+                <td>${getStatusBadge(job.status)}</td>
+                <td>
+                    <div class="progress" style="height: 20px;">
+                        <div class="progress-bar ${job.status === 'running' ? 'progress-bar-striped progress-bar-animated' : ''}"
+                             role="progressbar" style="width: ${progress}%">
+                            ${job.processed_sites}/${job.total_sites}
+                        </div>
+                    </div>
+                </td>
+                <td><span class="badge bg-success">${job.success_count}</span></td>
+                <td><span class="badge bg-danger">${job.error_count}</span></td>
+                <td>${duration}</td>
+                <td>${new Date(job.created_at).toLocaleString('fr-FR')}</td>
+            </tr>
+        `;
+    }).join('');
+}
+
+// Badge type de job
+function getJobTypeBadge(type) {
+    const badges = {
+        'crawl': '<span class="badge bg-primary">Crawl</span>',
+        'email': '<span class="badge bg-success">Email</span>',
+        'siret': '<span class="badge bg-info">SIRET</span>',
+        'leaders': '<span class="badge bg-warning">Dirigeants</span>',
+    };
+    return badges[type] || `<span class="badge bg-secondary">${type}</span>`;
+}
+
+// Badge statut
+function getStatusBadge(status) {
+    const badges = {
+        'pending': '<span class="badge bg-secondary">En attente</span>',
+        'running': '<span class="badge bg-primary"><i class="bi bi-arrow-repeat"></i> En cours</span>',
+        'completed': '<span class="badge bg-success"><i class="bi bi-check-circle"></i> Terminé</span>',
+        'failed': '<span class="badge bg-danger"><i class="bi bi-x-circle"></i> Échoué</span>',
+    };
+    return badges[status] || '<span class="badge bg-secondary">-</span>';
+}
+
+// Calculer la durée
+function calculateDuration(start, end) {
+    if (!start) return '-';
+
+    const startTime = new Date(start);
+    const endTime = end ? new Date(end) : new Date();
+    const diff = Math.floor((endTime - startTime) / 1000);
+
+    const hours = Math.floor(diff / 3600);
+    const minutes = Math.floor((diff % 3600) / 60);
+    const seconds = diff % 60;
+
+    if (hours > 0) return `${hours}h ${minutes}m`;
+    if (minutes > 0) return `${minutes}m ${seconds}s`;
+    return `${seconds}s`;
+}
+
+// Charger au démarrage
+document.addEventListener('DOMContentLoaded', loadJobs);
+
+// Auto-refresh toutes les 10 secondes
+setInterval(loadJobs, 10000);
+</script>
+{% endblock %}

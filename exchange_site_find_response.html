@@ -1,0 +1,2045 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+    <title>    Trouver un site
+</title>
+
+                
+
+    <link href="/css/admin/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/admin/font-awesome/css/font-awesome.css" rel="stylesheet">
+    <link href="/css/admin/plugins/chosen/bootstrap-chosen.css" rel="stylesheet">
+    <link href="/css/admin/plugins/cropper/cropper.min.css" rel="stylesheet">
+    <link href="/css/admin/plugins/iCheck/custom.css" rel="stylesheet">
+    <link href="/css/admin/plugins/datapicker/datepicker3.css" rel="stylesheet">
+    <link href="//cdn.jsdelivr.net/bootstrap.daterangepicker/2/daterangepicker.css" rel="stylesheet">
+    <link href="/css/admin/plugins/toastr/toastr.min.css" rel="stylesheet">
+    <link href="/css/admin/plugins/bootstrap-tagsinput/bootstrap-tagsinput.css" rel="stylesheet">
+    <link href="/css/admin/plugins/jasny/jasny-bootstrap.min.css" rel="stylesheet">
+    <link href="/css/admin/plugins/footable/footable.core.css" rel="stylesheet">
+    <link href="/css/admin/plugins/blueimp/css/blueimp-gallery.min.css" rel="stylesheet">
+    <link href="/css/admin/plugins/sweetalert/sweetalert.css" rel="stylesheet">
+    <link href="/css/admin/plugins/touchspin/jquery.bootstrap-touchspin.min.css" rel="stylesheet">
+    <link href="/css/admin/plugins/slick/slick.css" rel="stylesheet">
+    <link href="/css/admin/plugins/slick/slick-theme.css" rel="stylesheet">
+    <link href="/css/admin/animate.css" rel="stylesheet">
+    <link href="/css/admin/style.css" rel="stylesheet">
+    <link href="/css/admin/custom.min.css" rel="stylesheet">
+    <link href="/css/front/style.css" rel="stylesheet">
+
+    <script src="/bundles/fosjsrouting/js/router.js?version=v16"></script>
+    <script src="/js/routing?callback=fos.Router.setData"></script>
+
+
+        <link href="/css/admin/plugins/kartik-rating/star-rating.css" media="all" rel="stylesheet" type="text/css"/>
+        <link href="/css/admin/plugins/OverlayScrollbars/OverlayScrollbars.min.css" rel="stylesheet">
+        <link href="https://cdn.datatables.net/1.10.22/css/dataTables.bootstrap4.min.css" rel="stylesheet" id="bootstrap-css">
+        <link href="https://cdn.datatables.net/responsive/2.2.6/css/responsive.bootstrap4.min.css" rel="stylesheet" id="bootstrap-css">
+        <link href="https://cdn.datatables.net/responsive/2.2.6/js/dataTables.responsive.min.js" rel="stylesheet">
+    
+    <link rel="icon" type="image/png" href="/favicon.png?version=v16" />
+</head>
+
+<body id="" class=" visible-sidebar">
+
+            <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="0" height="0" style="position:absolute">
+	
+		<symbol id="de" viewBox="0 0 512.001 512.001">
+			<path d="M512 200.093H0V97.104a8.829 8.829 0 0 1 8.828-8.828h494.345a8.829 8.829 0 0 1 8.828 8.828L512 200.093z" fill="#464655"></path><path d="M503.172 423.725H8.828A8.829 8.829 0 0 1 0 414.897V311.909h512v102.988a8.828 8.828 0 0 1-8.828 8.828z" fill="#ffe15a"></path><path fill="#ff4b55" d="M0 200.091h512v111.81H0z"></path>
+		</symbol>
+	
+		<symbol id="en" viewBox="0 0 512.002 512.002">
+			<path d="M503.172 423.725H8.828A8.829 8.829 0 0 1 0 414.897V97.104a8.829 8.829 0 0 1 8.828-8.828h494.345a8.829 8.829 0 0 1 8.828 8.828v317.793a8.83 8.83 0 0 1-8.829 8.828z" fill="#41479b"></path><path d="M512 97.104a8.829 8.829 0 0 0-8.828-8.828h-39.495l-163.54 107.147V88.276h-88.276v107.147L48.322 88.276H8.828A8.829 8.829 0 0 0 0 97.104v22.831l140.309 91.927H0v88.276h140.309L0 392.066v22.831a8.829 8.829 0 0 0 8.828 8.828h39.495l163.54-107.147v107.147h88.276V316.578l163.54 107.147h39.495a8.829 8.829 0 0 0 8.828-8.828v-22.831l-140.309-91.927H512v-88.276H371.691L512 119.935V97.104z" fill="#f5f5f5"></path><g fill="#ff4b55"><path d="M512 229.518H282.483V88.276h-52.966v141.242H0v52.965h229.517v141.242h52.966V282.483H512z"></path><path d="M178.948 300.138L.25 416.135c.625 4.263 4.14 7.59 8.577 7.59h12.159l190.39-123.586h-32.428v-.001zM346.388 300.138H313.96l190.113 123.404c4.431-.472 7.928-4.09 7.928-8.646v-7.258l-165.613-107.5zM0 106.849l161.779 105.014h32.428L5.143 89.137C2.123 90.54 0 93.555 0 97.104v9.745zM332.566 211.863L511.693 95.586c-.744-4.122-4.184-7.309-8.521-7.309h-12.647L300.138 211.863h32.428z"></path></g>
+		</symbol>
+	
+		<symbol id="es" viewBox="0 0 512.001 512.001">
+			<path d="M8.828 423.725h494.345a8.829 8.829 0 0 0 8.828-8.828V97.104a8.829 8.829 0 0 0-8.828-8.828H8.828A8.83 8.83 0 0 0 0 97.104v317.793a8.828 8.828 0 0 0 8.828 8.828z" fill="#c8414b"></path><path fill="#ffd250" d="M0 158.901h512v194.21H0z"></path><path d="M216.276 256.001l7.485-33.681c.69-3.102-1.671-6.044-4.849-6.044h-5.272c-3.177 0-5.537 2.942-4.849 6.044l7.485 33.681z" fill="#c8414b"></path><path fill="#f5f5f5" d="M207.45 238.341h17.655v75.03H207.45z"></path><path fill="#fab446" d="M203.03 229.521h26.483v8.828H203.03z"></path><g fill="#c8414b"><path d="M185.38 256.001h44.14v8.828h-44.14zM229.517 291.311l-26.483-8.827v-8.828l26.483 8.828zM83.862 256.001l7.485-33.681c.69-3.102-1.671-6.044-4.849-6.044h-5.272c-3.177 0-5.537 2.942-4.849 6.044l7.485 33.681z"></path></g><path d="M114.759 229.518a8.829 8.829 0 0 0-8.828 8.828v57.379c0 10.725 10.01 30.897 44.138 30.897s44.138-20.171 44.138-30.897v-57.379a8.829 8.829 0 0 0-8.828-8.828h-70.62z" fill="#f5f5f5"></path><g fill="#c8414b"><path d="M150.069 273.656h-44.138v-35.31a8.829 8.829 0 0 1 8.828-8.828h35.31v44.138zM150.069 273.656h44.138v22.069c0 12.189-9.88 22.069-22.069 22.069-12.189 0-22.069-9.88-22.069-22.069v-22.069z"></path></g><path d="M105.931 273.656h44.138v22.069c0 12.189-9.88 22.069-22.069 22.069-12.189 0-22.069-9.88-22.069-22.069v-22.069z" fill="#fab446"></path><g fill="#c8414b"><path d="M141.241 313.281v-39.625h-8.828v43.693c3.284-.666 6.251-2.12 8.828-4.068zM123.586 317.349v-43.693h-8.828v39.625c2.578 1.948 5.545 3.402 8.828 4.068z"></path></g><path fill="#ffb441" d="M114.76 256.001h26.483v8.828H114.76z"></path><g fill="#fab446"><path d="M114.76 238.341h26.483v8.828H114.76z"></path><path d="M119.17 243.591h17.655v15.992H119.17z"></path></g><path fill="#f5f5f5" d="M75.03 238.341h17.655v75.03H75.03z"></path><g fill="#fab446"><path d="M70.62 308.971h26.483v8.828H70.62zM70.62 229.521h26.483v8.828H70.62z"></path></g><path fill="#5064aa" d="M66.21 317.791h35.31v8.828H66.21z"></path><path fill="#fab446" d="M207.45 308.971h26.483v8.828H207.45z"></path><path fill="#5064aa" d="M198.62 317.791h35.31v8.828h-35.31z"></path><path fill="#fab446" d="M123.59 220.691h52.966v8.828H123.59z"></path><path fill="#ffb441" d="M145.66 194.211h8.828v26.483h-8.828z"></path><g fill="#f5f5f5"><path d="M141.241 207.449c-7.302 0-13.241-5.94-13.241-13.241 0-7.302 5.94-13.241 13.241-13.241 7.302 0 13.241 5.94 13.241 13.241.001 7.301-5.939 13.241-13.241 13.241zm0-17.655a4.417 4.417 0 0 0-4.414 4.414c0 2.435 1.978 4.414 4.414 4.414s4.414-1.978 4.414-4.414a4.417 4.417 0 0 0-4.414-4.414z"></path><path d="M158.897 207.449c-7.302 0-13.241-5.94-13.241-13.241 0-7.302 5.94-13.241 13.241-13.241 7.302 0 13.241 5.94 13.241 13.241s-5.94 13.241-13.241 13.241zm0-17.655a4.417 4.417 0 0 0-4.414 4.414 4.417 4.417 0 0 0 4.414 4.414 4.417 4.417 0 0 0 4.414-4.414 4.418 4.418 0 0 0-4.414-4.414z"></path><path d="M176.552 216.277c-7.302 0-13.241-5.94-13.241-13.241 0-7.302 5.94-13.241 13.241-13.241 7.302 0 13.241 5.94 13.241 13.241s-5.94 13.241-13.241 13.241zm0-17.655a4.417 4.417 0 0 0-4.414 4.414 4.417 4.417 0 0 0 4.414 4.414c2.435 0 4.414-1.978 4.414-4.414s-1.979-4.414-4.414-4.414zM123.586 216.277c-7.302 0-13.241-5.94-13.241-13.241 0-7.302 5.94-13.241 13.241-13.241 7.302 0 13.241 5.94 13.241 13.241.001 7.301-5.939 13.241-13.241 13.241zm0-17.655a4.417 4.417 0 0 0-4.414 4.414c0 2.435 1.978 4.414 4.414 4.414s4.414-1.979 4.414-4.415a4.416 4.416 0 0 0-4.414-4.413z"></path></g><path d="M176.552 291.311v4.414c0 2.434-1.98 4.414-4.414 4.414s-4.414-1.98-4.414-4.414v-4.414h8.828m8.827-8.827h-26.483v13.241c0 7.302 5.94 13.241 13.241 13.241 7.302 0 13.241-5.94 13.241-13.241v-13.241h.001z" fill="#fab446"></path><path d="M172.138 264.829a8.829 8.829 0 0 1-8.828-8.828v-8.828a8.829 8.829 0 0 1 17.656 0v8.828a8.829 8.829 0 0 1-8.828 8.828z" fill="#ffa0d2"></path><circle cx="150.07" cy="273.651" r="13.241" fill="#5064aa"></circle><path fill="#fab446" d="M145.66 176.551h8.828v26.483h-8.828z"></path><path d="M123.586 220.691l-8.828-8.828 5.171-5.171a42.627 42.627 0 0 1 60.28 0l5.171 5.171-8.828 8.828h-52.966z" fill="#c8414b"></path><g fill="#ffd250"><circle cx="150.07" cy="211.861" r="4.414"></circle><circle cx="132.41" cy="211.861" r="4.414"></circle><circle cx="167.72" cy="211.861" r="4.414"></circle></g><g fill="#c8414b"><path d="M70.62 256.001h44.14v8.828H70.62zM70.621 291.311l26.482-8.827v-8.828l-26.482 8.828z"></path></g>
+		</symbol>
+	
+		<symbol id="fr" viewBox="0 0 512 512">
+			<path d="M170.667 423.721H8.828A8.829 8.829 0 0 1 0 414.893V97.1a8.829 8.829 0 0 1 8.828-8.828h161.839v335.449z" fill="#41479b"></path><path fill="#f5f5f5" d="M170.67 88.277h170.67v335.45H170.67z"></path><path d="M503.172 423.721H341.333V88.273h161.839A8.829 8.829 0 0 1 512 97.101v317.793a8.827 8.827 0 0 1-8.828 8.827z" fill="#ff4b55"></path>
+		</symbol>
+	
+		<symbol id="info-icon" viewBox="0 0 23.63 23.63">
+			<path d="M11.81 0a11.81 11.81 0 1 0 0 23.63 11.81 11.81 0 0 0 0-23.63zm2.46 18.3c-.6.25-1.1.43-1.45.55-.37.13-.79.2-1.27.2-.73 0-1.3-.19-1.71-.55s-.61-.8-.61-1.36a4.97 4.97 0 0 1 .19-1.42l.76-2.69.17-.73c.05-.23.07-.44.07-.63 0-.34-.07-.58-.21-.72-.15-.13-.42-.2-.82-.2-.2 0-.4.03-.6.09-.2.06-.39.12-.53.18l.2-.83c.5-.2.97-.38 1.43-.52.45-.15.88-.22 1.29-.22.73 0 1.3.18 1.7.53.39.35.59.81.59 1.37a8 8 0 0 1-.2 1.43l-.75 2.68a7.58 7.58 0 0 0-.24 1.36c0 .36.07.6.23.73s.44.2.83.2a3.56 3.56 0 0 0 1.13-.27l-.2.83zm-.13-10.87c-.36.33-.78.5-1.28.5s-.92-.17-1.28-.5a1.57 1.57 0 0 1-.53-1.2c0-.46.18-.86.53-1.19.36-.33.79-.5 1.28-.5.5 0 .93.17 1.28.5.35.33.53.73.53 1.2 0 .46-.18.86-.53 1.19z"></path>
+		</symbol>
+	
+		<symbol id="it" viewBox="0 0 512 512">
+			<path d="M170.667 423.721H8.828A8.829 8.829 0 0 1 0 414.893V97.1a8.829 8.829 0 0 1 8.828-8.828h161.839v335.449z" fill="#73af00"></path><path fill="#f5f5f5" d="M170.67 88.277h170.67v335.45H170.67z"></path><path d="M503.172 423.721H341.333V88.273h161.839A8.829 8.829 0 0 1 512 97.101v317.793a8.827 8.827 0 0 1-8.828 8.827z" fill="#ff4b55"></path>
+		</symbol>
+	
+		<symbol id="pt" viewBox="0 0 512.001 512.001">
+			<path d="M503.172 423.725H8.828A8.829 8.829 0 0 1 0 414.897V97.104a8.829 8.829 0 0 1 8.828-8.828h494.345a8.829 8.829 0 0 1 8.828 8.828v317.793a8.83 8.83 0 0 1-8.829 8.828z" fill="#ff4b55"></path><path d="M185.379 88.277H8.828A8.828 8.828 0 0 0 0 97.104v317.793a8.829 8.829 0 0 0 8.828 8.828H185.38V88.277h-.001z" fill="#73af00"></path><circle cx="185.45" cy="256.001" r="79.38" fill="#ffe15a"></circle><path d="M211.932 229.518v35.31c0 14.603-11.88 26.483-26.483 26.483s-26.483-11.88-26.483-26.483v-35.31h52.966m8.827-17.655h-70.621a8.829 8.829 0 0 0-8.828 8.828v44.138c0 24.376 19.762 44.138 44.138 44.138s44.138-19.762 44.138-44.138v-44.138a8.827 8.827 0 0 0-8.827-8.828z" fill="#ff4b55"></path><path d="M211.932 229.518v35.31c0 14.603-11.88 26.483-26.483 26.483s-26.483-11.88-26.483-26.483v-35.31h52.966" fill="#f5f5f5"></path><g fill="#ffe15a"><circle cx="150.07" cy="220.691" r="4.414"></circle><circle cx="220.69" cy="220.691" r="4.414"></circle><circle cx="150.07" cy="256.001" r="4.414"></circle><circle cx="220.69" cy="256.001" r="4.414"></circle><circle cx="185.38" cy="220.691" r="4.414"></circle><circle cx="211.88" cy="288.551" r="4.414"></circle><circle cx="159.4" cy="288.551" r="4.414"></circle></g><g fill="#41479b"><path d="M191.149 253.763v7.602c0 3.144-2.558 5.702-5.702 5.702s-5.702-2.558-5.702-5.702v-7.602h11.404M191.149 235.741v7.602c0 3.144-2.558 5.702-5.702 5.702s-5.702-2.558-5.702-5.702v-7.602h11.404M191.149 271.97v7.602c0 3.144-2.558 5.702-5.702 5.702s-5.702-2.558-5.702-5.702v-7.602h11.404M206.506 253.763v7.602c0 3.144-2.558 5.702-5.702 5.702s-5.702-2.558-5.702-5.702v-7.602h11.404M175.794 253.763v7.602c0 3.144-2.558 5.702-5.702 5.702s-5.702-2.558-5.702-5.702v-7.602h11.404"></path></g>
+		</symbol>
+	
+</svg>
+
+        <!-- Wrapper-->
+        <div id="wrapper" class="clearfix gray-bg">
+            <!-- Navigation -->
+                            <nav class="navbar-default navbar-static-side" role="navigation">
+  <div class="sidebar-collapse">
+    <ul class="nav metismenu">
+      <li class="nav-header">
+        <div class="dropdown profile-element">
+          <span>
+                          <img alt="image" class="img-circle img-sm" src="/img/avatar.png?version=v16"/>
+                      </span>
+          <span class="clear">
+            <span class="block m-t-xs">
+              <strong class="font-bold">David Muratori</strong>
+            </span>
+            <span class="text-muted text-xs block">
+              Solde:
+              <span class="text-info"><span id="user_balance">193.55</span> €</span>
+            </span>
+          </span>
+          <a id="logout-session" href="/logout">
+            <span class="text-muted text-xs block">Se déconnecter</span>
+          </a>
+                            </div>
+      </li>
+    </ul>
+            <ul class="nav metismenu" id="side-menu">
+            
+                <li class="first">        <a href="/bo/dashboard">    <div class="nav-item-col">
+          <i class="fa fa-th-large"></i>
+    
+          <span class="nav-label">            Tableau de bord
+    </span>
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                            <li>        <a href="#">    <div class="nav-item-col">
+          <i class="fa fa-user-circle"></i>
+    
+          <span class="nav-label">            Mon compte
+    </span>
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow"></span>
+            </div>
+</a>                <ul class="nav nav-second-level menu_level_1">
+            
+                <li class="first">        <a href="/bo/invoice/list">    <div class="nav-item-col">
+          <i class="fa fa-bank"></i>
+    
+                        Factures
+    
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li>        <a href="/bo/replenish-account/">    <div class="nav-item-col">
+          <i class="fa fa-euro"></i>
+    
+                        Recharger son compte
+    
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li>        <a href="/bo/transaction">    <div class="nav-item-col">
+          <i class="fa fa-bar-chart-o"></i>
+    
+                        Transactions
+    
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li>        <a href="/bo/withdraw/">    <div class="nav-item-col">
+          <i class="fa fa-money"></i>
+    
+                        Retirer ses gains
+    
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li>        <a href="/bo/email-notification">    <div class="nav-item-col">
+          <i class="fa fa-bell"></i>
+    
+                        Notifications
+    
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li class="last">        <a href="/bo/profile">    <div class="nav-item-col">
+          <i class="fa fa-id-card"></i>
+    
+                        Profils
+    
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+
+    </ul>
+
+    </li>
+
+    
+                            <li>        <a href="#">    <div class="nav-item-col">
+          <i class="fa fa-copy"></i>
+    
+          <span class="nav-label">            Ventes
+    </span>
+        </div>
+    <div class="nav-item-col">
+                    <span class="label-wrap pull-right">
+                                                                                </span>
+                            <span class="fa fa-fw arrow"></span>
+            </div>
+</a>                <ul class="nav nav-second-level menu_level_1">
+            
+                <li class="first">        <a href="/bo/exchange-site/">    <div class="nav-item-col">
+    
+                        Mes sites
+    
+        </div>
+    <div class="nav-item-col">
+                    <span class="label-wrap pull-right">
+                                    </span>
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li>        <a href="/bo/pack/">    <div class="nav-item-col">
+    
+                        Mes packs (Beta)
+    
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li>        <a href="/bo/exchange-site-proposals">    <div class="nav-item-col">
+    
+                        Propositions reçues
+    
+        </div>
+    <div class="nav-item-col">
+                    <span class="label-wrap pull-right">
+                                                                                </span>
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li class="last">        <a href="/bo/exchange-site/stats">    <div class="nav-item-col">
+    
+                        Statistiques
+    
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+
+    </ul>
+
+    </li>
+
+    
+                <li>        <a href="/bo/exchange-site-proposals-message">    <div class="nav-item-col">
+          <i class="fa fa-comments"></i>
+    
+          <span class="nav-label">            Message(s)
+    </span>
+        </div>
+    <div class="nav-item-col">
+                    <span class="label-wrap pull-right">
+                                                <span class="label label-info pull-right">0</span>
+                                                    </span>
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                            <li>        <a href="#">    <div class="nav-item-col">
+          <i class="fa fa-paper-plane"></i>
+    
+          <span class="nav-label">            Achat
+    </span>
+        </div>
+    <div class="nav-item-col">
+                    <span class="label-wrap pull-right">
+                                                <span class="label label-info pull-right">0</span>
+                                                    </span>
+                            <span class="fa fa-fw arrow"></span>
+            </div>
+</a>                <ul class="nav nav-second-level menu_level_1">
+            
+                <li class="first">        <a href="/bo/directories-list/">    <div class="nav-item-col">
+    
+                        liste de référencement
+    
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li>        <a href="/bo/netlinking/add">    <div class="nav-item-col">
+    
+                        Créer un projet
+    
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li>        <a href="/bo/netlinking/">    <div class="nav-item-col">
+    
+                        Projets en cours
+    
+        </div>
+    <div class="nav-item-col">
+                    <span class="label-wrap pull-right">
+                                                <span class="label label-info pull-right">0</span>
+                                                    </span>
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li>        <a href="/bo/netlinking/waiting">    <div class="nav-item-col">
+    
+                        Projets en attente
+    
+        </div>
+    <div class="nav-item-col">
+                    <span class="label-wrap pull-right">
+                                                <span class="label label-info pull-right">0</span>
+                                                    </span>
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li class="last">        <a href="/bo/netlinking/finished">    <div class="nav-item-col">
+    
+                        Projets terminés
+    
+        </div>
+    <div class="nav-item-col">
+                    <span class="label-wrap pull-right">
+                                                <span class="label label-info pull-right">0</span>
+                                                    </span>
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+
+    </ul>
+
+    </li>
+
+    
+                            <li class="active">        <a href="#">    <div class="nav-item-col">
+          <i class="fa fa-shopping-cart"></i>
+    
+          <span class="nav-label">            Achat rapide
+    </span>
+        </div>
+    <div class="nav-item-col">
+                    <span class="label-wrap pull-right">
+                                    </span>
+                            <span class="fa fa-fw arrow"></span>
+            </div>
+</a>                <ul class="nav nav-second-level menu_level_1">
+            
+                <li class="active first">        <a href="/bo/exchange-site-find">    <div class="nav-item-col">
+    
+                        Trouver un site
+    
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li>        <a href="/bo/exchange-order">    <div class="nav-item-col">
+    
+                        Vos commandes
+    
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li>        <a href="/bo/exchange-group">    <div class="nav-item-col">
+    
+                        Vos groupes
+    
+        </div>
+    <div class="nav-item-col">
+                    <span class="label-wrap pull-right">
+                                    </span>
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li class="last">        <a href="/bo/exchange-existing-page?page_keyword_filter%5Btype%5D=sales" id="existing_page_menu">    <div class="nav-item-col">
+    
+                        Pages positionnées
+    
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+
+    </ul>
+
+    </li>
+
+    
+                            <li>        <a href="#">    <div class="nav-item-col">
+          <i class="fa fa-pencil"></i>
+    
+          <span class="nav-label">            Rédaction
+    </span>
+        </div>
+    <div class="nav-item-col">
+                    <span class="label-wrap pull-right">
+                                                <span class="label label-info pull-right">0</span>
+                                                    </span>
+                            <span class="fa fa-fw arrow"></span>
+            </div>
+</a>                <ul class="nav nav-second-level menu_level_1">
+            
+                <li class="first">        <a href="/bo/copywriting-sites/">    <div class="nav-item-col">
+    
+                        Gérer les sites
+    
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li>        <a href="/bo/copywriting/project/create">    <div class="nav-item-col">
+    
+                        Créer un projet
+    
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li>        <a href="/bo/copywriting/order/list?status=waiting">    <div class="nav-item-col">
+    
+                        Projets en attente
+    
+        </div>
+    <div class="nav-item-col">
+                    <span class="label-wrap pull-right">
+                                                <span class="label label-info pull-right">0</span>
+                                                    </span>
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li>        <a href="/bo/copywriting/order/list?status%5B0%5D=progress&amp;status%5B1%5D=declined&amp;status%5B2%5D=submitted_to_admin">    <div class="nav-item-col">
+    
+                        Projets en cours
+    
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li class="last">        <a href="/bo/copywriting/order/list?status=completed">    <div class="nav-item-col">
+    
+                        Projets terminés
+    
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+
+    </ul>
+
+    </li>
+
+    
+                <li>        <a href="/bo/plugin/">    <div class="nav-item-col">
+          <i class="fa fa-globe"></i>
+    
+          <span class="nav-label">            Plugin
+    </span>
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                            <li>        <a href="#">    <div class="nav-item-col">
+          <i class="fa fa-envelope"></i>
+    
+          <span class="nav-label">            Nous contacter
+    </span>
+        </div>
+    <div class="nav-item-col">
+                    <span class="label-wrap pull-right">
+                                                <span class="label label-info pull-right">0</span>
+                                                    </span>
+                            <span class="fa fa-fw arrow"></span>
+            </div>
+</a>                <ul class="nav nav-second-level menu_level_1">
+            
+                <li class="first">        <a href="/bo/message/">    <div class="nav-item-col">
+    
+                        Voir Emails
+    
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li>        <a href="/bo/message/all/incoming">    <div class="nav-item-col">
+    
+                        Reçus
+    
+        </div>
+    <div class="nav-item-col">
+                    <span class="label-wrap pull-right">
+                                                <span class="label label-info pull-right">0</span>
+                                                    </span>
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li>        <a href="/bo/message/all/outgoing">    <div class="nav-item-col">
+    
+                        Envoyés
+    
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+    
+                <li class="last">        <a href="/bo/message/add">    <div class="nav-item-col">
+    
+                        Nouveau message
+    
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+
+    </ul>
+
+    </li>
+
+    
+                <li class="last">        <a href="/bo/faq">    <div class="nav-item-col">
+          <i class="fa fa-question-circle"></i>
+    
+          <span class="nav-label">            FAQ
+    </span>
+        </div>
+    <div class="nav-item-col">
+                            <span class="fa fa-fw arrow" style="opacity:0"></span>
+            </div>
+</a>        
+    </li>
+
+
+    </ul>
+
+  </div>
+</nav>
+            
+            <!-- Page wraper -->
+            <div id="page-wrapper">
+                <div id="swipe-area"></div>
+                <!-- Top Navigation -->
+                                    <div class="clearfix border-bottom top-nav_wrapper">
+  <nav class="navbar navbar-static-top" role="navigation">
+    <div class="navbar-header">
+      <a class="navbar-minimalize minimalize-styl-2 btn btn-primary " href="#"><i class="fa fa-bars"></i> </a>
+      <button class="btn-link fa fa-search j-search-trigger"></button>
+      <form role="search" class="navbar-form-custom j-navbar-search" action="/bo/search">
+
+        <div class="input-group">
+          <input class="form-control" type="text" id="serch-query" name="query" placeholder="Recherche..." value="">
+                </div>
+        <input type="submit" hidden>
+      </form>
+    </div>
+    <ul class="nav navbar-top-links navbar-right">
+      <li>
+        <span class="m-r-sm text-muted welcome-message">Bienvenue sur Ereferer.</span>
+      </li>
+      <li>
+        <a class="count-info" href="/bo/message/all/incoming">
+          <i class="fa fa-envelope"></i>
+                            </a>
+      </li>
+      <li>
+                          <img src="/img/flags/France.png?version=v16" height="25" width="25"/>
+              </li>
+      <li>
+        <select class="topnav-lang-select">
+                <option value="fr" selected="selected">FR</option>
+            <option value="en" >EN</option>
+            <option value="es" >ES</option>
+            <option value="it" >IT</option>
+            <option value="pt" >PT</option>
+            <option value="de" >DE</option>
+            <option value="nl" >NL</option>
+            <option value="pl" >PL</option>
+            <option value="ae" >AE</option>
+            <option value="or" >OTHER</option>
+    </select>      </li>
+      <li>
+        <a id="logout-session" href="/logout">
+          <i class="fa fa-sign-out"></i> Se déconnecter
+        </a>
+      </li>
+    </ul>
+  </nav>
+</div>
+
+                
+                <div class="row wrapper border-bottom white-bg page-heading">
+                    <div class="">
+                        <!-- Page Heading -->
+                                                    <div class="col-sm-6">
+                                    <ol class="breadcrumb">
+    <li>
+            Ventes
+    </li>
+                        <li>
+                                        Trouver un site
+
+                            </li>
+            </ol>
+                                <h2 class="head-title">    Trouver un site
+</h2>
+                            </div>
+                                                
+                                            </div>
+                </div>
+
+                <!-- Main content  -->
+                <div class="wrapper wrapper-content">
+                                            
+    <div class="tabs-container filters">
+        <div class="tab-content">
+            <div data-url="" id="tab-find_sites">
+                <div class="high-inputs">
+                    <form name="filters" method="post" id="find_site_filter" enctype="multipart/form-data">
+                    <div class="ibox-content">
+                        <button class="btn btn-primary m-t-md" data-action="toggle-filters" type="button">
+                            <i class="fa fa-sliders" aria-hidden="true" style="font-size: 20px; margin-right: 5px"></i>
+                            <span class="hidden">Voir les filtres</span>
+                            <span>Cacher les filtres</span>
+                        </button>
+                    </div>
+                    <div class="filters-container">
+                        <div class="tabs-container filters">
+    <ul class="nav nav-tabs">
+        <li class="active"><a data-toggle="tab" href="#tab-most-used"
+                              aria-expanded="true">Les plus utilisés</a></li>
+        <li class=""><a data-toggle="tab" href="#tab-advanced" aria-expanded="false">Options avancées</a>
+        </li>
+        <li class=""><a data-toggle="tab" href="#tab-majestic" aria-expanded="false">Majestic</a>
+        </li>
+        <li class=""><a data-toggle="tab" href="#tab-semrush" aria-expanded="false">Semrush</a></li>
+        <li class=""><a data-toggle="tab" href="#tab-publication-rules" aria-expanded="false">Règles de publications</a></li>
+        <li class="">
+                                      <a href="https://fr.ereferer.com/blog/liste-referencement-filtres" target="_blank" aria-expanded="false">Besoin d&#039;aide?</a>
+                    </li>
+    </ul>
+    <div class="tab-content">
+        <div id="tab-most-used" class="tab-pane active">
+            <div class="row">
+                <div class="col-lg-4 col-sm-6">
+                    <div class="filter-group clearfix">
+                        <div class="form-group site_filter_categories">
+                            <label class="control-label">Catégories</label>
+                            
+                            <select id="filters_category" name="filters[category][]" class="chosen-select form-control" data-placeholder="Sélectionnez vos catégories" multiple="multiple"><option value="23">- inclassable</option><option value="25">Actualités (généraliste)</option><option value="26">Animaux</option><option value="27">Enseignement &amp; Formation</option><option value="28">Entreprise</option><option value="29">   &gt;   E-commerce</option><option value="30">Environnement</option><option value="31">   &gt;   Bio</option><option value="32">   &gt;   Écologie</option><option value="34">Événement</option><option value="37">   &gt;   Cadeaux</option><option value="36">   &gt;   Mariage</option><option value="38">Finance &amp; Assurance</option><option value="39">   &gt;   Assurance</option><option value="40">   &gt;   Banque</option><option value="41">   &gt;   Crédits</option><option value="43">   &gt;   Finance</option><option value="46">High-Tech</option><option value="47">   &gt;   Informatique</option><option value="48">   &gt;   Téléphone &amp; Smartphone</option><option value="49">Immobilier</option><option value="50">Jeux</option><option value="51">   &gt;   Jeux d&#039;argent</option><option value="52">Mode</option><option value="54">   &gt;   Beauté</option><option value="33">Nature</option><option value="56">Rencontre</option><option value="58">   &gt;   Plan cul</option><option value="59">   &gt;   Tchat, Dial &amp; Webcam</option><option value="60">Santé</option><option value="61">   &gt;   Bien-Être</option><option value="64">Société</option><option value="65">   &gt;   Bébé</option><option value="66">   &gt;   Maman</option><option value="67">   &gt;   Sénior</option><option value="68">Sport &amp; Loisirs</option><option value="69">   &gt;   Cinéma</option><option value="70">   &gt;   Gastronomie</option><option value="71">   &gt;   Littérature</option><option value="72">   &gt;   Musique</option><option value="73">   &gt;   Photographie</option><option value="74">   &gt;   Sport</option><option value="75">Transport &amp; Véhicules</option><option value="76">   &gt;   Auto &amp; Moto</option><option value="77">Travaux et Batiment</option><option value="78">   &gt;   Bricolage</option><option value="79">   &gt;   Décoration</option><option value="80">   &gt;   Jardin</option><option value="81">   &gt;   Maison</option><option value="82">   &gt;   Plombier</option><option value="83">   &gt;   Serrurier</option><option value="84">   &gt;   Vitrier</option><option value="85">Voyage &amp; Tourisme</option><option value="86">   &gt;   Villes &amp; Villages</option><option value="87">Voyance</option><option value="88">Webmasters</option><option value="89">X (Adulte uniquement)</option></select>
+                            <span class="help-block m-b-none">Vous pouvez sélectionner un maximum de 5 catégories</span>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="control-label">Recherche par mot-clé / URL</label>
+                            <input type="text" id="filters_tag" name="filters[tag]" class="form-control" />
+                            <span class="help-block m-b-none">Vous pouvez sélectionner un maximum de 5 mots-clés</span>
+                        </div>
+                        
+                        <div class="form-group double-touchspin">
+                            <div class="form-group"><label class="control-label required">Prix</label>     <div class="form-group input-group minmaxrange"><span class="input-group-btn"><input type="number" id="filters_price_min" name="filters[price][min]" placeholder="min" range-type="min" range="price" class="form-control" /></span><span class="input-group-btn"><input type="number" id="filters_price_max" name="filters[price][max]" placeholder="max" range-type="max" range="price" class="form-control" /></span></div>  </div> 
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-sm-6">
+                    <div class="filter-group">
+                        <div class="form-group"><label class="control-label" for="filters_language">Langue</label> <select id="filters_language" name="filters[language]" class="chosen-select form-control"><option value="">Toutes les langues</option><option value="fr">Français</option><option value="en">Anglais</option><option value="es">Espagnol</option><option value="it">Italien</option><option value="pt">Portugais</option><option value="de">Allemand</option><option value="nl">Néerlandais</option><option value="pl">Polonais</option><option value="ae">arabe</option><option value="or">Autre langue</option></select>  </div> 
+                        <div class="form-group">
+                            <div class="form-group"><label class="control-label required" for="filters_country">Pays</label> <select id="filters_country" name="filters[country]" required="required" class="form-control"><option value="" selected="selected">Pays</option><option value="fr">France</option><option value="dz">Algeria</option><option value="ca">Canada</option><option value="ru">Russia</option><option value="cm">Cameroon</option><option value="am">Armenia</option><option value="us">United States</option><option value="tn">Tunisia</option><option value="de">Germany</option><option value="cd">Congo - Kinshasa</option><option value="mobile-il"></option><option value="tr">Turkey</option><option value="ch">Switzerland</option><option value="br">Brazil</option><option value="sn">Senegal</option><option value="pl">Poland</option><option value="be">Belgium</option><option value="ma">Morocco</option><option value="id">Indonesia</option><option value="mx">Mexico</option><option value="in">India</option><option value="uk">United Kingdom</option><option value="es">Spain</option><option value="kh">Cambodia</option><option value="my">Malaysia</option><option value="th">Thailand</option><option value="ph">Philippines</option><option value="co">Colombia</option><option value="ar">Argentina</option><option value="cl">Chile</option><option value="ee">Estonia</option><option value="ve">Venezuela</option><option value="pe">Peru</option><option value="bo">Bolivia</option><option value="nl">Netherlands</option><option value="au">Australia</option><option value="za">South Africa</option><option value="pt">Portugal</option><option value="it">Italy</option><option value="cr">Costa Rica</option><option value="ec">Ecuador</option><option value="dk">Denmark</option><option value="uy">Uruguay</option><option value="mg">Madagascar</option><option value="ae">United Arab Emirates</option><option value="cz">Czech Republic</option><option value="pk">Pakistan</option><option value="kr">South Korea</option><option value="lu">Luxembourg</option><option value="jp">Japan</option><option value="gt">Guatemala</option><option value="ng">Nigeria</option><option value="ao">Angola</option><option value="gh">Ghana</option><option value="do">Dominican Republic</option><option value="zw">Zimbabwe</option><option value="lk">Sri Lanka</option><option value="sa">Saudi Arabia</option><option value="ro">Romania</option><option value="vn">Vietnam</option><option value="sv">El Salvador</option><option value="pa">Panama</option><option value="hu">Hungary</option><option value="ie">Ireland</option><option value="ua">Ukraine</option><option value="eg">Egypt</option><option value="sg">Singapore</option><option value="at">Austria</option><option value="hn">Honduras</option><option value="gr">Greece</option><option value="nz">New Zealand</option><option value="ni">Nicaragua</option><option value="no">Norway</option><option value="al">Albania</option><option value="na">Namibia</option><option value="mn">Mongolia</option><option value="il">Israel</option><option value="tw">Taiwan</option><option value="jm">Jamaica</option><option value="bd">Bangladesh</option><option value="bw">Botswana</option><option value="np">Nepal</option><option value="se">Sweden</option><option value="kw">Kuwait</option><option value="cy">Cyprus</option><option value="af">Afghanistan</option><option value="qa">Qatar</option><option value="py">Paraguay</option><option value="hr">Croatia</option><option value="bz">Belize</option><option value="tt">Trinidad and Tobago</option><option value="ht">Haiti</option><option value="bg">Bulgaria</option><option value="by">Belarus</option><option value="gy">Guyana</option><option value="zm">Zambia</option><option value="mt">Malta</option><option value="fi">Finland</option><option value="hk">Hong Kong SAR China</option><option value="me">Montenegro</option><option value="bn">Brunei</option><option value="bs">Bahamas</option><option value="jo">Jordan</option><option value="az">Azerbaijan</option><option value="et">Ethiopia</option><option value="om">Oman</option><option value="bh">Bahrain</option><option value="is">Iceland</option><option value="ba">Bosnia and Herzegovina</option><option value="lt">Lithuania</option><option value="mz">Mozambique</option><option value="sk">Slovakia</option><option value="kz">Kazakhstan</option><option value="md">Moldova</option><option value="lv">Latvia</option><option value="rs">Serbia</option><option value="lb">Lebanon</option><option value="mu">Mauritius</option><option value="si">Slovenia</option><option value="ly">Libya</option><option value="ge">Georgia</option></select>  </div> 
+                        </div>
+                        <div id="majesticTrustFlow-mostused" class="double-touchspin">
+                            <label class="control-label">Trust flow</label>
+                            <button type="button"
+                                    class="info-button-icon"
+                                    data-toggle="popover"
+                                    data-placement="auto right"
+                                    title=""
+                                    data-content="Une donnée fournie par Majestic.com indiquant l&#039;indice de qualité d&#039;un site internet.">
+                                <svg><use xlink:href="#info-icon"></use></svg>
+                            </button>
+                                <div class="form-group input-group minmaxrange"><span class="input-group-btn"><input type="number" id="filters_majesticTrustFlow_min" name="filters[majesticTrustFlow][min]" placeholder="min" range-type="min" range="majesticTrustFlow" class="form-control" /></span><span class="input-group-btn"><input type="number" id="filters_majesticTrustFlow_max" name="filters[majesticTrustFlow][max]" placeholder="max" range-type="max" range="majesticTrustFlow" class="form-control" /></span></div>
+                        </div>
+                        <div id="article-mostused" class="double-touchspin">
+                            <label class="control-label" for="filters_article">Envoyer votre article.</label>
+                            <button type="button"
+                                    class="info-button-icon"
+                                    data-toggle="popover"
+                                    data-placement="auto right"
+                                    title=""
+                                    data-content="Ajoutez votre article et trouvez instantanément les sites vers lesquels vous pouvez l&#039;envoyer !">
+                                <svg><use xlink:href="#info-icon"></use></svg>
+                            </button>
+                                <div class="fileinput fileinput-new fileinput-ereferer input-group" data-provides="fileinput"><span class="btn btn-primary m-r-md btn-file"><span class="fileinput-new">Sélectionner un fichier</span><span class="fileinput-exists">modifier</span><input type="file"id="filters_article" name="filters[article]" accept=".docx, .doc, .odt" /></span><a href="#" class="btn btn-primary m-r-md btn-outline fileinput-exists" data-dismiss="fileinput">Supprimer</a><div class="form-control-static" data-trigger="fileinput"><i class="glyphicon glyphicon-file fileinput-exists"></i><span class="fileinput-filename"></span></div></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-sm-6">
+                    <div class="filter-group double-touchspin">
+                        <div id="mozDomainAuthority-mostused">
+                            <label class="control-label">Domain Authority</label>
+                            <button type="button"
+                                    class="info-button-icon"
+                                    data-toggle="popover"
+                                    data-placement="auto right"
+                                    title=""
+                                    data-content="Similaire au Trust Flow. Il s&#039;agit d&#039;un indice de qualité fournie par Moz.com">
+                                <svg><use xlink:href="#info-icon"></use></svg>
+                            </button>
+                                <div class="form-group input-group minmaxrange"><span class="input-group-btn"><input type="number" id="filters_mozDomainAuthority_min" name="filters[mozDomainAuthority][min]" placeholder="min" range-type="min" range="mozDomainAuthority" class="form-control" /></span><span class="input-group-btn"><input type="number" id="filters_mozDomainAuthority_max" name="filters[mozDomainAuthority][max]" placeholder="max" range-type="max" range="mozDomainAuthority" class="form-control" /></span></div>
+                        </div>
+                        <div id="semrushTraffic-mostused">
+                            <label class="control-label">Trafic</label>
+                            <button type="button"
+                                    class="info-button-icon"
+                                    data-toggle="popover"
+                                    data-placement="auto right"
+                                    title=""
+                                    data-content="Une donnée fournie par Semrush.com évaluant le trafic en provenance de Google d&#039;un site internet.">
+                            </button>
+                                <div class="form-group input-group minmaxrange"><span class="input-group-btn"><input type="number" id="filters_traffic_min" name="filters[traffic][min]" placeholder="min" range-type="min" range="traffic" class="form-control" /></span><span class="input-group-btn"><input type="number" id="filters_traffic_max" name="filters[traffic][max]" placeholder="max" range-type="max" range="traffic" class="form-control" /></span></div>
+                        </div>
+                        <div class="otherFunction-mostused">
+                            <label class="control-label">Autres fonctions</label>
+                            <div id="otherFunction-mostused">
+                                <div class="form-group"><div class="checkbox"><label for="filters_hideNofollow"><span class="checkbox_radio_widget_wrapper">
+        <input type="checkbox" id="filters_hideNofollow" name="filters[hideNofollow]" value="1" />
+        <label for="filters_hideNofollow"></label>
+    </span> Ne pas afficher les sites avec liens Nofollow</label></div></div>
+                                <div class="form-group"><div class="checkbox"><label for="filters_hidePartner"><span class="checkbox_radio_widget_wrapper">
+        <input type="checkbox" id="filters_hidePartner" name="filters[hidePartner]" value="1" />
+        <label for="filters_hidePartner"></label>
+    </span> Ne pas afficher les sites affichant une mention partenaire</label></div></div>
+                                <div class="form-group"><div class="checkbox"><label for="filters_hiddenGroup"><span class="checkbox_radio_widget_wrapper">
+        <input type="checkbox" id="filters_hiddenGroup" name="filters[hiddenGroup]" value="1" />
+        <label for="filters_hiddenGroup"></label>
+    </span> Masquer l&#039;achat de groupe</label></div></div>
+                                <div class="form-group"><div class="checkbox"><label for="filters_existingPage"><span class="checkbox_radio_widget_wrapper">
+        <input type="checkbox" id="filters_existingPage" name="filters[existingPage]" value="1" />
+        <label for="filters_existingPage"></label>
+    </span> Sites avec pages positionnées uniquement</label></div></div>
+                                <div class="form-group"><div class="checkbox"><label for="filters_activePacks"><span class="checkbox_radio_widget_wrapper">
+        <input type="checkbox" id="filters_activePacks" name="filters[activePacks]" value="1" />
+        <label for="filters_activePacks"></label>
+    </span> Sites proposant des packs</label></div></div>
+                                                                                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row hidden "  >
+                <div class="col-lg-4 col-sm-6">
+                    <label class="control-label required">Filtres semrush</label>
+                    <div class="filter-group clearfix">
+                        <input type="text" id="filters_semrushInputSign" name="filters[semrushInputSign]" placeholder="&gt; or &lt;" class="form-control" />
+                    </div>
+                </div>
+                <div class="col-lg-4 col-sm-6">
+                    <label class="control-label required">&nbsp;</label>
+                    <div class="filter-group clearfix">
+                        <input type="text" id="filters_semrushInputSignValue" name="filters[semrushInputSignValue]" placeholder="pourcentage number" class="form-control" />
+                    </div>
+                </div>
+                <div class="col-lg-4 col-sm-6">
+                    <label class="control-label required">&nbsp;</label>
+                    <div class="filter-group clearfix">
+                        <select id="filters_semrushInputDay" name="filters[semrushInputDay]" placeholder="number of day (7,15,30,45,60)" class="form-control"><option value=""></option><option value="0" selected="selected">&lt; Choose a number of day &gt;</option><option value="1">7</option><option value="2">15</option><option value="3">30</option><option value="4">45</option><option value="5">60</option></select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="tab-advanced" class="tab-pane">
+            <div class="row">
+                <div class="col-lg-4 col-sm-6">
+                    <div class="filter-group age-directory">
+                        <div class="bordered-group">
+                            <h3 style="opacity: .4">Âge</h3>
+                            <div class="age-wrap">
+                                <div class="filter-year">
+                                    <div class="form-group"><label class="control-label">Âge</label> <div id="filters_ageCondition"><div class="radio"><label for="filters_ageCondition_0"><span class="checkbox_radio_widget_wrapper">
+        <input type="radio" id="filters_ageCondition_0" name="filters[ageCondition]" value="gte" checked="checked" />
+        <label for="filters_ageCondition_0"></label>
+    </span> &gt;=</label></div><div class="radio"><label for="filters_ageCondition_1"><span class="checkbox_radio_widget_wrapper">
+        <input type="radio" id="filters_ageCondition_1" name="filters[ageCondition]" value="lte" />
+        <label for="filters_ageCondition_1"></label>
+    </span> &lt;=</label></div></div>  </div> 
+                                </div>
+                                <div class="filter-age">
+                                    <div class="form-group"><label class="control-label" for="filters_ageYears">Années</label> <input type="number" id="filters_ageYears" name="filters[ageYears]" class="form-control" />  </div> 
+                                    <div class="form-group"><label class="control-label" for="filters_ageMonth">Mois</label> <input type="number" id="filters_ageMonth" name="filters[ageMonth]" class="form-control" />  </div> 
+                                </div>
+                            </div>
+                            <div class="form-inline">
+                                <div id="filters_site"><div class="radio"><label for="filters_site_0" class="required"><span class="checkbox_radio_widget_wrapper">
+        <input type="radio" id="filters_site_0" name="filters[site]" required="required" value="archiveAge" checked="checked" />
+        <label for="filters_site_0"></label>
+    </span> Archive.org</label></div><div class="radio"><label for="filters_site_1" class="required"><span class="checkbox_radio_widget_wrapper">
+        <input type="radio" id="filters_site_1" name="filters[site]" required="required" value="bwaAge" />
+        <label for="filters_site_1"></label>
+    </span> Whois</label></div><div class="radio"><label for="filters_site_2" class="required"><span class="checkbox_radio_widget_wrapper">
+        <input type="radio" id="filters_site_2" name="filters[site]" required="required" value="both" />
+        <label for="filters_site_2"></label>
+    </span> Les deux</label></div></div>
+                                <button type="button"
+                                        class="info-button-icon"
+                                        data-toggle="popover"
+                                        data-placement="auto right"
+                                        title=""
+                                        data-content="L&#039;âge selon Archive.org:Il s&#039;agit de la première date de mise en service du site. &lt;br&gt;&lt;br&gt; L&#039;âge selon le Whois:Il s&#039;agit de la date de mise en service du site. &lt;br&gt;&lt;br&gt; La principale différence repose sur le fait que le Whois prend en compte l&#039;expiration d&#039;un nom de domaine. Par exemple, si monsite.com a existé de 2000 à 2001 puis de 2017 jusqu&#039;à maintenant, Archive va compter l&#039;âge à partir l&#039;an 2000 tandis que le Whois à partir de 2017.">
+                                    <svg><use xlink:href="#info-icon"></use></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-sm-6">
+                    <div class="filter-group filters-directory">
+                        <div class="bordered-group">
+                            <label class="control-label"><h3 style="opacity: .4">Annuaire</h3></label>
+                            <button type="button"
+                                    class="info-button-icon"
+                                    data-toggle="popover"
+                                    data-placement="auto right"
+                                    title=""
+                                    data-content="Vous disposez ici du taux de validation des annuaires ainsi que leur temps moyen de validation. Ereferer ne rembourse pas une soumission refusée par un annuaire. Prenez donc en compte le taux de validation pour éviter une mauvaise surprise !">
+                                <svg><use xlink:href="#info-icon"></use></svg>
+                            </button>
+                            <div class="double-touchspin">
+                                <div class="form-group"><label class="control-label">Taux de validation</label>     <div class="form-group input-group minmaxrange"><span class="input-group-btn"><input type="number" id="filters_directoryValidationRate_min" name="filters[directoryValidationRate][min]" placeholder="min" range-type="min" range="directoryValidationRate" class="form-control" /></span><span class="input-group-btn"><input type="number" id="filters_directoryValidationRate_max" name="filters[directoryValidationRate][max]" placeholder="max" range-type="max" range="directoryValidationRate" class="form-control" /></span></div>  </div> 
+                            </div>
+                            <div class="double-touchspin">
+                                <div class="form-group"><label class="control-label">Temps de validation</label>     <div class="form-group input-group minmaxrange"><span class="input-group-btn"><input type="number" id="filters_directoryValidationTime_min" name="filters[directoryValidationTime][min]" placeholder="min" range-type="min" range="directoryValidationTime" class="form-control" /></span><span class="input-group-btn"><input type="number" id="filters_directoryValidationTime_max" name="filters[directoryValidationTime][max]" placeholder="max" range-type="max" range="directoryValidationTime" class="form-control" /></span></div>  </div> 
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-sm-6">
+                    <div class="filter-group moz-directory">
+                        <div class="bordered-group">
+                            <h3 style="opacity: .4">Moz</h3>
+                            <div class="double-touchspin">
+                                <label class="control-label">Page Authority</label>
+                                <button type="button"
+                                        class="info-button-icon"
+                                        data-toggle="popover"
+                                        data-placement="auto right"
+                                        title=""
+                                        data-content="Il s&#039;agit d&#039;un indice de qualité fournie par Moz.com pour une page précise.">
+                                    <svg><use xlink:href="#info-icon"></use></svg>
+                                </button>
+                                    <div class="form-group input-group minmaxrange"><span class="input-group-btn"><input type="number" id="filters_mozPageAuthority_min" name="filters[mozPageAuthority][min]" placeholder="min" range-type="min" range="mozPageAuthority" class="form-control" /></span><span class="input-group-btn"><input type="number" id="filters_mozPageAuthority_max" name="filters[mozPageAuthority][max]" placeholder="max" range-type="max" range="mozPageAuthority" class="form-control" /></span></div>
+                            </div>
+                            <div class="double-touchspin">
+                                <div id="mozDomainAuthority-advanced"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="tab-majestic" class="tab-pane">
+            <div class="row">
+                <div class="col-lg-4 col-sm-6">
+                    <div class="filter-group double-touchspin">
+                        <div id="majesticTrustFlow-majestic"></div>
+                        <label class="control-label">Citation flow</label>
+                        <button type="button"
+                                class="info-button-icon"
+                                data-toggle="popover"
+                                data-placement="auto right"
+                                title=""
+                                data-content="Plus un site a de liens et plus son score de Citation Flow sera élevé, et ce peu importe la qualité des liens.">
+                            <svg><use xlink:href="#info-icon"></use></svg>
+                        </button>
+                            <div class="form-group input-group minmaxrange"><span class="input-group-btn"><input type="number" id="filters_majesticCitation_min" name="filters[majesticCitation][min]" placeholder="min" range-type="min" range="majesticCitation" class="form-control" /></span><span class="input-group-btn"><input type="number" id="filters_majesticCitation_max" name="filters[majesticCitation][max]" placeholder="max" range-type="max" range="majesticCitation" class="form-control" /></span></div>
+
+                        <label class="control-label">Trust flow/Citation flow ratio</label>
+                        <button type="button"
+                                class="info-button-icon"
+                                data-toggle="popover"
+                                data-placement="auto right"
+                                title=""
+                                data-content="Idéalement, il doit être situé autour de 1. Un ratio trop faible peut indiquer un site spammé.">
+                            <svg><use xlink:href="#info-icon"></use></svg>
+                        </button>
+                            <div class="form-group input-group minmaxrange"><span class="input-group-btn"><input type="number" id="filters_majesticTrustCitationRatio_min" name="filters[majesticTrustCitationRatio][min]" placeholder="min" range-type="min" range="majesticTrustCitationRatio" class="form-control" /></span><span class="input-group-btn"><input type="number" id="filters_majesticTrustCitationRatio_max" name="filters[majesticTrustCitationRatio][max]" placeholder="max" range-type="max" range="majesticTrustCitationRatio" class="form-control" /></span></div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-sm-6">
+                    <div class="filter-group double-touchspin">
+                        <label class="control-label">Liens</label>
+                        <button type="button"
+                                class="info-button-icon"
+                                data-toggle="popover"
+                                data-placement="auto right"
+                                title=""
+                                data-content="Indicateur peu pertinent indiquant le nombre total de liens pointant vers un domaine. À ne pas confondre avec le nombre de domaines référents, qui lui indique le nombre de sites faisant un lien vers un autre site.">
+                            <svg><use xlink:href="#info-icon"></use></svg>
+                        </button>
+                            <div class="form-group input-group minmaxrange"><span class="input-group-btn"><input type="number" id="filters_majesticBacklinks_min" name="filters[majesticBacklinks][min]" placeholder="min" range-type="min" range="majesticBacklinks" class="form-control" /></span><span class="input-group-btn"><input type="number" id="filters_majesticBacklinks_max" name="filters[majesticBacklinks][max]" placeholder="max" range-type="max" range="majesticBacklinks" class="form-control" /></span></div>
+                        <div class="form-group"><label class="control-label">Liens .edu</label>     <div class="form-group input-group minmaxrange"><span class="input-group-btn"><input type="number" id="filters_majesticEduBacklinks_min" name="filters[majesticEduBacklinks][min]" placeholder="min" range-type="min" range="majesticEduBacklinks" class="form-control" /></span><span class="input-group-btn"><input type="number" id="filters_majesticEduBacklinks_max" name="filters[majesticEduBacklinks][max]" placeholder="max" range-type="max" range="majesticEduBacklinks" class="form-control" /></span></div>  </div> 
+                        <div class="form-group"><label class="control-label">Liens .gov</label>     <div class="form-group input-group minmaxrange"><span class="input-group-btn"><input type="number" id="filters_majesticGovBacklinks_min" name="filters[majesticGovBacklinks][min]" placeholder="min" range-type="min" range="majesticGovBacklinks" class="form-control" /></span><span class="input-group-btn"><input type="number" id="filters_majesticGovBacklinks_max" name="filters[majesticGovBacklinks][max]" placeholder="max" range-type="max" range="majesticGovBacklinks" class="form-control" /></span></div>  </div> 
+                    </div>
+                </div>
+                <div class="col-lg-4 col-sm-12">
+                    <div class="row double-touchspin">
+                        <div class="col-sm-6 col-lg-12">
+                            <div class="filter-group">
+                                <label class="control-label">Domaines référents</label>
+                                <button type="button"
+                                        class="info-button-icon"
+                                        data-toggle="popover"
+                                        data-placement="auto right"
+                                        title=""
+                                        data-content="Indique le nombre de domaines (sites) faisant un lien vers un site.">
+                                    <svg><use xlink:href="#info-icon"></use></svg>
+                                </button>
+                                    <div class="form-group input-group minmaxrange"><span class="input-group-btn"><input type="number" id="filters_majesticRefDomains_min" name="filters[majesticRefDomains][min]" placeholder="min" range-type="min" range="majesticRefDomains" class="form-control" /></span><span class="input-group-btn"><input type="number" id="filters_majesticRefDomains_max" name="filters[majesticRefDomains][max]" placeholder="max" range-type="max" range="majesticRefDomains" class="form-control" /></span></div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 col-lg-12">
+                            <div class="filter-group ">
+                                <label class="control-label">Topical trust flow</label>
+                                <button type="button"
+                                        class="info-button-icon"
+                                        data-toggle="popover"
+                                        data-placement="auto right"
+                                        title=""
+                                        data-content="Permet de connaitre dans quelle thématique un site possède un fort capital de Trust Flow. Optez de préférence pour des sites ayant un fort Tropical Trust Flow dans votre catégorie !">
+                                    <svg><use xlink:href="#info-icon"></use></svg>
+                                </button>
+                                    <div id="filters_majesticTtfCategories" class="ttf-categories-collection" data-prototype="&lt;div class=&quot;form-group&quot;&gt; &lt;div id=&quot;filters_majesticTtfCategories___name__&quot;&gt;&lt;div class=&quot;form-group&quot;&gt;&lt;label class=&quot;control-label&quot; for=&quot;filters_majesticTtfCategories___name___category&quot;&gt;form.category&lt;/label&gt; &lt;select id=&quot;filters_majesticTtfCategories___name___category&quot; name=&quot;filters[majesticTtfCategories][__name__][category]&quot; class=&quot;chosen-select form-control&quot;&gt;&lt;option value=&quot;&quot;&gt;Sélectionner une catégorie&lt;/option&gt;&lt;option value=&quot;338&quot;&gt;Adult/Arts&lt;/option&gt;&lt;option value=&quot;576&quot;&gt;Adult/Business&lt;/option&gt;&lt;option value=&quot;327&quot;&gt;Adult/Computers&lt;/option&gt;&lt;option value=&quot;554&quot;&gt;Adult/Games&lt;/option&gt;&lt;option value=&quot;326&quot;&gt;Adult/Image Galleries&lt;/option&gt;&lt;option value=&quot;672&quot;&gt;Adult/News&lt;/option&gt;&lt;option value=&quot;865&quot;&gt;Adult/Other&lt;/option&gt;&lt;option value=&quot;602&quot;&gt;Adult/Recreation&lt;/option&gt;&lt;option value=&quot;499&quot;&gt;Adult/Regional&lt;/option&gt;&lt;option value=&quot;656&quot;&gt;Adult/Shopping&lt;/option&gt;&lt;option value=&quot;439&quot;&gt;Adult/Society&lt;/option&gt;&lt;option value=&quot;309&quot;&gt;Adult/World&lt;/option&gt;&lt;option value=&quot;8&quot;&gt;Arts&lt;/option&gt;&lt;option value=&quot;345&quot;&gt;Arts/Animation&lt;/option&gt;&lt;option value=&quot;310&quot;&gt;Arts/Architecture&lt;/option&gt;&lt;option value=&quot;317&quot;&gt;Arts/Art History&lt;/option&gt;&lt;option value=&quot;820&quot;&gt;Arts/Awards&lt;/option&gt;&lt;option value=&quot;393&quot;&gt;Arts/Bodyart&lt;/option&gt;&lt;option value=&quot;870&quot;&gt;Arts/Chats and Forums&lt;/option&gt;&lt;option value=&quot;527&quot;&gt;Arts/Classical Studies&lt;/option&gt;&lt;option value=&quot;322&quot;&gt;Arts/Comics&lt;/option&gt;&lt;option value=&quot;747&quot;&gt;Arts/Costumes&lt;/option&gt;&lt;option value=&quot;275&quot;&gt;Arts/Crafts&lt;/option&gt;&lt;option value=&quot;508&quot;&gt;Arts/Design&lt;/option&gt;&lt;option value=&quot;516&quot;&gt;Arts/Digital&lt;/option&gt;&lt;option value=&quot;442&quot;&gt;Arts/Directories&lt;/option&gt;&lt;option value=&quot;525&quot;&gt;Arts/Education&lt;/option&gt;&lt;option value=&quot;15&quot;&gt;Arts/Entertainment&lt;/option&gt;&lt;option value=&quot;301&quot;&gt;Arts/Genres&lt;/option&gt;&lt;option value=&quot;413&quot;&gt;Arts/Graphic Design&lt;/option&gt;&lt;option value=&quot;699&quot;&gt;Arts/Humanities&lt;/option&gt;&lt;option value=&quot;423&quot;&gt;Arts/Illustration&lt;/option&gt;&lt;option value=&quot;298&quot;&gt;Arts/Literature&lt;/option&gt;&lt;option value=&quot;392&quot;&gt;Arts/Magazines and E-zines&lt;/option&gt;&lt;option value=&quot;35&quot;&gt;Arts/Movies&lt;/option&gt;&lt;option value=&quot;5&quot;&gt;Arts/Music&lt;/option&gt;&lt;option value=&quot;671&quot;&gt;Arts/News and Media&lt;/option&gt;&lt;option value=&quot;299&quot;&gt;Arts/Online Writing&lt;/option&gt;&lt;option value=&quot;635&quot;&gt;Arts/Organizations&lt;/option&gt;&lt;option value=&quot;422&quot;&gt;Arts/Other&lt;/option&gt;&lt;option value=&quot;250&quot;&gt;Arts/People&lt;/option&gt;&lt;option value=&quot;45&quot;&gt;Arts/Performing Arts&lt;/option&gt;&lt;option value=&quot;280&quot;&gt;Arts/Photography&lt;/option&gt;&lt;option value=&quot;4&quot;&gt;Arts/Radio&lt;/option&gt;&lt;option value=&quot;376&quot;&gt;Arts/Television&lt;/option&gt;&lt;option value=&quot;618&quot;&gt;Arts/Video&lt;/option&gt;&lt;option value=&quot;251&quot;&gt;Arts/Visual Arts&lt;/option&gt;&lt;option value=&quot;700&quot;&gt;Arts/Weblogs&lt;/option&gt;&lt;option value=&quot;577&quot;&gt;Arts/Writers Resources&lt;/option&gt;&lt;option value=&quot;14&quot;&gt;Business&lt;/option&gt;&lt;option value=&quot;531&quot;&gt;Business/Accounting&lt;/option&gt;&lt;option value=&quot;555&quot;&gt;Business/Aerospace and Defense&lt;/option&gt;&lt;option value=&quot;339&quot;&gt;Business/Agriculture and Forestry&lt;/option&gt;&lt;option value=&quot;281&quot;&gt;Business/Arts and Entertainment&lt;/option&gt;&lt;option value=&quot;400&quot;&gt;Business/Associations&lt;/option&gt;&lt;option value=&quot;186&quot;&gt;Business/Automotive&lt;/option&gt;&lt;option value=&quot;611&quot;&gt;Business/Biotechnology and Pharmaceuticals&lt;/option&gt;&lt;option value=&quot;505&quot;&gt;Business/Business and Society&lt;/option&gt;&lt;option value=&quot;253&quot;&gt;Business/Business Services&lt;/option&gt;&lt;option value=&quot;36&quot;&gt;Business/Chemicals&lt;/option&gt;&lt;option value=&quot;120&quot;&gt;Business/Construction and Maintenance&lt;/option&gt;&lt;option value=&quot;222&quot;&gt;Business/Consumer Goods and Services&lt;/option&gt;&lt;option value=&quot;719&quot;&gt;Business/Cooperatives&lt;/option&gt;&lt;option value=&quot;872&quot;&gt;Business/Crypto&lt;/option&gt;&lt;option value=&quot;691&quot;&gt;Business/Customer Service&lt;/option&gt;&lt;option value=&quot;353&quot;&gt;Business/Directories&lt;/option&gt;&lt;option value=&quot;384&quot;&gt;Business/E-Commerce&lt;/option&gt;&lt;option value=&quot;523&quot;&gt;Business/Education and Training&lt;/option&gt;&lt;option value=&quot;289&quot;&gt;Business/Electronics and Electrical&lt;/option&gt;&lt;option value=&quot;340&quot;&gt;Business/Employment&lt;/option&gt;&lt;option value=&quot;337&quot;&gt;Business/Energy&lt;/option&gt;&lt;option value=&quot;247&quot;&gt;Business/Environment&lt;/option&gt;&lt;option value=&quot;40&quot;&gt;Business/Financial Services&lt;/option&gt;&lt;option value=&quot;373&quot;&gt;Business/Food and Related Products&lt;/option&gt;&lt;option value=&quot;331&quot;&gt;Business/Healthcare&lt;/option&gt;&lt;option value=&quot;460&quot;&gt;Business/Hospitality&lt;/option&gt;&lt;option value=&quot;495&quot;&gt;Business/Human Resources&lt;/option&gt;&lt;option value=&quot;221&quot;&gt;Business/Industrial Goods and Services&lt;/option&gt;&lt;option value=&quot;696&quot;&gt;Business/Information Services&lt;/option&gt;&lt;option value=&quot;367&quot;&gt;Business/Information Technology&lt;/option&gt;&lt;option value=&quot;502&quot;&gt;Business/International Business and Trade&lt;/option&gt;&lt;option value=&quot;119&quot;&gt;Business/Investing&lt;/option&gt;&lt;option value=&quot;653&quot;&gt;Business/Major Companies&lt;/option&gt;&lt;option value=&quot;170&quot;&gt;Business/Management&lt;/option&gt;&lt;option value=&quot;28&quot;&gt;Business/Marketing and Advertising&lt;/option&gt;&lt;option value=&quot;604&quot;&gt;Business/Materials&lt;/option&gt;&lt;option value=&quot;694&quot;&gt;Business/Mining and Drilling&lt;/option&gt;&lt;option value=&quot;108&quot;&gt;Business/News and Media&lt;/option&gt;&lt;option value=&quot;325&quot;&gt;Business/Opportunities&lt;/option&gt;&lt;option value=&quot;871&quot;&gt;Business/Other&lt;/option&gt;&lt;option value=&quot;31&quot;&gt;Business/Publishing and Printing&lt;/option&gt;&lt;option value=&quot;41&quot;&gt;Business/Real Estate&lt;/option&gt;&lt;option value=&quot;560&quot;&gt;Business/Resources&lt;/option&gt;&lt;option value=&quot;256&quot;&gt;Business/Retail Trade&lt;/option&gt;&lt;option value=&quot;305&quot;&gt;Business/Small Business&lt;/option&gt;&lt;option value=&quot;37&quot;&gt;Business/Telecommunications&lt;/option&gt;&lt;option value=&quot;128&quot;&gt;Business/Textiles and Nonwovens&lt;/option&gt;&lt;option value=&quot;20&quot;&gt;Business/Transportation and Logistics&lt;/option&gt;&lt;option value=&quot;588&quot;&gt;Business/Wholesale Trade&lt;/option&gt;&lt;option value=&quot;471&quot;&gt;Computers&lt;/option&gt;&lt;option value=&quot;763&quot;&gt;Computers/Algorithms&lt;/option&gt;&lt;option value=&quot;406&quot;&gt;Computers/Artificial Intelligence&lt;/option&gt;&lt;option value=&quot;441&quot;&gt;Computers/Artificial Life&lt;/option&gt;&lt;option value=&quot;629&quot;&gt;Computers/Bulletin Board Systems&lt;/option&gt;&lt;option value=&quot;552&quot;&gt;Computers/CAD and CAM&lt;/option&gt;&lt;option value=&quot;26&quot;&gt;Computers/Chats and Forums&lt;/option&gt;&lt;option value=&quot;382&quot;&gt;Computers/Companies&lt;/option&gt;&lt;option value=&quot;759&quot;&gt;Computers/Computer Science&lt;/option&gt;&lt;option value=&quot;536&quot;&gt;Computers/Computer Science/Academic Departments&lt;/option&gt;&lt;option value=&quot;666&quot;&gt;Computers/Computer Science/Computer Graphics&lt;/option&gt;&lt;option value=&quot;562&quot;&gt;Computers/Computer Science/Conferences&lt;/option&gt;&lt;option value=&quot;630&quot;&gt;Computers/Computer Science/Database Theory&lt;/option&gt;&lt;option value=&quot;833&quot;&gt;Computers/Computer Science/Directories&lt;/option&gt;&lt;option value=&quot;624&quot;&gt;Computers/Computer Science/Distributed Computing&lt;/option&gt;&lt;option value=&quot;697&quot;&gt;Computers/Computer Science/Organizations&lt;/option&gt;&lt;option value=&quot;434&quot;&gt;Computers/Computer Science/People&lt;/option&gt;&lt;option value=&quot;779&quot;&gt;Computers/Computer Science/Publications&lt;/option&gt;&lt;option value=&quot;840&quot;&gt;Computers/Computer Science/Reference&lt;/option&gt;&lt;option value=&quot;686&quot;&gt;Computers/Computer Science/Research Institutes&lt;/option&gt;&lt;option value=&quot;679&quot;&gt;Computers/Computer Science/Theoretical&lt;/option&gt;&lt;option value=&quot;462&quot;&gt;Computers/Consultants&lt;/option&gt;&lt;option value=&quot;534&quot;&gt;Computers/Data Communications&lt;/option&gt;&lt;option value=&quot;433&quot;&gt;Computers/Data Formats&lt;/option&gt;&lt;option value=&quot;644&quot;&gt;Computers/Desktop Publishing&lt;/option&gt;&lt;option value=&quot;649&quot;&gt;Computers/E-Books&lt;/option&gt;&lt;option value=&quot;48&quot;&gt;Computers/Education&lt;/option&gt;&lt;option value=&quot;396&quot;&gt;Computers/Emulators&lt;/option&gt;&lt;option value=&quot;564&quot;&gt;Computers/Ethics&lt;/option&gt;&lt;option value=&quot;590&quot;&gt;Computers/FAQs  Help  and Tutorials&lt;/option&gt;&lt;option value=&quot;293&quot;&gt;Computers/Graphics&lt;/option&gt;&lt;option value=&quot;524&quot;&gt;Computers/Hacking&lt;/option&gt;&lt;option value=&quot;357&quot;&gt;Computers/Hardware&lt;/option&gt;&lt;option value=&quot;608&quot;&gt;Computers/History&lt;/option&gt;&lt;option value=&quot;632&quot;&gt;Computers/Home Automation&lt;/option&gt;&lt;option value=&quot;675&quot;&gt;Computers/Human-Computer Interaction&lt;/option&gt;&lt;option value=&quot;9&quot;&gt;Computers/Internet&lt;/option&gt;&lt;option value=&quot;430&quot;&gt;Computers/Internet/Abuse&lt;/option&gt;&lt;option value=&quot;556&quot;&gt;Computers/Internet/Access Providers&lt;/option&gt;&lt;option value=&quot;793&quot;&gt;Computers/Internet/Broadcasting&lt;/option&gt;&lt;option value=&quot;344&quot;&gt;Computers/Internet/Chat&lt;/option&gt;&lt;option value=&quot;574&quot;&gt;Computers/Internet/Child Safety&lt;/option&gt;&lt;option value=&quot;744&quot;&gt;Computers/Internet/Cloud Computing&lt;/option&gt;&lt;option value=&quot;535&quot;&gt;Computers/Internet/Commercial Services&lt;/option&gt;&lt;option value=&quot;601&quot;&gt;Computers/Internet/Consultants&lt;/option&gt;&lt;option value=&quot;544&quot;&gt;Computers/Internet/Cybercafes&lt;/option&gt;&lt;option value=&quot;860&quot;&gt;Computers/Internet/Cyberspace&lt;/option&gt;&lt;option value=&quot;348&quot;&gt;Computers/Internet/Domain Names&lt;/option&gt;&lt;option value=&quot;332&quot;&gt;Computers/Internet/E-mail&lt;/option&gt;&lt;option value=&quot;521&quot;&gt;Computers/Internet/Education&lt;/option&gt;&lt;option value=&quot;725&quot;&gt;Computers/Internet/Etiquette&lt;/option&gt;&lt;option value=&quot;627&quot;&gt;Computers/Internet/FAQs  Help  and Tutorials&lt;/option&gt;&lt;option value=&quot;614&quot;&gt;Computers/Internet/File Sharing&lt;/option&gt;&lt;option value=&quot;578&quot;&gt;Computers/Internet/History&lt;/option&gt;&lt;option value=&quot;428&quot;&gt;Computers/Internet/Internet Fax&lt;/option&gt;&lt;option value=&quot;39&quot;&gt;Computers/Internet/News and Media&lt;/option&gt;&lt;option value=&quot;23&quot;&gt;Computers/Internet/On the Web&lt;/option&gt;&lt;option value=&quot;645&quot;&gt;Computers/Internet/Organizations&lt;/option&gt;&lt;option value=&quot;751&quot;&gt;Computers/Internet/Policy&lt;/option&gt;&lt;option value=&quot;32&quot;&gt;Computers/Internet/Protocols&lt;/option&gt;&lt;option value=&quot;259&quot;&gt;Computers/Internet/Proxying and Filtering&lt;/option&gt;&lt;option value=&quot;573&quot;&gt;Computers/Internet/Publications&lt;/option&gt;&lt;option value=&quot;255&quot;&gt;Computers/Internet/Resources&lt;/option&gt;&lt;option value=&quot;754&quot;&gt;Computers/Internet/RFCs&lt;/option&gt;&lt;option value=&quot;399&quot;&gt;Computers/Internet/Routers and Routing&lt;/option&gt;&lt;option value=&quot;1&quot;&gt;Computers/Internet/Searching&lt;/option&gt;&lt;option value=&quot;522&quot;&gt;Computers/Internet/Statistics and Demographics&lt;/option&gt;&lt;option value=&quot;739&quot;&gt;Computers/Internet/Telephony&lt;/option&gt;&lt;option value=&quot;732&quot;&gt;Computers/Internet/Training&lt;/option&gt;&lt;option value=&quot;3&quot;&gt;Computers/Internet/Web Design and Development&lt;/option&gt;&lt;option value=&quot;677&quot;&gt;Computers/Internet/WWW&lt;/option&gt;&lt;option value=&quot;843&quot;&gt;Computers/Intranet&lt;/option&gt;&lt;option value=&quot;758&quot;&gt;Computers/Mailing Lists&lt;/option&gt;&lt;option value=&quot;435&quot;&gt;Computers/Mobile Computing&lt;/option&gt;&lt;option value=&quot;261&quot;&gt;Computers/Multimedia&lt;/option&gt;&lt;option value=&quot;279&quot;&gt;Computers/News and Media&lt;/option&gt;&lt;option value=&quot;109&quot;&gt;Computers/Open Source&lt;/option&gt;&lt;option value=&quot;420&quot;&gt;Computers/Organizations&lt;/option&gt;&lt;option value=&quot;720&quot;&gt;Computers/Other&lt;/option&gt;&lt;option value=&quot;537&quot;&gt;Computers/Parallel Computing&lt;/option&gt;&lt;option value=&quot;807&quot;&gt;Computers/Performance and Capacity&lt;/option&gt;&lt;option value=&quot;657&quot;&gt;Computers/Programming&lt;/option&gt;&lt;option value=&quot;784&quot;&gt;Computers/Programming/Agents&lt;/option&gt;&lt;option value=&quot;638&quot;&gt;Computers/Programming/Compilers&lt;/option&gt;&lt;option value=&quot;684&quot;&gt;Computers/Programming/Component Frameworks&lt;/option&gt;&lt;option value=&quot;592&quot;&gt;Computers/Programming/Contests&lt;/option&gt;&lt;option value=&quot;768&quot;&gt;Computers/Programming/Databases&lt;/option&gt;&lt;option value=&quot;746&quot;&gt;Computers/Programming/Development Tools&lt;/option&gt;&lt;option value=&quot;776&quot;&gt;Computers/Programming/Disassemblers&lt;/option&gt;&lt;option value=&quot;845&quot;&gt;Computers/Programming/Drivers&lt;/option&gt;&lt;option value=&quot;603&quot;&gt;Computers/Programming/Education&lt;/option&gt;&lt;option value=&quot;815&quot;&gt;Computers/Programming/FAQs  Help  and Tutorials&lt;/option&gt;&lt;option value=&quot;652&quot;&gt;Computers/Programming/Games&lt;/option&gt;&lt;option value=&quot;286&quot;&gt;Computers/Programming/Graphics&lt;/option&gt;&lt;option value=&quot;639&quot;&gt;Computers/Programming/History&lt;/option&gt;&lt;option value=&quot;352&quot;&gt;Computers/Programming/Internet&lt;/option&gt;&lt;option value=&quot;7&quot;&gt;Computers/Programming/Languages&lt;/option&gt;&lt;option value=&quot;285&quot;&gt;Computers/Programming/Libraries&lt;/option&gt;&lt;option value=&quot;728&quot;&gt;Computers/Programming/Magazines and E-zines&lt;/option&gt;&lt;option value=&quot;774&quot;&gt;Computers/Programming/Memory Management&lt;/option&gt;&lt;option value=&quot;737&quot;&gt;Computers/Programming/Metaprogramming&lt;/option&gt;&lt;option value=&quot;642&quot;&gt;Computers/Programming/Methodologies&lt;/option&gt;&lt;option value=&quot;866&quot;&gt;Computers/Programming/Operating Systems&lt;/option&gt;&lt;option value=&quot;402&quot;&gt;Computers/Programming/Personal Pages&lt;/option&gt;&lt;option value=&quot;411&quot;&gt;Computers/Programming/Resources&lt;/option&gt;&lt;option value=&quot;623&quot;&gt;Computers/Programming/Software Testing&lt;/option&gt;&lt;option value=&quot;773&quot;&gt;Computers/Programming/Threads&lt;/option&gt;&lt;option value=&quot;473&quot;&gt;Computers/Robotics&lt;/option&gt;&lt;option value=&quot;418&quot;&gt;Computers/Security&lt;/option&gt;&lt;option value=&quot;651&quot;&gt;Computers/Shopping&lt;/option&gt;&lt;option value=&quot;21&quot;&gt;Computers/Software&lt;/option&gt;&lt;option value=&quot;515&quot;&gt;Computers/Software/Abandonware&lt;/option&gt;&lt;option value=&quot;449&quot;&gt;Computers/Software/Accounting&lt;/option&gt;&lt;option value=&quot;683&quot;&gt;Computers/Software/Backup&lt;/option&gt;&lt;option value=&quot;743&quot;&gt;Computers/Software/Barcode&lt;/option&gt;&lt;option value=&quot;769&quot;&gt;Computers/Software/Build Management&lt;/option&gt;&lt;option value=&quot;363&quot;&gt;Computers/Software/Business&lt;/option&gt;&lt;option value=&quot;721&quot;&gt;Computers/Software/Business Drawing&lt;/option&gt;&lt;option value=&quot;752&quot;&gt;Computers/Software/Communications&lt;/option&gt;&lt;option value=&quot;580&quot;&gt;Computers/Software/Conferences and Trade Shows&lt;/option&gt;&lt;option value=&quot;598&quot;&gt;Computers/Software/Configuration Management&lt;/option&gt;&lt;option value=&quot;718&quot;&gt;Computers/Software/Consultants&lt;/option&gt;&lt;option value=&quot;762&quot;&gt;Computers/Software/Data Administration&lt;/option&gt;&lt;option value=&quot;507&quot;&gt;Computers/Software/Data Compression&lt;/option&gt;&lt;option value=&quot;557&quot;&gt;Computers/Software/Databases&lt;/option&gt;&lt;option value=&quot;366&quot;&gt;Computers/Software/Desktop Customization&lt;/option&gt;&lt;option value=&quot;708&quot;&gt;Computers/Software/Device Drivers&lt;/option&gt;&lt;option value=&quot;509&quot;&gt;Computers/Software/Diagnostics&lt;/option&gt;&lt;option value=&quot;506&quot;&gt;Computers/Software/Directories&lt;/option&gt;&lt;option value=&quot;678&quot;&gt;Computers/Software/Disk Management&lt;/option&gt;&lt;option value=&quot;757&quot;&gt;Computers/Software/Document Imaging&lt;/option&gt;&lt;option value=&quot;510&quot;&gt;Computers/Software/Document Management&lt;/option&gt;&lt;option value=&quot;722&quot;&gt;Computers/Software/Editors&lt;/option&gt;&lt;option value=&quot;431&quot;&gt;Computers/Software/Educational&lt;/option&gt;&lt;option value=&quot;867&quot;&gt;Computers/Software/Enterprise Application Integration&lt;/option&gt;&lt;option value=&quot;801&quot;&gt;Computers/Software/Enterprise Information Integration&lt;/option&gt;&lt;option value=&quot;596&quot;&gt;Computers/Software/ERP&lt;/option&gt;&lt;option value=&quot;712&quot;&gt;Computers/Software/File Management&lt;/option&gt;&lt;option value=&quot;850&quot;&gt;Computers/Software/Fonts&lt;/option&gt;&lt;option value=&quot;350&quot;&gt;Computers/Software/Freeware&lt;/option&gt;&lt;option value=&quot;542&quot;&gt;Computers/Software/Globalization&lt;/option&gt;&lt;option value=&quot;403&quot;&gt;Computers/Software/Graphics&lt;/option&gt;&lt;option value=&quot;468&quot;&gt;Computers/Software/Groupware&lt;/option&gt;&lt;option value=&quot;726&quot;&gt;Computers/Software/Help Desk&lt;/option&gt;&lt;option value=&quot;735&quot;&gt;Computers/Software/History&lt;/option&gt;&lt;option value=&quot;658&quot;&gt;Computers/Software/Human Resources&lt;/option&gt;&lt;option value=&quot;493&quot;&gt;Computers/Software/Industry-Specific&lt;/option&gt;&lt;option value=&quot;663&quot;&gt;Computers/Software/Information Retrieval&lt;/option&gt;&lt;option value=&quot;2&quot;&gt;Computers/Software/Internet&lt;/option&gt;&lt;option value=&quot;811&quot;&gt;Computers/Software/Intranet&lt;/option&gt;&lt;option value=&quot;778&quot;&gt;Computers/Software/Licensing&lt;/option&gt;&lt;option value=&quot;591&quot;&gt;Computers/Software/Manufacturing&lt;/option&gt;&lt;option value=&quot;354&quot;&gt;Computers/Software/Marketing&lt;/option&gt;&lt;option value=&quot;822&quot;&gt;Computers/Software/Master Data Management&lt;/option&gt;&lt;option value=&quot;636&quot;&gt;Computers/Software/Networking&lt;/option&gt;&lt;option value=&quot;127&quot;&gt;Computers/Software/News and Media&lt;/option&gt;&lt;option value=&quot;809&quot;&gt;Computers/Software/Object-Oriented&lt;/option&gt;&lt;option value=&quot;706&quot;&gt;Computers/Software/Office Suites&lt;/option&gt;&lt;option value=&quot;710&quot;&gt;Computers/Software/Online Training&lt;/option&gt;&lt;option value=&quot;238&quot;&gt;Computers/Software/Operating Systems&lt;/option&gt;&lt;option value=&quot;731&quot;&gt;Computers/Software/Presentation&lt;/option&gt;&lt;option value=&quot;258&quot;&gt;Computers/Software/Project Management&lt;/option&gt;&lt;option value=&quot;782&quot;&gt;Computers/Software/Rentable&lt;/option&gt;&lt;option value=&quot;669&quot;&gt;Computers/Software/Retailers&lt;/option&gt;&lt;option value=&quot;786&quot;&gt;Computers/Software/Search Engines&lt;/option&gt;&lt;option value=&quot;359&quot;&gt;Computers/Software/Shareware&lt;/option&gt;&lt;option value=&quot;458&quot;&gt;Computers/Software/Software Engineering&lt;/option&gt;&lt;option value=&quot;484&quot;&gt;Computers/Software/Spreadsheets&lt;/option&gt;&lt;option value=&quot;766&quot;&gt;Computers/Software/System Management&lt;/option&gt;&lt;option value=&quot;647&quot;&gt;Computers/Software/Typesetting&lt;/option&gt;&lt;option value=&quot;676&quot;&gt;Computers/Software/Word Processors&lt;/option&gt;&lt;option value=&quot;637&quot;&gt;Computers/Software/Workflow&lt;/option&gt;&lt;option value=&quot;817&quot;&gt;Computers/Software/Year 2000&lt;/option&gt;&lt;option value=&quot;668&quot;&gt;Computers/Speech Technology&lt;/option&gt;&lt;option value=&quot;816&quot;&gt;Computers/Supercomputing&lt;/option&gt;&lt;option value=&quot;438&quot;&gt;Computers/Systems&lt;/option&gt;&lt;option value=&quot;469&quot;&gt;Computers/Usenet&lt;/option&gt;&lt;option value=&quot;498&quot;&gt;Computers/Virtual Reality&lt;/option&gt;&lt;option value=&quot;514&quot;&gt;Games&lt;/option&gt;&lt;option value=&quot;330&quot;&gt;Games/Board Games&lt;/option&gt;&lt;option value=&quot;401&quot;&gt;Games/Card Games&lt;/option&gt;&lt;option value=&quot;586&quot;&gt;Games/Coin-Op&lt;/option&gt;&lt;option value=&quot;568&quot;&gt;Games/Conventions&lt;/option&gt;&lt;option value=&quot;829&quot;&gt;Games/Developers and Publishers&lt;/option&gt;&lt;option value=&quot;749&quot;&gt;Games/Dice&lt;/option&gt;&lt;option value=&quot;333&quot;&gt;Games/Gambling&lt;/option&gt;&lt;option value=&quot;628&quot;&gt;Games/Game Studies&lt;/option&gt;&lt;option value=&quot;750&quot;&gt;Games/Hand Games&lt;/option&gt;&lt;option value=&quot;853&quot;&gt;Games/Hand-Eye Coordination&lt;/option&gt;&lt;option value=&quot;839&quot;&gt;Games/History&lt;/option&gt;&lt;option value=&quot;701&quot;&gt;Games/Miniatures&lt;/option&gt;&lt;option value=&quot;334&quot;&gt;Games/Online&lt;/option&gt;&lt;option value=&quot;838&quot;&gt;Games/Paper and Pencil&lt;/option&gt;&lt;option value=&quot;828&quot;&gt;Games/Party Games&lt;/option&gt;&lt;option value=&quot;854&quot;&gt;Games/Play Groups&lt;/option&gt;&lt;option value=&quot;844&quot;&gt;Games/Play-By-Mail&lt;/option&gt;&lt;option value=&quot;587&quot;&gt;Games/Puzzles&lt;/option&gt;&lt;option value=&quot;730&quot;&gt;Games/Resources&lt;/option&gt;&lt;option value=&quot;445&quot;&gt;Games/Roleplaying&lt;/option&gt;&lt;option value=&quot;760&quot;&gt;Games/Tile Games&lt;/option&gt;&lt;option value=&quot;488&quot;&gt;Games/Trading Card Games&lt;/option&gt;&lt;option value=&quot;407&quot;&gt;Games/Video Games&lt;/option&gt;&lt;option value=&quot;464&quot;&gt;Games/Video Games/Action&lt;/option&gt;&lt;option value=&quot;465&quot;&gt;Games/Video Games/Action-Adventure&lt;/option&gt;&lt;option value=&quot;461&quot;&gt;Games/Video Games/Adventure&lt;/option&gt;&lt;option value=&quot;421&quot;&gt;Games/Video Games/Browser Based&lt;/option&gt;&lt;option value=&quot;689&quot;&gt;Games/Video Games/Chats and Forums&lt;/option&gt;&lt;option value=&quot;631&quot;&gt;Games/Video Games/Cheats and Hints&lt;/option&gt;&lt;option value=&quot;6&quot;&gt;Games/Video Games/Clans and Guilds&lt;/option&gt;&lt;option value=&quot;466&quot;&gt;Games/Video Games/Computer Platforms&lt;/option&gt;&lt;option value=&quot;18&quot;&gt;Games/Video Games/Console Platforms&lt;/option&gt;&lt;option value=&quot;394&quot;&gt;Games/Video Games/Construction&lt;/option&gt;&lt;option value=&quot;584&quot;&gt;Games/Video Games/Developers and Publishers&lt;/option&gt;&lt;option value=&quot;831&quot;&gt;Games/Video Games/Directories&lt;/option&gt;&lt;option value=&quot;599&quot;&gt;Games/Video Games/Downloads&lt;/option&gt;&lt;option value=&quot;284&quot;&gt;Games/Video Games/Driving and Racing&lt;/option&gt;&lt;option value=&quot;852&quot;&gt;Games/Video Games/Educational&lt;/option&gt;&lt;option value=&quot;416&quot;&gt;Games/Video Games/Emulation&lt;/option&gt;&lt;option value=&quot;561&quot;&gt;Games/Video Games/Fan Pages&lt;/option&gt;&lt;option value=&quot;783&quot;&gt;Games/Video Games/Fighting&lt;/option&gt;&lt;option value=&quot;288&quot;&gt;Games/Video Games/Game Design&lt;/option&gt;&lt;option value=&quot;690&quot;&gt;Games/Video Games/Handheld Platforms&lt;/option&gt;&lt;option value=&quot;682&quot;&gt;Games/Video Games/History&lt;/option&gt;&lt;option value=&quot;791&quot;&gt;Games/Video Games/Humor and Jokes&lt;/option&gt;&lt;option value=&quot;826&quot;&gt;Games/Video Games/Humorous&lt;/option&gt;&lt;option value=&quot;572&quot;&gt;Games/Video Games/Massive Multiplayer Online&lt;/option&gt;&lt;option value=&quot;575&quot;&gt;Games/Video Games/Multiplayer&lt;/option&gt;&lt;option value=&quot;646&quot;&gt;Games/Video Games/Music&lt;/option&gt;&lt;option value=&quot;709&quot;&gt;Games/Video Games/Music and Dance&lt;/option&gt;&lt;option value=&quot;558&quot;&gt;Games/Video Games/News and Reviews&lt;/option&gt;&lt;option value=&quot;723&quot;&gt;Games/Video Games/Platform&lt;/option&gt;&lt;option value=&quot;349&quot;&gt;Games/Video Games/Puzzle&lt;/option&gt;&lt;option value=&quot;512&quot;&gt;Games/Video Games/Recreation&lt;/option&gt;&lt;option value=&quot;386&quot;&gt;Games/Video Games/Roleplaying&lt;/option&gt;&lt;option value=&quot;44&quot;&gt;Games/Video Games/Shooter&lt;/option&gt;&lt;option value=&quot;335&quot;&gt;Games/Video Games/Simulation&lt;/option&gt;&lt;option value=&quot;424&quot;&gt;Games/Video Games/Sports&lt;/option&gt;&lt;option value=&quot;364&quot;&gt;Games/Video Games/Strategy&lt;/option&gt;&lt;option value=&quot;851&quot;&gt;Games/Video Games/Word Games&lt;/option&gt;&lt;option value=&quot;818&quot;&gt;Games/Yard  Deck  and Table Games&lt;/option&gt;&lt;option value=&quot;314&quot;&gt;Health&lt;/option&gt;&lt;option value=&quot;405&quot;&gt;Health/Addictions&lt;/option&gt;&lt;option value=&quot;641&quot;&gt;Health/Aging&lt;/option&gt;&lt;option value=&quot;270&quot;&gt;Health/Alternative&lt;/option&gt;&lt;option value=&quot;360&quot;&gt;Health/Animal&lt;/option&gt;&lt;option value=&quot;610&quot;&gt;Health/Beauty&lt;/option&gt;&lt;option value=&quot;548&quot;&gt;Health/Child Health&lt;/option&gt;&lt;option value=&quot;295&quot;&gt;Health/Conditions and Diseases&lt;/option&gt;&lt;option value=&quot;551&quot;&gt;Health/Conferences&lt;/option&gt;&lt;option value=&quot;300&quot;&gt;Health/Dentistry&lt;/option&gt;&lt;option value=&quot;729&quot;&gt;Health/Directories&lt;/option&gt;&lt;option value=&quot;633&quot;&gt;Health/Education&lt;/option&gt;&lt;option value=&quot;426&quot;&gt;Health/Fitness&lt;/option&gt;&lt;option value=&quot;825&quot;&gt;Health/Home Health&lt;/option&gt;&lt;option value=&quot;323&quot;&gt;Health/Medicine&lt;/option&gt;&lt;option value=&quot;688&quot;&gt;Health/Men&amp;#039;s Health&lt;/option&gt;&lt;option value=&quot;304&quot;&gt;Health/Mental Health&lt;/option&gt;&lt;option value=&quot;594&quot;&gt;Health/News and Media&lt;/option&gt;&lt;option value=&quot;388&quot;&gt;Health/Nursing&lt;/option&gt;&lt;option value=&quot;351&quot;&gt;Health/Nutrition&lt;/option&gt;&lt;option value=&quot;550&quot;&gt;Health/Occupational Health and Safety&lt;/option&gt;&lt;option value=&quot;659&quot;&gt;Health/Organizations&lt;/option&gt;&lt;option value=&quot;494&quot;&gt;Health/Pharmacy&lt;/option&gt;&lt;option value=&quot;824&quot;&gt;Health/Products and Shopping&lt;/option&gt;&lt;option value=&quot;415&quot;&gt;Health/Professions&lt;/option&gt;&lt;option value=&quot;492&quot;&gt;Health/Public Health and Safety&lt;/option&gt;&lt;option value=&quot;868&quot;&gt;Health/Regional&lt;/option&gt;&lt;option value=&quot;440&quot;&gt;Health/Reproductive Health&lt;/option&gt;&lt;option value=&quot;436&quot;&gt;Health/Resources&lt;/option&gt;&lt;option value=&quot;583&quot;&gt;Health/Search Engines&lt;/option&gt;&lt;option value=&quot;470&quot;&gt;Health/Senior Health&lt;/option&gt;&lt;option value=&quot;716&quot;&gt;Health/Senses&lt;/option&gt;&lt;option value=&quot;372&quot;&gt;Health/Services&lt;/option&gt;&lt;option value=&quot;450&quot;&gt;Health/Specific Substances&lt;/option&gt;&lt;option value=&quot;453&quot;&gt;Health/Support Groups&lt;/option&gt;&lt;option value=&quot;715&quot;&gt;Health/Teen Health&lt;/option&gt;&lt;option value=&quot;517&quot;&gt;Health/Weight Loss&lt;/option&gt;&lt;option value=&quot;341&quot;&gt;Health/Women&amp;#039;s Health&lt;/option&gt;&lt;option value=&quot;47&quot;&gt;Home&lt;/option&gt;&lt;option value=&quot;687&quot;&gt;Home/Apartment Living&lt;/option&gt;&lt;option value=&quot;106&quot;&gt;Home/Consumer Information&lt;/option&gt;&lt;option value=&quot;274&quot;&gt;Home/Cooking&lt;/option&gt;&lt;option value=&quot;425&quot;&gt;Home/Do-It-Yourself&lt;/option&gt;&lt;option value=&quot;643&quot;&gt;Home/Emergency Preparation&lt;/option&gt;&lt;option value=&quot;408&quot;&gt;Home/Entertaining&lt;/option&gt;&lt;option value=&quot;263&quot;&gt;Home/Family&lt;/option&gt;&lt;option value=&quot;16&quot;&gt;Home/Gardening&lt;/option&gt;&lt;option value=&quot;545&quot;&gt;Home/Home Improvement&lt;/option&gt;&lt;option value=&quot;650&quot;&gt;Home/Homemaking&lt;/option&gt;&lt;option value=&quot;812&quot;&gt;Home/Homeowners&lt;/option&gt;&lt;option value=&quot;738&quot;&gt;Home/Moving and Relocating&lt;/option&gt;&lt;option value=&quot;277&quot;&gt;Home/News and Media&lt;/option&gt;&lt;option value=&quot;582&quot;&gt;Home/Personal Finance&lt;/option&gt;&lt;option value=&quot;419&quot;&gt;Home/Personal Organization&lt;/option&gt;&lt;option value=&quot;648&quot;&gt;Home/Rural Living&lt;/option&gt;&lt;option value=&quot;781&quot;&gt;Home/Software&lt;/option&gt;&lt;option value=&quot;680&quot;&gt;Home/Urban Living&lt;/option&gt;&lt;option value=&quot;265&quot;&gt;News&lt;/option&gt;&lt;option value=&quot;504&quot;&gt;News/Alternative&lt;/option&gt;&lt;option value=&quot;432&quot;&gt;News/Analysis and Opinion&lt;/option&gt;&lt;option value=&quot;319&quot;&gt;News/Breaking News&lt;/option&gt;&lt;option value=&quot;813&quot;&gt;News/Chats and Forums&lt;/option&gt;&lt;option value=&quot;609&quot;&gt;News/Colleges and Universities&lt;/option&gt;&lt;option value=&quot;673&quot;&gt;News/Current Events&lt;/option&gt;&lt;option value=&quot;151&quot;&gt;News/Directories&lt;/option&gt;&lt;option value=&quot;756&quot;&gt;News/Extended Coverage&lt;/option&gt;&lt;option value=&quot;621&quot;&gt;News/Headline Links&lt;/option&gt;&lt;option value=&quot;612&quot;&gt;News/Internet Broadcasts&lt;/option&gt;&lt;option value=&quot;365&quot;&gt;News/Journalism&lt;/option&gt;&lt;option value=&quot;13&quot;&gt;News/Magazines and E-zines&lt;/option&gt;&lt;option value=&quot;30&quot;&gt;News/Media Industry&lt;/option&gt;&lt;option value=&quot;736&quot;&gt;News/Museums and Archives&lt;/option&gt;&lt;option value=&quot;387&quot;&gt;News/Newspapers&lt;/option&gt;&lt;option value=&quot;863&quot;&gt;News/Other&lt;/option&gt;&lt;option value=&quot;625&quot;&gt;News/Personalized News&lt;/option&gt;&lt;option value=&quot;579&quot;&gt;News/Satire&lt;/option&gt;&lt;option value=&quot;252&quot;&gt;News/Weather&lt;/option&gt;&lt;option value=&quot;378&quot;&gt;News/Weblogs&lt;/option&gt;&lt;option value=&quot;276&quot;&gt;Recreation&lt;/option&gt;&lt;option value=&quot;361&quot;&gt;Recreation/Antiques&lt;/option&gt;&lt;option value=&quot;22&quot;&gt;Recreation/Audio&lt;/option&gt;&lt;option value=&quot;287&quot;&gt;Recreation/Autos&lt;/option&gt;&lt;option value=&quot;446&quot;&gt;Recreation/Aviation&lt;/option&gt;&lt;option value=&quot;518&quot;&gt;Recreation/Birding&lt;/option&gt;&lt;option value=&quot;390&quot;&gt;Recreation/Boating&lt;/option&gt;&lt;option value=&quot;711&quot;&gt;Recreation/Camps&lt;/option&gt;&lt;option value=&quot;329&quot;&gt;Recreation/Climbing&lt;/option&gt;&lt;option value=&quot;291&quot;&gt;Recreation/Collecting&lt;/option&gt;&lt;option value=&quot;549&quot;&gt;Recreation/Drugs&lt;/option&gt;&lt;option value=&quot;245&quot;&gt;Recreation/Food&lt;/option&gt;&lt;option value=&quot;543&quot;&gt;Recreation/Guns&lt;/option&gt;&lt;option value=&quot;17&quot;&gt;Recreation/Humor&lt;/option&gt;&lt;option value=&quot;741&quot;&gt;Recreation/Kites&lt;/option&gt;&lt;option value=&quot;803&quot;&gt;Recreation/Knives&lt;/option&gt;&lt;option value=&quot;513&quot;&gt;Recreation/Living History&lt;/option&gt;&lt;option value=&quot;785&quot;&gt;Recreation/Locks&lt;/option&gt;&lt;option value=&quot;343&quot;&gt;Recreation/Models&lt;/option&gt;&lt;option value=&quot;290&quot;&gt;Recreation/Motorcycles&lt;/option&gt;&lt;option value=&quot;409&quot;&gt;Recreation/Nudism&lt;/option&gt;&lt;option value=&quot;837&quot;&gt;Recreation/Other&lt;/option&gt;&lt;option value=&quot;381&quot;&gt;Recreation/Outdoors&lt;/option&gt;&lt;option value=&quot;771&quot;&gt;Recreation/Parties&lt;/option&gt;&lt;option value=&quot;248&quot;&gt;Recreation/Pets&lt;/option&gt;&lt;option value=&quot;489&quot;&gt;Recreation/Picture Ratings&lt;/option&gt;&lt;option value=&quot;379&quot;&gt;Recreation/Radio&lt;/option&gt;&lt;option value=&quot;655&quot;&gt;Recreation/Roads and Highways&lt;/option&gt;&lt;option value=&quot;476&quot;&gt;Recreation/Scouting&lt;/option&gt;&lt;option value=&quot;500&quot;&gt;Recreation/Theme Parks&lt;/option&gt;&lt;option value=&quot;585&quot;&gt;Recreation/Tobacco&lt;/option&gt;&lt;option value=&quot;257&quot;&gt;Recreation/Trains and Railroads&lt;/option&gt;&lt;option value=&quot;24&quot;&gt;Recreation/Travel&lt;/option&gt;&lt;option value=&quot;437&quot;&gt;Reference&lt;/option&gt;&lt;option value=&quot;772&quot;&gt;Reference/Almanacs&lt;/option&gt;&lt;option value=&quot;375&quot;&gt;Reference/Archives&lt;/option&gt;&lt;option value=&quot;634&quot;&gt;Reference/Ask an Expert&lt;/option&gt;&lt;option value=&quot;593&quot;&gt;Reference/Bibliography&lt;/option&gt;&lt;option value=&quot;727&quot;&gt;Reference/Biography&lt;/option&gt;&lt;option value=&quot;796&quot;&gt;Reference/Books&lt;/option&gt;&lt;option value=&quot;412&quot;&gt;Reference/Dictionaries&lt;/option&gt;&lt;option value=&quot;169&quot;&gt;Reference/Directories&lt;/option&gt;&lt;option value=&quot;10&quot;&gt;Reference/Education&lt;/option&gt;&lt;option value=&quot;681&quot;&gt;Reference/Encyclopedias&lt;/option&gt;&lt;option value=&quot;733&quot;&gt;Reference/Flags&lt;/option&gt;&lt;option value=&quot;707&quot;&gt;Reference/Journals&lt;/option&gt;&lt;option value=&quot;800&quot;&gt;Reference/Knots&lt;/option&gt;&lt;option value=&quot;368&quot;&gt;Reference/Knowledge Management&lt;/option&gt;&lt;option value=&quot;410&quot;&gt;Reference/Libraries&lt;/option&gt;&lt;option value=&quot;369&quot;&gt;Reference/Maps&lt;/option&gt;&lt;option value=&quot;246&quot;&gt;Reference/Museums&lt;/option&gt;&lt;option value=&quot;764&quot;&gt;Reference/Parliamentary Procedure&lt;/option&gt;&lt;option value=&quot;268&quot;&gt;Reference/Quotations&lt;/option&gt;&lt;option value=&quot;600&quot;&gt;Reference/Thesauri&lt;/option&gt;&lt;option value=&quot;693&quot;&gt;Reference/Time&lt;/option&gt;&lt;option value=&quot;798&quot;&gt;Reference/World Records&lt;/option&gt;&lt;option value=&quot;38&quot;&gt;Regional&lt;/option&gt;&lt;option value=&quot;313&quot;&gt;Regional/Africa&lt;/option&gt;&lt;option value=&quot;278&quot;&gt;Regional/Asia&lt;/option&gt;&lt;option value=&quot;312&quot;&gt;Regional/Caribbean&lt;/option&gt;&lt;option value=&quot;491&quot;&gt;Regional/Central America&lt;/option&gt;&lt;option value=&quot;25&quot;&gt;Regional/Europe&lt;/option&gt;&lt;option value=&quot;292&quot;&gt;Regional/Middle East&lt;/option&gt;&lt;option value=&quot;33&quot;&gt;Regional/North America&lt;/option&gt;&lt;option value=&quot;303&quot;&gt;Regional/Oceania&lt;/option&gt;&lt;option value=&quot;849&quot;&gt;Regional/Other&lt;/option&gt;&lt;option value=&quot;457&quot;&gt;Regional/Polar Regions&lt;/option&gt;&lt;option value=&quot;429&quot;&gt;Regional/South America&lt;/option&gt;&lt;option value=&quot;622&quot;&gt;Science&lt;/option&gt;&lt;option value=&quot;570&quot;&gt;Science/Academic Departments&lt;/option&gt;&lt;option value=&quot;294&quot;&gt;Science/Agriculture&lt;/option&gt;&lt;option value=&quot;613&quot;&gt;Science/Anomalies and Alternative Science&lt;/option&gt;&lt;option value=&quot;362&quot;&gt;Science/Astronomy&lt;/option&gt;&lt;option value=&quot;318&quot;&gt;Science/Biology&lt;/option&gt;&lt;option value=&quot;717&quot;&gt;Science/Chats and Forums&lt;/option&gt;&lt;option value=&quot;383&quot;&gt;Science/Chemistry&lt;/option&gt;&lt;option value=&quot;526&quot;&gt;Science/Directories&lt;/option&gt;&lt;option value=&quot;417&quot;&gt;Science/Earth Sciences&lt;/option&gt;&lt;option value=&quot;571&quot;&gt;Science/Educational Resources&lt;/option&gt;&lt;option value=&quot;713&quot;&gt;Science/Employment&lt;/option&gt;&lt;option value=&quot;454&quot;&gt;Science/Environment&lt;/option&gt;&lt;option value=&quot;619&quot;&gt;Science/Events&lt;/option&gt;&lt;option value=&quot;670&quot;&gt;Science/Instruments and Supplies&lt;/option&gt;&lt;option value=&quot;342&quot;&gt;Science/Math&lt;/option&gt;&lt;option value=&quot;321&quot;&gt;Science/Methods and Techniques&lt;/option&gt;&lt;option value=&quot;485&quot;&gt;Science/News and Media&lt;/option&gt;&lt;option value=&quot;667&quot;&gt;Science/Organizations&lt;/option&gt;&lt;option value=&quot;297&quot;&gt;Science/Physics&lt;/option&gt;&lt;option value=&quot;46&quot;&gt;Science/Publications&lt;/option&gt;&lt;option value=&quot;605&quot;&gt;Science/Reference&lt;/option&gt;&lt;option value=&quot;620&quot;&gt;Science/Research Groups and Centers&lt;/option&gt;&lt;option value=&quot;311&quot;&gt;Science/Science in Society&lt;/option&gt;&lt;option value=&quot;856&quot;&gt;Science/Search Engines&lt;/option&gt;&lt;option value=&quot;49&quot;&gt;Science/Social Sciences&lt;/option&gt;&lt;option value=&quot;810&quot;&gt;Science/Software&lt;/option&gt;&lt;option value=&quot;159&quot;&gt;Science/Technology&lt;/option&gt;&lt;option value=&quot;34&quot;&gt;Shopping&lt;/option&gt;&lt;option value=&quot;254&quot;&gt;Shopping/Antiques and Collectibles&lt;/option&gt;&lt;option value=&quot;546&quot;&gt;Shopping/Auctions&lt;/option&gt;&lt;option value=&quot;685&quot;&gt;Shopping/Children&lt;/option&gt;&lt;option value=&quot;385&quot;&gt;Shopping/Classifieds&lt;/option&gt;&lt;option value=&quot;377&quot;&gt;Shopping/Clothing&lt;/option&gt;&lt;option value=&quot;260&quot;&gt;Shopping/Consumer Electronics&lt;/option&gt;&lt;option value=&quot;487&quot;&gt;Shopping/Crafts&lt;/option&gt;&lt;option value=&quot;765&quot;&gt;Shopping/Death Care&lt;/option&gt;&lt;option value=&quot;316&quot;&gt;Shopping/Directories&lt;/option&gt;&lt;option value=&quot;355&quot;&gt;Shopping/Entertainment&lt;/option&gt;&lt;option value=&quot;371&quot;&gt;Shopping/Ethnic and Regional&lt;/option&gt;&lt;option value=&quot;336&quot;&gt;Shopping/Flowers&lt;/option&gt;&lt;option value=&quot;302&quot;&gt;Shopping/Food&lt;/option&gt;&lt;option value=&quot;533&quot;&gt;Shopping/General Merchandise&lt;/option&gt;&lt;option value=&quot;398&quot;&gt;Shopping/Gifts&lt;/option&gt;&lt;option value=&quot;370&quot;&gt;Shopping/Health&lt;/option&gt;&lt;option value=&quot;755&quot;&gt;Shopping/Holidays&lt;/option&gt;&lt;option value=&quot;282&quot;&gt;Shopping/Home and Garden&lt;/option&gt;&lt;option value=&quot;307&quot;&gt;Shopping/Jewelry&lt;/option&gt;&lt;option value=&quot;380&quot;&gt;Shopping/Music&lt;/option&gt;&lt;option value=&quot;662&quot;&gt;Shopping/Niche&lt;/option&gt;&lt;option value=&quot;615&quot;&gt;Shopping/Office Products&lt;/option&gt;&lt;option value=&quot;541&quot;&gt;Shopping/Pets&lt;/option&gt;&lt;option value=&quot;532&quot;&gt;Shopping/Photography&lt;/option&gt;&lt;option value=&quot;397&quot;&gt;Shopping/Publications&lt;/option&gt;&lt;option value=&quot;356&quot;&gt;Shopping/Recreation&lt;/option&gt;&lt;option value=&quot;530&quot;&gt;Shopping/Sports&lt;/option&gt;&lt;option value=&quot;511&quot;&gt;Shopping/Tobacco&lt;/option&gt;&lt;option value=&quot;501&quot;&gt;Shopping/Tools&lt;/option&gt;&lt;option value=&quot;490&quot;&gt;Shopping/Toys and Games&lt;/option&gt;&lt;option value=&quot;740&quot;&gt;Shopping/Travel&lt;/option&gt;&lt;option value=&quot;479&quot;&gt;Shopping/Vehicles&lt;/option&gt;&lt;option value=&quot;269&quot;&gt;Shopping/Visual Arts&lt;/option&gt;&lt;option value=&quot;566&quot;&gt;Shopping/Weddings&lt;/option&gt;&lt;option value=&quot;262&quot;&gt;Society&lt;/option&gt;&lt;option value=&quot;520&quot;&gt;Society/Activism&lt;/option&gt;&lt;option value=&quot;589&quot;&gt;Society/Advice&lt;/option&gt;&lt;option value=&quot;538&quot;&gt;Society/Crime&lt;/option&gt;&lt;option value=&quot;374&quot;&gt;Society/Death&lt;/option&gt;&lt;option value=&quot;346&quot;&gt;Society/Disabled&lt;/option&gt;&lt;option value=&quot;65&quot;&gt;Society/Ethnicity&lt;/option&gt;&lt;option value=&quot;567&quot;&gt;Society/Folklore&lt;/option&gt;&lt;option value=&quot;480&quot;&gt;Society/Future&lt;/option&gt;&lt;option value=&quot;404&quot;&gt;Society/Gay  Lesbian  and Bisexual&lt;/option&gt;&lt;option value=&quot;391&quot;&gt;Society/Genealogy&lt;/option&gt;&lt;option value=&quot;11&quot;&gt;Society/Government&lt;/option&gt;&lt;option value=&quot;358&quot;&gt;Society/History&lt;/option&gt;&lt;option value=&quot;320&quot;&gt;Society/Holidays&lt;/option&gt;&lt;option value=&quot;29&quot;&gt;Society/Issues&lt;/option&gt;&lt;option value=&quot;266&quot;&gt;Society/Law&lt;/option&gt;&lt;option value=&quot;451&quot;&gt;Society/Lifestyle Choices&lt;/option&gt;&lt;option value=&quot;414&quot;&gt;Society/Military&lt;/option&gt;&lt;option value=&quot;273&quot;&gt;Society/Organizations&lt;/option&gt;&lt;option value=&quot;264&quot;&gt;Society/Paranormal&lt;/option&gt;&lt;option value=&quot;42&quot;&gt;Society/People&lt;/option&gt;&lt;option value=&quot;271&quot;&gt;Society/Philanthropy&lt;/option&gt;&lt;option value=&quot;347&quot;&gt;Society/Philosophy&lt;/option&gt;&lt;option value=&quot;27&quot;&gt;Society/Politics&lt;/option&gt;&lt;option value=&quot;328&quot;&gt;Society/Relationships&lt;/option&gt;&lt;option value=&quot;107&quot;&gt;Society/Religion and Spirituality&lt;/option&gt;&lt;option value=&quot;272&quot;&gt;Society/Sexuality&lt;/option&gt;&lt;option value=&quot;12&quot;&gt;Society/Subcultures&lt;/option&gt;&lt;option value=&quot;745&quot;&gt;Society/Support Groups&lt;/option&gt;&lt;option value=&quot;459&quot;&gt;Society/Transgender&lt;/option&gt;&lt;option value=&quot;475&quot;&gt;Society/Work&lt;/option&gt;&lt;option value=&quot;389&quot;&gt;Sports&lt;/option&gt;&lt;option value=&quot;790&quot;&gt;Sports/Adventure Racing&lt;/option&gt;&lt;option value=&quot;714&quot;&gt;Sports/Airsoft&lt;/option&gt;&lt;option value=&quot;569&quot;&gt;Sports/Animal Sports&lt;/option&gt;&lt;option value=&quot;519&quot;&gt;Sports/Archery&lt;/option&gt;&lt;option value=&quot;496&quot;&gt;Sports/Badminton&lt;/option&gt;&lt;option value=&quot;463&quot;&gt;Sports/Baseball&lt;/option&gt;&lt;option value=&quot;324&quot;&gt;Sports/Basketball&lt;/option&gt;&lt;option value=&quot;799&quot;&gt;Sports/Bocce&lt;/option&gt;&lt;option value=&quot;770&quot;&gt;Sports/Boomerang&lt;/option&gt;&lt;option value=&quot;553&quot;&gt;Sports/Bowling&lt;/option&gt;&lt;option value=&quot;703&quot;&gt;Sports/Boxing&lt;/option&gt;&lt;option value=&quot;808&quot;&gt;Sports/Cheerleading&lt;/option&gt;&lt;option value=&quot;472&quot;&gt;Sports/College and University&lt;/option&gt;&lt;option value=&quot;704&quot;&gt;Sports/Cricket&lt;/option&gt;&lt;option value=&quot;836&quot;&gt;Sports/Croquet&lt;/option&gt;&lt;option value=&quot;529&quot;&gt;Sports/Cue Sports&lt;/option&gt;&lt;option value=&quot;267&quot;&gt;Sports/Cycling&lt;/option&gt;&lt;option value=&quot;559&quot;&gt;Sports/Darts&lt;/option&gt;&lt;option value=&quot;478&quot;&gt;Sports/Disabled&lt;/option&gt;&lt;option value=&quot;296&quot;&gt;Sports/Equestrian&lt;/option&gt;&lt;option value=&quot;455&quot;&gt;Sports/Events&lt;/option&gt;&lt;option value=&quot;581&quot;&gt;Sports/Extreme Sports&lt;/option&gt;&lt;option value=&quot;664&quot;&gt;Sports/Fantasy&lt;/option&gt;&lt;option value=&quot;616&quot;&gt;Sports/Fencing&lt;/option&gt;&lt;option value=&quot;753&quot;&gt;Sports/Flying Discs&lt;/option&gt;&lt;option value=&quot;857&quot;&gt;Sports/Footbag&lt;/option&gt;&lt;option value=&quot;606&quot;&gt;Sports/Football&lt;/option&gt;&lt;option value=&quot;563&quot;&gt;Sports/Gaelic&lt;/option&gt;&lt;option value=&quot;847&quot;&gt;Sports/Goalball&lt;/option&gt;&lt;option value=&quot;540&quot;&gt;Sports/Golf&lt;/option&gt;&lt;option value=&quot;834&quot;&gt;Sports/Greyhound Racing&lt;/option&gt;&lt;option value=&quot;775&quot;&gt;Sports/Gymnastics&lt;/option&gt;&lt;option value=&quot;787&quot;&gt;Sports/Handball&lt;/option&gt;&lt;option value=&quot;607&quot;&gt;Sports/Hockey&lt;/option&gt;&lt;option value=&quot;814&quot;&gt;Sports/Informal Sports&lt;/option&gt;&lt;option value=&quot;789&quot;&gt;Sports/Jai Alai&lt;/option&gt;&lt;option value=&quot;547&quot;&gt;Sports/Kabbadi&lt;/option&gt;&lt;option value=&quot;748&quot;&gt;Sports/Korfball&lt;/option&gt;&lt;option value=&quot;692&quot;&gt;Sports/Lacrosse&lt;/option&gt;&lt;option value=&quot;830&quot;&gt;Sports/Laser Games&lt;/option&gt;&lt;option value=&quot;827&quot;&gt;Sports/Lumberjack&lt;/option&gt;&lt;option value=&quot;503&quot;&gt;Sports/Martial Arts&lt;/option&gt;&lt;option value=&quot;283&quot;&gt;Sports/Motorsports&lt;/option&gt;&lt;option value=&quot;483&quot;&gt;Sports/Multi-Sports&lt;/option&gt;&lt;option value=&quot;821&quot;&gt;Sports/Netball&lt;/option&gt;&lt;option value=&quot;806&quot;&gt;Sports/Officiating&lt;/option&gt;&lt;option value=&quot;595&quot;&gt;Sports/Organizations&lt;/option&gt;&lt;option value=&quot;467&quot;&gt;Sports/Orienteering&lt;/option&gt;&lt;option value=&quot;695&quot;&gt;Sports/Paddleball&lt;/option&gt;&lt;option value=&quot;481&quot;&gt;Sports/Paintball&lt;/option&gt;&lt;option value=&quot;528&quot;&gt;Sports/People&lt;/option&gt;&lt;option value=&quot;665&quot;&gt;Sports/Petanque&lt;/option&gt;&lt;option value=&quot;674&quot;&gt;Sports/Racquetball&lt;/option&gt;&lt;option value=&quot;308&quot;&gt;Sports/Resources&lt;/option&gt;&lt;option value=&quot;702&quot;&gt;Sports/Rodeo&lt;/option&gt;&lt;option value=&quot;804&quot;&gt;Sports/Rope Skipping&lt;/option&gt;&lt;option value=&quot;859&quot;&gt;Sports/Rounders&lt;/option&gt;&lt;option value=&quot;395&quot;&gt;Sports/Running&lt;/option&gt;&lt;option value=&quot;842&quot;&gt;Sports/Sepak Takraw&lt;/option&gt;&lt;option value=&quot;474&quot;&gt;Sports/Skateboarding&lt;/option&gt;&lt;option value=&quot;477&quot;&gt;Sports/Skating&lt;/option&gt;&lt;option value=&quot;19&quot;&gt;Sports/Soccer&lt;/option&gt;&lt;option value=&quot;788&quot;&gt;Sports/Softball&lt;/option&gt;&lt;option value=&quot;452&quot;&gt;Sports/Software&lt;/option&gt;&lt;option value=&quot;698&quot;&gt;Sports/Squash&lt;/option&gt;&lt;option value=&quot;315&quot;&gt;Sports/Strength Sports&lt;/option&gt;&lt;option value=&quot;724&quot;&gt;Sports/Table Tennis&lt;/option&gt;&lt;option value=&quot;805&quot;&gt;Sports/Tchoukball&lt;/option&gt;&lt;option value=&quot;43&quot;&gt;Sports/Team Handball&lt;/option&gt;&lt;option value=&quot;846&quot;&gt;Sports/Team Spirit&lt;/option&gt;&lt;option value=&quot;626&quot;&gt;Sports/Tennis&lt;/option&gt;&lt;option value=&quot;497&quot;&gt;Sports/Track and Field&lt;/option&gt;&lt;option value=&quot;640&quot;&gt;Sports/Volleyball&lt;/option&gt;&lt;option value=&quot;742&quot;&gt;Sports/Walking&lt;/option&gt;&lt;option value=&quot;306&quot;&gt;Sports/Water Sports&lt;/option&gt;&lt;option value=&quot;456&quot;&gt;Sports/Winter Sports&lt;/option&gt;&lt;option value=&quot;864&quot;&gt;Sports/Women&lt;/option&gt;&lt;option value=&quot;539&quot;&gt;Sports/Wrestling&lt;/option&gt;&lt;option value=&quot;654&quot;&gt;Sports/Youth and High School&lt;/option&gt;&lt;option value=&quot;705&quot;&gt;World/Bahasa Indonesia&lt;/option&gt;&lt;option value=&quot;819&quot;&gt;World/Bosanski&lt;/option&gt;&lt;option value=&quot;835&quot;&gt;World/Bulgarian&lt;/option&gt;&lt;option value=&quot;660&quot;&gt;World/Català&lt;/option&gt;&lt;option value=&quot;832&quot;&gt;World/Chinese Simplified&lt;/option&gt;&lt;option value=&quot;862&quot;&gt;World/Chinese Traditional&lt;/option&gt;&lt;option value=&quot;869&quot;&gt;World/Cymraeg&lt;/option&gt;&lt;option value=&quot;565&quot;&gt;World/Deutsch&lt;/option&gt;&lt;option value=&quot;597&quot;&gt;World/Español&lt;/option&gt;&lt;option value=&quot;855&quot;&gt;World/Esperanto&lt;/option&gt;&lt;option value=&quot;249&quot;&gt;World/Français&lt;/option&gt;&lt;option value=&quot;858&quot;&gt;World/Greek&lt;/option&gt;&lt;option value=&quot;823&quot;&gt;World/Hrvatski&lt;/option&gt;&lt;option value=&quot;427&quot;&gt;World/Italiano&lt;/option&gt;&lt;option value=&quot;617&quot;&gt;World/Japanese&lt;/option&gt;&lt;option value=&quot;797&quot;&gt;World/Latviski&lt;/option&gt;&lt;option value=&quot;795&quot;&gt;World/Lietuvių&lt;/option&gt;&lt;option value=&quot;841&quot;&gt;World/Magyar&lt;/option&gt;&lt;option value=&quot;486&quot;&gt;World/Nederlands&lt;/option&gt;&lt;option value=&quot;848&quot;&gt;World/Norsk&lt;/option&gt;&lt;option value=&quot;482&quot;&gt;World/Polski&lt;/option&gt;&lt;option value=&quot;792&quot;&gt;World/Português&lt;/option&gt;&lt;option value=&quot;780&quot;&gt;World/Română&lt;/option&gt;&lt;option value=&quot;734&quot;&gt;World/Russian&lt;/option&gt;&lt;option value=&quot;802&quot;&gt;World/Sardu&lt;/option&gt;&lt;option value=&quot;777&quot;&gt;World/Srpski&lt;/option&gt;&lt;option value=&quot;861&quot;&gt;World/Suomi&lt;/option&gt;&lt;option value=&quot;761&quot;&gt;World/Svenska&lt;/option&gt;&lt;option value=&quot;767&quot;&gt;World/Thai&lt;/option&gt;&lt;option value=&quot;794&quot;&gt;World/Türkçe&lt;/option&gt;&lt;option value=&quot;661&quot;&gt;World/Ukrainian&lt;/option&gt;&lt;/select&gt;  &lt;/div&gt; &lt;div class=&quot;form-group&quot;&gt;&lt;label class=&quot;control-label&quot;&gt;Taux&lt;/label&gt;     &lt;div class=&quot;form-group input-group minmaxrange&quot;&gt;&lt;span class=&quot;input-group-btn&quot;&gt;&lt;input type=&quot;number&quot; id=&quot;filters_majesticTtfCategories___name___rate_min&quot; name=&quot;filters[majesticTtfCategories][__name__][rate][min]&quot; placeholder=&quot;min&quot; range-type=&quot;min&quot; range=&quot;rate&quot; class=&quot;form-control&quot; /&gt;&lt;/span&gt;&lt;span class=&quot;input-group-btn&quot;&gt;&lt;input type=&quot;number&quot; id=&quot;filters_majesticTtfCategories___name___rate_max&quot; name=&quot;filters[majesticTtfCategories][__name__][rate][max]&quot; placeholder=&quot;max&quot; range-type=&quot;max&quot; range=&quot;rate&quot; class=&quot;form-control&quot; /&gt;&lt;/span&gt;&lt;/div&gt;  &lt;/div&gt; &lt;/div&gt;  &lt;/div&gt; " data-prototype-name="__name__" data-allow-add="1" data-allow-remove="1" data-name-prefix="filters[majesticTtfCategories]"></div>
+                            </div>
+                        </div>
+                    </div>
+
+
+                </div>
+            </div>
+        </div>
+        <div id="tab-semrush" class="tab-pane">
+            <div class="row">
+                <div class="col-lg-4 col-sm-6">
+                    <div class="filter-group double-touchspin">
+                        <div id="semrushTraffic-semrush"></div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-sm-6">
+                    <div class="filter-group double-touchspin">
+                        <label class="control-label">Mots-clés</label>
+                        <button type="button"
+                                class="info-button-icon"
+                                data-toggle="popover"
+                                data-placement="auto right"
+                                title=""
+                                data-content="Le nombre de mots-clés positionnés dans les 100 premiers résultats sur Google.">
+                            <svg><use xlink:href="#info-icon"></use></svg>
+                        </button>
+                            <div class="form-group input-group minmaxrange"><span class="input-group-btn"><input type="number" id="filters_semrushKeyword_min" name="filters[semrushKeyword][min]" placeholder="min" range-type="min" range="semrushKeyword" class="form-control" /></span><span class="input-group-btn"><input type="number" id="filters_semrushKeyword_max" name="filters[semrushKeyword][max]" placeholder="max" range-type="max" range="semrushKeyword" class="form-control" /></span></div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-sm-6">
+                    <div class="filter-group double-touchspin">
+                        <label class="control-label">Coût du Trafic</label>
+                        <button type="button"
+                                class="info-button-icon"
+                                data-toggle="popover"
+                                data-placement="auto right"
+                                title=""
+                                data-content="Semrush s&#039;appuie ici du CPC (coût par clic) de Google Adwords d&#039;une requête pour évaluer le coût du trafic.">
+                            <svg><use xlink:href="#info-icon"></use></svg>
+                        </button>
+                            <div class="form-group input-group minmaxrange"><span class="input-group-btn"><input type="number" id="filters_semrushTrafficCost_min" name="filters[semrushTrafficCost][min]" placeholder="min" range-type="min" range="semrushTrafficCost" class="form-control" /></span><span class="input-group-btn"><input type="number" id="filters_semrushTrafficCost_max" name="filters[semrushTrafficCost][max]" placeholder="max" range-type="max" range="semrushTrafficCost" class="form-control" /></span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="tab-publication-rules" class="tab-pane">
+            <div class="row">
+                <div class="col-lg-4 col-sm-6">
+                    <div class="filter-group">
+                        <div class="form-group"><label class="control-label">Ancre autorisée</label> <div id="filters_authorizedAnchor"><div class="checkbox"><label for="filters_authorizedAnchor_0"><span class="checkbox_radio_widget_wrapper">
+        <input type="checkbox" id="filters_authorizedAnchor_0" name="filters[authorizedAnchor][]" value="unoptimized" />
+        <label for="filters_authorizedAnchor_0"></label>
+    </span> Désoptimisée</label></div><div class="checkbox"><label for="filters_authorizedAnchor_1"><span class="checkbox_radio_widget_wrapper">
+        <input type="checkbox" id="filters_authorizedAnchor_1" name="filters[authorizedAnchor][]" value="semioptimized" />
+        <label for="filters_authorizedAnchor_1"></label>
+    </span> Semi-optimisée</label></div><div class="checkbox"><label for="filters_authorizedAnchor_2"><span class="checkbox_radio_widget_wrapper">
+        <input type="checkbox" id="filters_authorizedAnchor_2" name="filters[authorizedAnchor][]" value="optimized" />
+        <label for="filters_authorizedAnchor_2"></label>
+    </span> Optimisée</label></div></div>  </div> 
+                        <div class="form-group"><div class="checkbox"><label for="filters_plugin"><span class="checkbox_radio_widget_wrapper">
+        <input type="checkbox" id="filters_plugin" name="filters[plugin]" value="1" />
+        <label for="filters_plugin"></label>
+    </span> Partenaire (plugin)</label></div></div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-sm-6 pull-right">
+                    <div class="filter-group double-touchspin">
+                        <div class="form-group"><label class="control-label">Nombre de mots souhaités</label>     <div class="form-group input-group minmaxrange"><span class="input-group-btn"><input type="number" id="filters_wordsCount_min" name="filters[wordsCount][min]" placeholder="min" range-type="min" range="wordsCount" class="form-control" /></span><span class="input-group-btn"><input type="number" id="filters_wordsCount_max" name="filters[wordsCount][max]" placeholder="max" range-type="max" range="wordsCount" class="form-control" /></span></div>  </div> 
+                        <div class="form-group"><label class="control-label">Nombre de liens</label>     <div class="form-group input-group minmaxrange"><span class="input-group-btn"><input type="number" id="filters_maxLinksNumber_min" name="filters[maxLinksNumber][min]" placeholder="min" range-type="min" range="maxLinksNumber" class="form-control" /></span><span class="input-group-btn"><input type="number" id="filters_maxLinksNumber_max" name="filters[maxLinksNumber][max]" placeholder="max" range-type="max" range="maxLinksNumber" class="form-control" /></span></div>  </div> 
+                        <div class="form-group"><label class="control-label" for="excluse_website_tags">Exclure les sites pour lesquels vous avez déjà acheté un lien</label> <input type="text" id="excluse_website_tags" name="filters[excluseWebsite]" class="excluseWebsiteInput form-control" placeholder="Ex : mondomaine.com" />  </div> 
+                        <span class="help-block m-b-none excluse-help-text">Entrez l’url de votre site et nous exlurons tous les sites sur lesquels vous avez acheté un lien pour ce dernier.</span>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-sm-6 pull-left">
+                    <div class="other-filter-group filter-group">
+                        <label class="control-label">Autres fonctions</label>
+                        <div class="form-group"><div class="checkbox"><label for="filters_googleNewsAdmin"><span class="checkbox_radio_widget_wrapper">
+        <input type="checkbox" id="filters_googleNewsAdmin" name="filters[googleNewsAdmin]" value="1" />
+        <label for="filters_googleNewsAdmin"></label>
+    </span> Google News</label></div></div>
+                                                                        <div class="form-group"><div class="checkbox"><label for="filters_hideUrl"><span class="checkbox_radio_widget_wrapper">
+        <input type="checkbox" id="filters_hideUrl" name="filters[hideUrl]" value="1" />
+        <label for="filters_hideUrl"></label>
+    </span> Ne pas afficher les URLs cachées</label></div></div>
+                        <div id="otherFunction-rules"></div>
+                        <div class="form-group"><div class="checkbox"><label for="filters_showWritingErefererOnly"><span class="checkbox_radio_widget_wrapper">
+        <input type="checkbox" id="filters_showWritingErefererOnly" name="filters[showWritingErefererOnly]" value="1" />
+        <label for="filters_showWritingErefererOnly"></label>
+    </span> Afficher uniquement les sites avec rédaction par Ereferer</label></div></div>
+                        <div class="form-group"><div class="checkbox"><label for="filters_showSendArticleOnly"><span class="checkbox_radio_widget_wrapper">
+        <input type="checkbox" id="filters_showSendArticleOnly" name="filters[showSendArticleOnly]" value="1" />
+        <label for="filters_showSendArticleOnly"></label>
+    </span> Afficher uniquement les sites pour lesquels je peux envoyer mon article</label></div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <input type="hidden" id="filters_proposal" name="filters[proposal]" />
+    </div>
+</div>
+
+                        <footer class="filters-submit">
+                            <button type="submit" id="filters_filter" name="filters[filter]" class="btn-primary m-r-md btn">Appliquer les filtres</button>
+                            <div>
+                                <span>Sites trouvés:</span>
+                                <span id="count_results">0</span>
+                            </div>
+                            <div class="activated-section">
+                              <i>( <span class="activated-length"></span> filtres activés: <span class="activated-filter"></span> ) - <a href="javascript:void(0)" class="reset_filters">Réinitialiser les filtres</a></i>
+                            </div>
+                        </footer>
+                    </div>
+                    <input type="hidden" id="filters__token" name="filters[_token]" value="48a66b43239091465cc6bad860ee.Gz_IvZSDhGPoRbvcFxihqbj-vhCfPICbr6c-zDpluCA.TWn89PfbzxTdNoi1dEnD342k7GDQBMf61tN0lk038HFMa_6OzbfOGZhw8g" /></form>
+                </div>
+
+                <div class="exchange_sites_table">
+                    <div class="tabs-container">
+                        <ul class="nav nav-tabs j-directories-list_nav">
+                            <li class="active">
+                                <a data-toggle="tab" href="" data-type="all">Tous</a>
+                            </li>
+                            <li class="">
+                                <a data-toggle="tab" href="" data-type="join">Groupes à rejoindre <span class="label label-info group-num"></span> </a>
+                            </li>
+                             <li class=" favorite-count">
+                                <a data-toggle="tab" href="" data-type="favorite">Favoris <i class="fa fa-heart" aria-hidden="true"></i></a>
+                            </li>
+                            <li class="bestPrice-count">
+                                <a data-toggle="tab" href="" data-type="bestPrice">Meilleur prix<img src="/img/discount.png?version=v16" height="20" width="20"/></a>
+                            </li>
+                            <li>
+                                                                    <a id="excel-not-import" data-content="Désolé, par précaution cette option est réservée aux membres ayant dépensés plus de 1000€ sur les 12 derniers mois. Si c&#039;est le cas, merci de nous contacter pour vous débloquer l&#039;accès.">Télécharger le résultat sous Excel</a>
+                                                            </li>
+                        </ul>
+                    </div>
+                    <input type="hidden" id="active_site_account" value="" name="">
+<div class="ibox-content sk-spinner_wrap">
+        <div class="sk-spinner sk-spinner-double-bounce">
+        <div class="sk-double-bounce1"></div>
+        <div class="sk-double-bounce2"></div>
+    </div>
+            <div class="quickpurchase-table">
+        <table class="table-freeze table table-striped dataTable" id="quickPurchaseTable">
+            <thead>
+                <tr>
+                    <th data-name="site" class="site exchange_site_order_by  sorting" data-tooltip="URL" data-tooltip-location="up">URL</th>
+<th data-name="semrush_traffic" class="traffic-column exchange_site_order_by sorting_desc sorting" data-tooltip="Trafic" data-tooltip-location="up">Trafic</th>
+<th data-name="semrush_keyword" data-tooltip="Mot-clés Semrush" class="exchange_site_order_by  sorting" data-tooltip-location="up">KW</th>
+<th data-name="trust_flow" class="exchange_site_order_by  sorting" data-tooltip="Trust flow" data-tooltip-location="up">TF</th>
+<th data-name="majestic_ttf_categories" class="exchange_site_order_by  sorting hidden-xs hidden-sm hidden-md" data-tooltip="Trust flow categories" data-tooltip-location="up">TTF</th>
+<th data-name="majestic_citation" class="exchange_site_order_by  sorting" data-tooltip="Citation Flow" data-tooltip-location="up">CF</th>
+<th data-name="proposals_trust_flow" class="tooltipq exchange_site_order_by  sorting hidden-xs hidden-sm hidden-md" data-tooltip="Publication trust flow" data-tooltip-location="up">
+    PTF
+</th>
+<th data-name="referring_domains" class="exchange_site_order_by  sorting" data-tooltip="Domaines référents" data-tooltip-location="up">RD</th>
+<th data-name="moz_domain_authority" class="exchange_site_order_by  sorting" data-tooltip="Domain Authority" data-tooltip-location="up">DA</th>
+<th data-name="words" class="exchange_site_order_by  sorting" data-tooltip="Rédaction" data-tooltip-location="up">Rédaction</th>
+                    <th data-name="price" class="exchange_site_order_by text-right  sorting" data-tooltip="Prix" data-tooltip-location="up">Prix</th>
+                </tr>
+            </thead>
+            <tbody>
+                                        </tbody>
+        </table>
+    </div>
+    </div>
+
+<div class="modal fade moreDetail" id="details" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h4 class="modal-title"></h4>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span></button>
+        </div>
+        <div class="modal-body">
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Fermer</button>
+        </div>
+    </div>
+</div></div>
+
+<div class="modal fade" id="proposalList" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h4 class="modal-title"></h4>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span></button>
+        </div>
+        <div class="modal-body">
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Fermer</button>
+        </div>
+    </div>
+</div></div>
+
+    <script>
+        var countResults = 0;
+        var responseGlobalItems = [];
+        var favoriteCountResults = 0;
+        var bestPriceCountResults = 0;
+        var superAdmin = 0;
+        if ($("#active_site_account").val()) {
+            $("#low_visibility_button").hide();
+        }
+    </script>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Writing Rreferer -->
+    
+<div class="modal fade" id="exchangeSiteProposition" tabindex="-1" role="dialog">
+    <div class="modal-dialog high-inputs" role="document">
+        <div class="modal-content sk-spinner_wrap">
+            <div class="sk-spinner sk-spinner-double-bounce">
+                <div class="sk-double-bounce1"></div>
+                <div class="sk-double-bounce2"></div>
+            </div>
+            <div class="modal-header">
+                <h4 class="modal-title"></h4>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-errors alert-danger hidden"></div>
+            <div class="modal-body"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary">J&#039;accepte</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="exchangeSitePropositionApi" tabindex="-1" role="dialog">
+    <div class="modal-dialog high-inputs" role="document">
+        <div class="modal-content sk-spinner_wrap">
+            <div class="modal-header">
+                <h4 class="modal-title"></h4>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <p>Pour terminer votre commande, vous devez vous inscrire au préalable.<br> Vous pourrez ainsi récupérer votre facture et suivre le statut de votre commande.<br> Vous serez automatiquement redirigé vers la page d'inscription dans <span class="text-danger">10</span> secondes</p>
+                <div class="api-key-time"><h1 id="countdowntimer">10</h1></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="submitArticleProposition" tabindex="-1" role="dialog" data-keyboard="false">
+    <div class="modal-dialog high-inputs" role="document">
+        <div class="modal-content sk-spinner_wrap">
+            <div class="sk-spinner sk-spinner-double-bounce">
+                <div class="sk-double-bounce1"></div>
+                <div class="sk-double-bounce2"></div>
+            </div>
+            <div class="modal-header">
+                <h4 class="modal-title"></h4>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-errors alert-danger hidden"></div>
+            <div class="modal-body"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary">J&#039;accepte</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal inmodal" id="submitTextProposition" tabindex="-1" role="dialog" data-keyboard="false">
+    <div class="modal-dialog high-inputs modal-lg" role="document">
+        <div class="modal-content sk-spinner_wrap">
+            <div class="sk-spinner sk-spinner-double-bounce">
+                <div class="sk-double-bounce1"></div>
+                <div class="sk-double-bounce2"></div>
+            </div>
+            <div class="modal-header">
+                <h4 class="modal-title"></h4>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-errors alert-danger hidden"></div>
+            <div class="modal-body">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-white" data-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-primary">J&#039;accepte</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="exchangeSitePropositionPack" tabindex="-1" role="dialog">
+    <div class="modal-dialog high-inputs" role="document" style="width: 85%;">
+        <div class="modal-content sk-spinner_wrap">
+            <div class="sk-spinner sk-spinner-double-bounce">
+                <div class="sk-double-bounce1"></div>
+                <div class="sk-double-bounce2"></div>
+            </div>
+            <div class="modal-header">
+                <h4 class="modal-title"></h4>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-errors alert-danger hidden"></div>
+            <div class="modal-body"></div>
+            <div class="modal-footer"></div>
+        </div>
+    </div>
+</div>
+    <div class="modal fade" id="exchangeSiteResultProposals" tabindex="-1" role="dialog">
+        <div class="modal-dialog high-inputs" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title"></h4>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                </div>
+                <div class="modal-body"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="choiceImages">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">Choix des images</h4>
+                    <button type="button" class="closeChoiseImage" ><span>&times;</span></button>
+                </div>
+
+                <div class="modal-body">
+                    <form id="search_images">
+                        <label class="control-label" for="query">Rechercher</label>
+                        <input class="form-control" type="text" id="query" name="query" required>
+                        <button type="submit" class="btn btn-primary btn-outline pull-right m-t-lg">Soumettre</button>
+                    </form>
+
+                    <div id="images-container" class="m-t-md">
+                      <div id="admin-images-container" class="m-t-md">
+                          <div class="inner-title" >Images personnelles de l&#039;administrateur</div>
+                          <div class="inner-container"></div>
+                      </div>
+                      <div id="pixabay-images-container" class="m-t-md">
+                          <div class="inner-title" >Pixabay</div>
+                          <div class="inner-container"></div>
+                      </div>
+                    </div>
+
+                    <div id="pagination"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+                </div>
+
+            </div>
+            <!-- End page wrapper-->
+
+            <!-- Footer -->
+                            <div class="footer">
+    <div class="pull-right">
+      <strong> &copy; Copyright</strong> 2017-2025  EREFERER
+    </div>
+</div>
+                    </div>
+        <!-- End wrapper-->
+    
+            
+    <!-- Mainly scripts -->
+    <script src="//cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+    <script src="/js/admin/jquery-3.1.1.min.js"></script>
+    <script src="/js/admin/bootstrap.min.js"></script>
+    <script src="/js/jquery-ui.min.js?version=v16"></script>
+    <script src="/js/admin/plugins/metisMenu/jquery.metisMenu.js"></script>
+    <script src="/js/admin/plugins/slimscroll/jquery.slimscroll.min.js"></script>
+
+
+
+    <!-- iCheck -->
+    <script src="/js/admin/plugins/iCheck/icheck.min.js"></script>
+
+    <!-- Chosen -->
+    <script src="/js/admin/plugins/chosen/chosen.jquery.js"></script>
+
+    <!-- Data picker -->
+    <script src="/js/admin/plugins/datapicker/bootstrap-datepicker.js"></script>
+    <script src="//cdn.jsdelivr.net/bootstrap.daterangepicker/2/daterangepicker.js"></script>
+    <script src="/js/admin/plugins/toastr/toastr.min.js"></script>
+    <script src="//js.pusher.com/2.2/pusher.min.js" type="text/javascript" type="text/javascript" ></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/bootbox.js/4.3.0/bootbox.min.js" type="text/javascript" ></script>  
+
+    <script src="/js/admin/plugins/bootstrap-tagsinput/bootstrap-tagsinput.js"></script>
+    <script src="/js/admin/plugins/jasny/jasny-bootstrap.min.js"></script>
+
+    <script src="/js/admin/plugins/moment/moment.min.js"></script>
+    <script src="/js/admin/plugins/footable/footable.all.min.js"></script>
+    <script src="/js/admin/plugins/blueimp/jquery.blueimp-gallery.min.js"></script>
+    <script src="/js/admin/plugins/sweetalert/sweetalert.min.js"></script>
+    <script src="/js/front/plugin/sticky-table-headers.js"></script>
+
+    <!-- Custom and plugin javascript -->
+
+    <script src="/js/admin/plugins/pace/pace.min.js"></script>
+    <script src="/js/front/plugin/resize-sensor.js"></script>
+    <script src="/js/front/plugin/sticky-sidebar.js"></script>
+    <script src="/js/main.js?version=v16"></script>
+    <script src="/js/front/minmax-validation.js?version=v16"></script>
+
+    <script type="text/javascript">
+        $body = $("body");
+        $(document).on({
+            ajaxStart: function () {
+                $body.addClass("loading");
+            },
+            ajaxStop: function () {
+                $body.removeClass("loading");
+            }
+        });
+
+        $(document).ready(function () {
+            $('.admin-search').chosen({
+                disable_search_threshold: 7,
+                width: "100%"
+            });
+
+            $('select.form-control[multiple!=multiple]')
+                .not("#filters_ageCondition").not('.footable select').not('.footable select').not('.ajax_chosen')
+                .chosen({
+                    width: "100%",
+                    search_contains: true
+                })
+                .on('chosen:showing_dropdown', function (evt, params) {
+                    checkChosenPosition(evt);
+                });
+
+            $('.chosen-select[multiple!=multiple]').chosen({
+                width: "100%",
+                search_contains: true
+            });
+
+            $('.input-group.date').datepicker({
+                todayBtn: "linked",
+                keyboardNavigation: false,
+                forceParse: false,
+                calendarWeeks: true,
+                autoclose: true
+            });
+        });
+
+        var translations = {
+            choose_an_option: 'choose_an_option',
+            excel_report: 'Exporter vers Excel les résultats',
+            pack: {
+                confirmation: {
+                    buy_pack_immediately: 'Vous\u0020serez\u0020d\u00E9bit\u00E9\u0020de\u0020\u0026pack_price\u0026\u20AC\u0020pour\u0020l\u0027int\u00E9gralit\u00E9\u0020du\u0020pack.\u0020Les\u0020articles\u0020non\u0020utilis\u00E9s\u0020\u00E0\u0020la\u0020fin\u0020du\u0020temps\u0020imparti\u0020seront\u0020pay\u00E9s\u0020\u00E0\u0020l\u0027\u00E9diteur\u0020et\u0020ne\u0020pourront\u0020\u00EAtre\u0020rembours\u00E9s.',
+                    buy_pack_each_item: 'Vous serez facturé à chaque article envoyé. Les articles non utilisés à la fin du temps vous seront débités et ne pourront être remboursés.',
+                    cancel: 'L\u0027annulation\u0020d\u0027un\u0020packentraine\u0020aussi\u0020l\u0027annulation\u0020de\u0020la\u0020remise\u0020dont\u0020vous\u0020avez\u0020b\u00E9n\u00E9fici\u00E9\u0020\u003Cbr\u003EVous\u0020serez\u0020donc\u0020rembours\u00E9\u0020de\u0020\u0026refund_price\u0026\u20AC\u0020\u003Cbr\u003E\u00CAtes\u002Dvous\u0020sur\u0020de\u0020vouloir\u0020annuler\u0020ce\u0020pack\u0020\u003F'
+                },
+                immediately: 'Immédiatement (24h)'
+            },
+            modal: {
+                delete: {
+                    title: 'Êtes vous sûr ?',
+                    text: 'Vous ne pourrez pas ensuite le récupérer !',
+                    confirmButtonText: 'Oui, le supprimer !'
+                },
+                confirmation: {
+                    title: 'Confirmation!',
+                    text: 'Êtes vous sûr de vouloir effectuer cette action ?',
+                    confirmButtonText: 'Oui !'
+                },
+                cancel: {
+                    text: 'Annuler',
+                },
+                error: 'Erreur !',
+                error_500: '500 Internal Server Error',
+                invalid_json: 'JSON invalide',
+            },
+            successCopied: 'A bien été copié !',
+            infoTitle: 'Information',
+            infoValidationText: 'Vous ne pouvez pas créer plusieurs projets pour le même site internet afin d&#039;éviter les doublons.',
+            validateTitle: 'Veuillez cocher cette case si vous souhaitez continuer',
+            noResults: 'Aucun résultat',
+            errors: {
+                writing_ereferer: {
+                    fields: 'Vous devez mentionner au moins 1 url et son ancre afin de pouvoir poursuivre.'
+                },
+                writing_webmaster: {
+                    fields: 'Vous devez mentionner au moins 1 url et son ancre afin de pouvoir poursuivre.'
+                },
+                submit_your_article: {
+                    fields: 'Vous devez mentionner au moins 1 url et son ancre afin de pouvoir poursuivre.'
+                },
+                create_group: {
+                    fields: 'Vous devez mentionner au moins 1 url et son ancre afin de pouvoir poursuivre.'
+                },
+                join_group: {
+                    fields: 'Vous devez mentionner au moins 1 url et son ancre afin de pouvoir poursuivre.',
+                    message: 'Vous devez entrer un message au partenaire.'
+                },
+                admin_proposal: {
+                    fields: 'errors.admin_proposal.fields'
+                },
+                contact_partner: {
+                    fields: 'Vous devez mentionner au moins 1 url et son ancre afin de pouvoir poursuivre.',
+                },
+                wrong_min_range: 'La valeur minimale ne peut être supérieure à la maximale',
+                wrong_max_range: 'La valeur maximale doit être supérieur à la minimale',
+                wrong_url: 'Url incorrecte',
+                checkedCondition: 'Veuillez vérifier cette condition si vous souhaitez continuer',
+                checkedRefuseCondition: 'Veuillez accepter la condition ci-dessus si vous souhaitez continuer.',
+                general_error: 'Résolvez les problèmes suivants pour continuer',
+                black_list_url: 'Désolé, cette thématique n’est pas acceptée sur ce site !'
+            }
+        };
+
+    </script>
+    <script src="/js/admin/inspinia.js"></script>
+
+            
+    <script  type="text/javascript">
+    translations.name = {
+        age: "Age",
+        archive: "Âge (Archive.org)",
+        whois: "Âge (Whois)",
+        y: "Année(s)",
+        d: "Jour(s)",
+        m: "Mois",
+        blog: "Blog",
+        directory: "Annuaire",
+        categories: "Catégories",
+        tags: "Tags",
+        type: "Type",
+        category: "Catégorie",
+        preferences: "Rédaction",
+        semrushTraffic: "Trafic",
+        emptyTable: "table.empty",
+
+        metaTitle: "Meta title",
+        metaDescription: "Meta description",
+        headerOneSet: "H1",
+        headerTwoStartEnd: "H2",
+        headerThreeStartEnd: "H3",
+        majesticTrustCitationRatio: "Trust flow/Citation flow ratio",
+
+
+        boldText: "Passages en gras",
+        italicText: "Passages en Italic",
+        ulTag: "Liste à puce",
+
+        semrushKeyword: "Mot-clés Semrush",
+        semrushTrafficCost: "Coût du trafic Semrush",
+        trustFlow: "Trust flow",
+        topictrustFlow: "Topical Trust Flow",
+        referringDomains: "Domaines référents",
+        price: "Prix",
+        language: "Langue",
+        googleNews: "Google News",
+        googleAnalytics: "Google analytics",
+        mozDomainAuthority: "Domain Authority",
+        mozPageAuthority: "Page authority",
+        alexaRank: "Alexa",
+        majesticCitation: "Citation Flow",
+        majesticRefDomains: "Domaines référents",
+        majesticBacklinks: "Liens",
+        majesticEduBacklinks: "Liens EDU",
+        majesticGovBacklinks: "Liens GOV",
+        authorizedAnchor: "Ancre autorisée",
+        words: "Mots",
+        links: "Liens",
+        images: "Images",
+        to: "à",
+        yes: "Oui",
+        no: "Non",
+        min: "min",
+        max: "max",
+        optional: "Optionnel",
+        validation_rate: "Taux de validation",
+        validation_time: "Temps pour valider",
+        accept_subdomains: "Accepte sous-domaines",
+        reject_subdomains: "Refuse sous-domaines",
+        legal: "Site avec mentions légales",
+        dont_legal: "Site sans mentions légales",
+        plugin: "Plugin",
+        publicationRequirements: "Critères de publication",
+        metrics: "Metrics",
+        showDetails: "Voir les détails",
+        hideDetails: "Cacher les details",
+        majestic_ttf_categories: "Trust flow categories",
+        majestic_metrics: "Majestic",
+        semrush_metrics: "Semrush",
+        moz_metrics: "Moz",
+        google_metrics: "Google",
+        other_metrics: "Autres metrics",
+        article: "form.article_filter",
+        hideUrlContent: "Disposant de l&#039;intégralité des médias et sites Premium ouverts au netlinking, Ereferer les protège et n&#039;affiche ces URLs qu&#039;aux partenaires ayant rechargé au moins 1000€ cumulés sur leur compte sur les 12 derniers mois. L&#039;accès est déverrouillé indépendamment en nous contactant.",
+        seeUrl: "(Voir l&#039;URL)",
+        visits: "Visites",
+        uniqueVisitors: "Visiteurs U.",
+        semrush: "Trafic Google",
+        prev: "Prev",
+        next: "Next",
+        downloadError: "Vous ne pouvez pas télécharger plus de 100 résultats.",
+    }
+</script>
+
+    <script src="/js/admin/plugins/touchspin/jquery.bootstrap-touchspin.min.js?version=v16"></script>
+    <script src="/js/admin/jquery.collection.js?version=v16"></script>
+    <script src="/js/front/init_filters.js?version=v16"></script>
+    <script src="/js/front/exchangeProposition/submitYourArticle.js?version=v16"></script>
+    <script src="/js/front/exchangeProposition/pixabay.js?version=v16"></script>
+    <script src="/js/admin/jquery.twbsPagination.min.js?version=v16"></script>
+    <script src="/js/front/admin_images/search.js?version=v16"></script>
+    <script src="/js/front/copywriting/upload-image.js?version=v16"></script>
+    <script src="https://cloud.tinymce.com/stable/tinymce.min.js?apiKey=vybbx0bipzx1il1w2g7jixvrhh409ib9oh0qacpi96q7n68z"></script>
+    <script src="/js/front/exchange_site/exchange_site_find.js?version=v16"></script>
+    <script src="/js/front/exchange_site/tooltip.js?version=v16"></script>
+    <script src="/js/admin/plugins/kartik-rating/star-rating.js?version=v16"></script>
+    <script src="https://cdn.datatables.net/1.10.22/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.22/js/dataTables.bootstrap4.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.2.6/js/dataTables.responsive.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.2.6/js/responsive.bootstrap4.min.js"></script>
+    <script src="/js/front/exchange_site/exchange_site_result_proposals.js?version=v16"></script>
+    <script src="/js/admin/plugins/OverlayScrollbars/jquery.overlayScrollbars.min.js?version=v16"></script>
+    <script src="/js/front/directory/jquery-throttle-debounce.js?version=v16"></script>
+    <script src="/js/front/directory/jquery.stickyheader.js?version=v16"></script>
+    <script src="/js/front/directory/custom-popup.js?version=v16"></script>
+    <script src="/js/front/directory/trust-flow-chat.js?version=v16"></script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/jquery.lazy/1.7.9/jquery.lazy.min.js"></script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/jquery.lazy/1.7.9/jquery.lazy.plugins.min.js"></script>
+    <script src="https://www.amcharts.com/lib/4/core.js"></script>
+    <script src="https://www.amcharts.com/lib/4/charts.js"></script>
+    <script src="https://www.amcharts.com/lib/4/themes/animated.js"></script>
+    <script type="text/javascript">
+        $('#excluse_website_tags').tagsinput({
+            tagClass: 'label label-white',
+            maxTags: 3
+        });
+
+        $('#filters_tag').tagsinput({
+            tagClass: 'label label-white',
+            maxTags: 5
+        });
+
+        $(document).on('focusin', function(e) {
+          if ($(e.target).closest(".mce-window").length) {
+            e.stopImmediatePropagation();
+          }
+        });
+
+        initMultipleSelect($('#filters_category'), 5);
+        
+        $(document).on('click', '.heart-flag', function(event) {
+            event.preventDefault();
+            var site_id = $(this).attr("data-id");
+            var site_type = $(this).attr("data-type");
+            var self = $(this);
+            $.ajax({
+              type: 'GET',
+              url: Routing.generate('user_exchange_site_favorite_flag'),
+              data: {
+                'site_id': site_id,
+                'site_type': site_type,
+              },
+              dataType: 'json',
+              success: function success(response) {
+                if (response.status === 'success') {
+                    if(response.flag){
+                      self.html('<i class="fa fa-heart" aria-hidden="true"></i>');
+                      $('.favorite-count').show();
+                    }else{
+                        if($(".favorite-count").hasClass("active")) {
+                            self.closest("tr").hide();
+                        } else {
+                            self.html('<i class="fa fa-heart-o" aria-hidden="true"></i>');
+                        }
+                    }
+                }
+              },
+            });
+        });
+    </script>
+    <script type="text/javascript">
+
+        $('.ttf-categories-collection').collection({
+            add: '<a href="#" class="btn btn-outline btn-info add-ttf-category">Ajouter une catégorie</a>',
+            remove: '<a href="#" class="btn btn-sm btn-outline btn-danger">Retirer</a>',
+            allow_up: false,
+            allow_down: false,
+            add_at_the_end: true,
+            after_add: function(collection) {
+                initTouchSpin();
+                $('.chosen-select')
+                    .chosen({width: "100%"})
+                    .on('chosen:showing_dropdown', function (evt, params) {
+                        checkChosenPosition(evt);
+                    });
+            }
+        });
+    </script>
+    <script type="text/javascript">
+        $('.filters-directory').parent().css('display', 'none');
+
+        $('[data-action="toggle-filters"]').on('click', function(){
+          $('.filters-container').slideToggle(300, function() {
+            $('[data-action="toggle-filters"]').find('span').toggleClass('hidden');
+          });
+        });
+
+        var ageInputs = $('#filters_ageCondition').find('input[type="radio"]');
+
+        function checkAgeInputs(){
+            ageInputs.each(function() {
+                if($(this).prop('checked')) {
+                    ageInputs.parents('.radio').removeClass('active');
+                    $(this).parents('.radio').addClass('active');
+                }
+            })
+        }
+        checkAgeInputs();
+        ageInputs.on('change', function() {
+          checkAgeInputs();
+        })
+
+    </script>
+    <script type="text/javascript">
+
+        $('#excel-not-import').on('click', function (e) {
+            var content = $(this).attr("data-content");
+            toastr.error(content);
+        });
+
+        $(document).on('click', '#low_visibility_button', function(e) {
+            e.preventDefault();
+            var url = new URL(location.href);
+            var tab = $('.j-directories-list_nav .active a').attr("data-type");
+            var params = new URLSearchParams(url.search);
+            var page = $(this).attr("data-id");
+            $("#active_site_account").val(page);
+            var search = params.get("search");
+            applyFilter(null, search, null, tab, true);
+            $(this).hide();
+        });
+
+        $('#excel-import').on('click', function (e) {
+           
+           let form =  $("#find_site_filter")[0];
+           var url = new URL(location.href);
+           var params = new URLSearchParams(url.search);
+           var search = params.get("search");
+           let tab = $(this).closest('.j-directories-list_nav').find('.active a').attr("data-type");
+           let form_filters = new FormData(form);
+           form_filters.append('tab', tab);
+           if (search) {
+            form_filters.append('search', search);
+           }
+
+           let queryString = new URLSearchParams(form_filters).toString();
+
+           if (typeof proposalId !== 'undefined' && proposalId) {
+               queryString='&proposal-id='+proposalId;
+           }
+
+           url = $(this).attr("href");
+
+           $(this).attr("href", url+ '?'+queryString);
+        });
+
+        $(document).on('click', '.j-directories-list_nav li a[data-toggle="tab"]', function(e) {
+            e.preventDefault();
+            var tab = $(this).attr("data-type");
+            var url = new URL(location.href);
+            var params = new URLSearchParams(url.search);
+            var search = params.get("search");
+            if ($("#active_site_account").val() > 0) {
+                var lowVisibility = true;
+            } else {
+                var lowVisibility = false;
+            }
+            applyFilter(null, search, null, tab, lowVisibility)
+        });
+
+        
+        var total_load = 0;
+
+        $(document).on('click', '.exchange_sites_table .pagination > li > a', function(event) {
+            event.preventDefault();
+            var url = new URL(event.currentTarget.href);
+            var params = new URLSearchParams(url.search);
+            var search = params.get("search");
+            var page = params.get("page");
+            var orderByKey = url.href.match('order-by%5B(.*)%5D');
+            var tab = $('.j-directories-list_nav .active a').attr("data-type");
+            if ($("#active_site_account").val() > 0) {
+                var lowVisibility = true;
+            } else {
+                var lowVisibility = false;
+            }
+            if(orderByKey){
+                var orderBy = params.get(decodeURI(orderByKey[0]));    
+                applyFilter(page, search, {[decodeURI(orderByKey[1])]: orderBy}, tab, lowVisibility);
+            } else {
+                applyFilter(page, search, null, tab, lowVisibility);
+            }
+
+        });
+
+        $('#filters_filter').click(function(event) {
+            if(validateMinMax()) {
+                return false;
+            }
+
+            var url = new URL(location.href);
+            var params = new URLSearchParams(url.search);
+            var search = params.get("search");
+
+            if ($("#active_site_account").val() > 0) {
+                var lowVisibility = true;
+            } else {
+                var lowVisibility = false;
+            }
+            
+            var tab = $('.j-directories-list_nav .active a').attr("data-type");
+            applyFilter(null, search, null, tab, lowVisibility)
+
+            return false;
+        });
+
+        $('.reset_filters').on('click', function () {
+          $('form[name="filters"] input[type="number"]').val("");
+          $('form[name="filters"] input[type="checkbox"]').prop("checked", false);
+          $('form[name="filters"] #filters_tag').val("");
+          $('#filters_category option:selected').prop('selected',false);
+          $('#filters_category_chosen .chosen-single span').text($("#filters_category option:first").text());
+          $('#filters_filter').trigger('click');
+        });
+
+        function getAllRequestData(page) {
+          var formData = $('form[name="filters"]').serializeArray();
+          var uri = {};
+          for (var i in formData) {
+            if (uri.hasOwnProperty(formData[i].name)) {
+              if (!$.isArray(uri[formData[i].name])) {
+                uri[formData[i].name] = [uri[formData[i].name]];
+              }
+
+              uri[formData[i].name].push(formData[i].value);
+            } else {
+              uri[formData[i].name] = formData[i].value;
+            }
+          }
+
+          var title_obj = {
+            'filters[ageMonth]': 'Age Month',
+            'filters[ageYears]': 'Age Years',
+            'filters[category]': 'Category',
+            'filters[language]': 'Language',
+            'filters[price][max]': 'Price Max',
+            'filters[price][min]': 'Price Min',
+            'filters[tag]': 'Tag',
+            'filters[majesticTrustFlow][min]': 'TrustFlow Min',
+            'filters[majesticTrustFlow][max]': 'TrustFlow Max',
+            'filters[mozDomainAuthority][min]': 'DomainAuthority Min',
+            'filters[mozDomainAuthority][max]': 'DomainAuthority Max',
+            'filters[traffic][min]': 'Traffic Min',
+            'filters[traffic][max]': 'Traffic Max',
+            'filters[mozPageAuthority][min]': 'PageAuthority Min',
+            'filters[mozPageAuthority][max]': 'PageAuthority Max',
+            'filters[directoryValidationRate][min]': 'ValidationRate Min',
+            'filters[directoryValidationRate][max]': 'ValidationRate Max',
+            'filters[directoryValidationTime][min]': 'ValidationTime Min',
+            'filters[directoryValidationTime][max]': 'ValidationTime Max',
+            'filters[majesticCitation][min]': 'Citation Min',
+            'filters[majesticCitation][max]': 'Citation Max',
+            'filters[majesticTrustCitationRatio][min]': 'TrustCitationRatio Min',
+            'filters[majesticTrustCitationRatio][max]': 'TrustCitationRatio Max',
+            'filters[majesticBacklinks][min]': 'Backlinks Min',
+            'filters[majesticBacklinks][max]': 'Backlinks Max',
+            'filters[majesticEduBacklinks][min]': 'EduBacklinks Min',
+            'filters[majesticEduBacklinks][max]': 'EduBacklinks Max',
+            'filters[majesticGovBacklinks][min]': 'GovBacklinks Min',
+            'filters[majesticGovBacklinks][max]': 'GovBacklinks Max',
+            'filters[majesticRefDomains][min]': 'RefDomains Min',
+            'filters[majesticRefDomains][max]': 'RefDomains Max',
+            'filters[semrushKeyword][min]': 'Keyword Min',
+            'filters[semrushKeyword][max]': 'Keyword Max',
+            'filters[semrushTrafficCost][min]': 'TrafficCost Min',
+            'filters[semrushTrafficCost][max]': 'TrafficCost Max',
+            'filters[wordsCount][min]': 'wordsCount Min',
+            'filters[wordsCount][max]': 'wordsCount Max',
+            'filters[authorizedAnchor][]': 'Authorized anchor',
+            'filters[existingPage]': 'Existing Page'
+          }
+          var text = '';
+          var title = '';
+          var value = '';
+          var activatedlength = 0;
+          for(var key in uri){
+            if(uri[key] != ''){
+              title = title_obj[key];
+              value = uri[key];
+              if (title == "Category") {
+                value = $('#filters_category_chosen .chosen-single span').text();
+                if (value == "") {
+                  value = $('#filters_category option[value="'+uri[key]+'"]').text();
+                }
+              }
+              if (title == "Language") {
+                value = $('#filters_language option[value="'+uri[key]+'"]').text();
+              }
+              if (title != undefined) {
+                text += title + ':' + value + '; ';
+                activatedlength ++;
+              }
+
+            }
+          }
+
+          $(".activated-length").html(activatedlength);
+          $(".activated-filter").html(text);
+
+          return uri;
+        }
+
+        function updateQueryStringParameter(uri, key, value) {
+            var re = new RegExp("([?&])" + key + "=.*?(&|$)", "i");
+            var separator = uri.indexOf('?') !== -1 ? "&" : "?";
+            if (uri.match(re)) {
+                return uri.replace(re, '$1' + key + "=" + value + '$2');
+            }
+            else {
+                return uri + separator + key + "=" + value;
+            }
+        }
+
+        var url = new URL(location.href);
+        var params = new URLSearchParams(url.search);
+
+        var search = params.get("search");
+
+        var order = params.get("order-by");
+        page = location.href.match(new RegExp("page=(\\d+)"));
+
+                                    if ('findSites' === 'findSites') {
+           applyFilter(page ? page[1] : null, search, order);
+        }
+
+        var href = location.href;
+
+        $('a[href="#tab-proposals"]').on('click', function(e) {
+            e.preventDefault();
+            if ($(this).parents('.active').length) return;
+            if (href.search('\\?') == -1) href = location.href + '?tab=proposals';
+            else if (href.search('findSites') !== -1) href = href.replace('findSites', 'proposals');
+            else href = location.href + '&tab=proposals';
+
+            location.href = updateQueryStringParameter(href, 'page', 1);
+        });
+
+        $('a[href="#tab-find_sites"]').on('click', function(e) {
+          e.preventDefault();
+          if ($(this).parents('.active').length) return;
+          if(href.search('proposals') !== -1) {
+            href = href.replace('proposals', 'findSites')
+          }
+
+          location.href = updateQueryStringParameter(href, 'page', 1);
+        });
+
+        (function($) {
+        $.Lazy('lazyExchangeLoad', function(element, response) {
+            // just for demonstration, write some text inside element
+                var index_key = element.attr('data-key');
+                getTrustFlowChart(index_key);
+                // return loaded state to Lazy
+                response(true);
+            });
+        })(window.jQuery || window.Zepto);
+    </script>
+
+    <div class="modal fade" id="erefererAlerts" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title"></h4>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                </div>
+                <div class="modal-body"></div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
+
+<script type="text/javascript">
+    var userId = 69717;
+
+    console.log("test" + userId);
+
+    var pusher = new Pusher('e68c91eed5f6fc664eda', {
+        cluster: 'eu'
+    });
+    // Enter a unique channel you wish your users to be subscribed in.
+    var channel = pusher.subscribe('user-channel');
+    channel.bind('user_event', function(data) {
+        console.log("User:" + data.user_id);
+        if (data.user_id == userId) {
+            window.location.href = '/logout';
+        }
+    });
+</script>

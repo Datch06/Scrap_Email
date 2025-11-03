@@ -1,0 +1,14 @@
+# COMMANDES À COPIER-COLLER
+# Installation de l'interface sur https://admin.perfect-cocon-seo.fr
+
+# 1. Aller dans le dossier
+cd /var/www/Scrap_Email
+
+# 2. Lancer l'installation complète (UNE SEULE COMMANDE)
+sudo bash INSTALLATION_MAINTENANT.sh
+
+# C'EST TOUT !
+# Le script va tout faire automatiquement en 2-3 minutes.
+
+# Après l'installation, testez :
+# https://admin.perfect-cocon-seo.fr
