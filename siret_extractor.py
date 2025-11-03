@@ -29,8 +29,15 @@ class SiretExtractor:
         Returns:
             tuple: (siret, type) où type est 'SIRET' ou 'SIREN'
         """
-        # Pattern pour SIRET (14 chiffres)
-        siret_pattern = re.compile(r'\b(\d{3}\s?\d{3}\s?\d{3}\s?\d{5})\b')
+        # Patterns pour SIRET (14 chiffres) - patterns explicites d'abord
+        siret_patterns = [
+            # N° de Siret: "N° de Siret : 51046815000014"
+            re.compile(r'(?:N°|n°|numéro|numero)\s+(?:de\s+)?(?:SIRET|Siret|siret)\s*[:\s]*(\d{3}\s?\d{3}\s?\d{3}\s?\d{5})\b', re.IGNORECASE),
+            # SIRET explicite: "SIRET: 123 456 789 00014"
+            re.compile(r'(?:SIRET|Siret|siret)\s*[:\s]*(\d{3}\s?\d{3}\s?\d{3}\s?\d{5})\b', re.IGNORECASE),
+            # Pattern générique (14 chiffres)
+            re.compile(r'\b(\d{3}\s?\d{3}\s?\d{3}\s?\d{5})\b'),
+        ]
 
         # Patterns pour SIREN (9 chiffres) - multiples variantes
         siren_patterns = [
@@ -43,15 +50,18 @@ class SiretExtractor:
             re.compile(r'(?:numéro|numero|n°|N°)\s+(?:d\'identification|identification)[:\s]*(\d{3}\s?\d{3}\s?\d{3})\b', re.IGNORECASE),
             # Immatriculation: "Immatriculée au RCS 123 456 789"
             re.compile(r'(?:Immatricul|inscrit)[éeès]+\s+(?:au|sous\s+le)[:\s]*(?:RCS|rcs)[:\s]*[A-Za-zÀ-ÿ\s]*(\d{3}\s?\d{3}\s?\d{3})\b', re.IGNORECASE),
+            # Registre du Commerce et des Sociétés: "immatriculée au Registre du Commerce et des Sociétés de Paris sous le numéro 123 456 789"
+            re.compile(r'(?:Registre\s+du\s+Commerce\s+et\s+des\s+Sociétés|RCS)[^\.]{0,50}(?:sous\s+le\s+)?numéro\s+(\d{3}\s?\d{3}\s?\d{3})(?:\s?\d{5})?\b', re.IGNORECASE),
         ]
 
-        # Chercher SIRET d'abord (14 chiffres)
-        siret_matches = siret_pattern.findall(text)
-        if siret_matches:
-            # Nettoyer et valider
-            siret = siret_matches[0].replace(' ', '')
-            if len(siret) == 14 and siret.isdigit():
-                return siret, 'SIRET'
+        # Chercher SIRET d'abord (14 chiffres) avec tous les patterns
+        for pattern in siret_patterns:
+            siret_matches = pattern.findall(text)
+            if siret_matches:
+                # Nettoyer et valider
+                siret = siret_matches[0].replace(' ', '')
+                if len(siret) == 14 and siret.isdigit():
+                    return siret, 'SIRET'
 
         # Chercher SIREN (9 chiffres) avec tous les patterns
         for pattern in siren_patterns:
@@ -92,6 +102,10 @@ class SiretExtractor:
             '/legal',
             '/cgv',
             '/conditions-generales',
+            '/politique-de-confidentialite',
+            '/politique-de-confidentialite/',
+            '/confidentialite',
+            '/privacy',
             '/a-propos',
             '/about',
             '/qui-sommes-nous',
