@@ -64,6 +64,11 @@ class Site(Base):
     email_validation_date = Column(DateTime, nullable=True)
     email_deliverable = Column(Boolean, default=False)
 
+    # Détection CMS
+    cms = Column(String(50), nullable=True)  # WordPress, Joomla, Drupal, PrestaShop, etc.
+    cms_version = Column(String(20), nullable=True)  # Version du CMS si détectable
+    cms_detected_at = Column(DateTime, nullable=True)  # Date de détection
+
     # Métadonnées
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

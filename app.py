@@ -132,6 +132,13 @@ def get_stats():
         emails_valid = session.query(Site).filter(Site.email_validation_status == 'valid').count()
         emails_invalid = session.query(Site).filter(Site.email_validation_status == 'invalid').count()
         emails_risky = session.query(Site).filter(Site.email_validation_status == 'risky').count()
+
+        # Stats CMS
+        sites_with_cms = session.query(Site).filter(Site.cms.isnot(None)).count()
+        cms_counts = {}
+        cms_results = session.query(Site.cms, func.count(Site.id)).filter(Site.cms.isnot(None)).group_by(Site.cms).all()
+        for cms, count in cms_results:
+            cms_counts[cms] = count
         emails_deliverable = session.query(Site).filter(Site.email_deliverable == True).count()
 
         return jsonify({
@@ -158,6 +165,10 @@ def get_stats():
             'emails_deliverable': emails_deliverable,
             'validation_rate': round((emails_validated / sites_with_email * 100) if sites_with_email > 0 else 0, 1),
             'deliverable_rate': round((emails_deliverable / emails_validated * 100) if emails_validated > 0 else 0, 1),
+            # Stats CMS
+            'sites_with_cms': sites_with_cms,
+            'cms_counts': cms_counts,
+            'cms_rate': round((sites_with_cms / total_sites * 100) if total_sites > 0 else 0, 1),
         })
 
     finally:
