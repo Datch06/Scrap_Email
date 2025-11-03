@@ -1,0 +1,226 @@
+#!/usr/bin/env python3
+"""
+Module d'extraction de SIRET/SIREN depuis les sites web
+Utilise plusieurs sources et stratégies
+"""
+
+import requests
+import re
+from bs4 import BeautifulSoup
+from playwright.sync_api import sync_playwright
+import time
+
+
+class SiretExtractor:
+    """Extracteur de SIRET/SIREN avec multiples stratégies"""
+
+    def __init__(self, use_playwright=False, timeout=10):
+        self.use_playwright = use_playwright
+        self.timeout = timeout
+        self.session = requests.Session()
+        self.session.headers.update({
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        })
+
+    def extract_siret_from_text(self, text):
+        """
+        Extrait SIRET/SIREN depuis du texte brut
+
+        Returns:
+            tuple: (siret, type) où type est 'SIRET' ou 'SIREN'
+        """
+        # Pattern pour SIRET (14 chiffres)
+        siret_pattern = re.compile(r'\b(\d{3}\s?\d{3}\s?\d{3}\s?\d{5})\b')
+        # Pattern pour SIREN (9 chiffres)
+        siren_pattern = re.compile(r'(?:SIREN|siren|Siren)[:\s]*(\d{3}\s?\d{3}\s?\d{3})\b')
+
+        # Chercher SIRET
+        siret_matches = siret_pattern.findall(text)
+        if siret_matches:
+            # Nettoyer et valider
+            siret = siret_matches[0].replace(' ', '')
+            if len(siret) == 14 and siret.isdigit():
+                return siret, 'SIRET'
+
+        # Chercher SIREN
+        siren_matches = siren_pattern.findall(text)
+        if siren_matches:
+            siren = siren_matches[0].replace(' ', '')
+            if len(siren) == 9 and siren.isdigit():
+                return siren, 'SIREN'
+
+        return None, None
+
+    def extract_from_domain(self, domain):
+        """
+        Extrait le SIRET depuis un domaine
+
+        Stratégies:
+        1. Pages mentions légales
+        2. Pages CGV/conditions
+        3. Page À propos
+        4. Footer de la homepage
+        5. Recherche pappers.fr (fallback)
+
+        Returns:
+            dict: {'siret': ..., 'siren': ..., 'type': ..., 'source': ...}
+        """
+        if not domain.startswith('http'):
+            urls_to_try = [f'https://{domain}', f'http://{domain}']
+        else:
+            urls_to_try = [domain]
+
+        # Pages à vérifier
+        pages_to_check = [
+            '',  # Homepage
+            '/mentions-legales',
+            '/mentions-legales.html',
+            '/mentions-legales.php',
+            '/mentions',
+            '/legal',
+            '/cgv',
+            '/conditions-generales',
+            '/a-propos',
+            '/about',
+            '/qui-sommes-nous',
+            '/contact',
+        ]
+
+        for base_url in urls_to_try:
+            for page in pages_to_check:
+                try:
+                    url = base_url + page
+                    response = self.session.get(url, timeout=self.timeout, allow_redirects=True)
+
+                    if response.status_code == 200:
+                        text = response.text
+                        soup = BeautifulSoup(text, 'html.parser')
+
+                        # Extraire le texte visible
+                        visible_text = soup.get_text(separator=' ')
+
+                        siret, siret_type = self.extract_siret_from_text(visible_text)
+
+                        if siret:
+                            result = {
+                                'siret': siret if siret_type == 'SIRET' else None,
+                                'siren': siret[:9] if siret_type == 'SIRET' else siret,
+                                'type': siret_type,
+                                'source': f'scraping:{page if page else "homepage"}'
+                            }
+                            return result
+
+                except:
+                    continue
+
+        # Si aucun SIRET trouvé, essayer avec pappers.fr
+        return self.search_pappers(domain)
+
+    def search_pappers(self, domain):
+        """
+        Recherche le SIRET via pappers.fr en utilisant le nom de domaine
+
+        Returns:
+            dict ou None
+        """
+        try:
+            # Extraire le nom de l'entreprise du domaine
+            company_name = domain.replace('http://', '').replace('https://', '').split('/')[0]
+            company_name = company_name.replace('www.', '').split('.')[0]
+
+            url = f'https://www.pappers.fr/recherche?q={company_name}'
+
+            response = self.session.get(url, timeout=self.timeout)
+
+            if response.status_code == 200:
+                soup = BeautifulSoup(response.text, 'html.parser')
+
+                # Chercher le SIREN dans les résultats
+                siren_pattern = re.compile(r'SIREN\s*:\s*(\d{9})')
+                match = siren_pattern.search(soup.get_text())
+
+                if match:
+                    siren = match.group(1)
+                    return {
+                        'siret': None,
+                        'siren': siren,
+                        'type': 'SIREN',
+                        'source': 'pappers'
+                    }
+
+        except:
+            pass
+
+        return None
+
+    def extract_with_playwright(self, domain):
+        """
+        Extrait le SIRET en utilisant Playwright (pour sites dynamiques)
+
+        Returns:
+            dict ou None
+        """
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            context = browser.new_context(
+                user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            )
+            page = context.new_page()
+
+            pages_to_check = [
+                '',
+                '/mentions-legales',
+                '/legal',
+                '/cgv',
+            ]
+
+            for page_path in pages_to_check:
+                try:
+                    url = f'https://{domain}{page_path}' if not domain.startswith('http') else f'{domain}{page_path}'
+                    page.goto(url, wait_until='networkidle', timeout=20000)
+                    page.wait_for_timeout(2000)
+
+                    text = page.inner_text('body')
+
+                    siret, siret_type = self.extract_siret_from_text(text)
+
+                    if siret:
+                        context.close()
+                        browser.close()
+
+                        return {
+                            'siret': siret if siret_type == 'SIRET' else None,
+                            'siren': siret[:9] if siret_type == 'SIRET' else siret,
+                            'type': siret_type,
+                            'source': f'playwright:{page_path if page_path else "homepage"}'
+                        }
+
+                except:
+                    continue
+
+            context.close()
+            browser.close()
+
+        return None
+
+
+if __name__ == '__main__':
+    # Tests
+    extractor = SiretExtractor()
+
+    test_domains = [
+        'amazon.fr',
+        'carrefour.fr',
+        'fnac.com',
+    ]
+
+    for domain in test_domains:
+        print(f"\nTest: {domain}")
+        result = extractor.extract_from_domain(domain)
+        if result:
+            print(f"  SIREN: {result.get('siren')}")
+            print(f"  SIRET: {result.get('siret')}")
+            print(f"  Type: {result.get('type')}")
+            print(f"  Source: {result.get('source')}")
+        else:
+            print("  ✗ Non trouvé")
