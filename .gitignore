@@ -62,3 +62,7 @@ nohup.out
 # Backup files
 *.backup
 *.bak
+
+# Allow backups directory for GitHub storage
+!backups/
+!backups/*.tar.gz
