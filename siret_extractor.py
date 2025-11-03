@@ -98,6 +98,7 @@ class SiretExtractor:
             '/mentions-legales',
             '/mentions-legales.html',
             '/mentions-legales.php',
+            '/page/mentions-legales',
             '/mentions',
             '/legal',
             '/cgv',
