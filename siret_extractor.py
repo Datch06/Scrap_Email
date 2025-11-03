@@ -31,10 +31,21 @@ class SiretExtractor:
         """
         # Pattern pour SIRET (14 chiffres)
         siret_pattern = re.compile(r'\b(\d{3}\s?\d{3}\s?\d{3}\s?\d{5})\b')
-        # Pattern pour SIREN (9 chiffres)
-        siren_pattern = re.compile(r'(?:SIREN|siren|Siren)[:\s]*(\d{3}\s?\d{3}\s?\d{3})\b')
 
-        # Chercher SIRET
+        # Patterns pour SIREN (9 chiffres) - multiples variantes
+        siren_patterns = [
+            # SIREN explicite: "SIREN: 123 456 789"
+            re.compile(r'(?:SIREN|siren|Siren)[:\s]*(\d{3}\s?\d{3}\s?\d{3})\b'),
+            # RCS: "RCS Paris 123 456 789" ou "438 049 843 RCS"
+            re.compile(r'(?:RCS|rcs)[:\s]*[A-Za-zÀ-ÿ\s]*(\d{3}\s?\d{3}\s?\d{3})\b'),
+            re.compile(r'(\d{3}\s?\d{3}\s?\d{3})\s+(?:RCS|rcs)'),
+            # Numéro d'identification: "numéro d'identification 123 456 789"
+            re.compile(r'(?:numéro|numero|n°|N°)\s+(?:d\'identification|identification)[:\s]*(\d{3}\s?\d{3}\s?\d{3})\b', re.IGNORECASE),
+            # Immatriculation: "Immatriculée au RCS 123 456 789"
+            re.compile(r'(?:Immatricul|inscrit)[éeès]+\s+(?:au|sous\s+le)[:\s]*(?:RCS|rcs)[:\s]*[A-Za-zÀ-ÿ\s]*(\d{3}\s?\d{3}\s?\d{3})\b', re.IGNORECASE),
+        ]
+
+        # Chercher SIRET d'abord (14 chiffres)
         siret_matches = siret_pattern.findall(text)
         if siret_matches:
             # Nettoyer et valider
@@ -42,12 +53,13 @@ class SiretExtractor:
             if len(siret) == 14 and siret.isdigit():
                 return siret, 'SIRET'
 
-        # Chercher SIREN
-        siren_matches = siren_pattern.findall(text)
-        if siren_matches:
-            siren = siren_matches[0].replace(' ', '')
-            if len(siren) == 9 and siren.isdigit():
-                return siren, 'SIREN'
+        # Chercher SIREN (9 chiffres) avec tous les patterns
+        for pattern in siren_patterns:
+            siren_matches = pattern.findall(text)
+            if siren_matches:
+                siren = siren_matches[0].replace(' ', '')
+                if len(siren) == 9 and siren.isdigit():
+                    return siren, 'SIREN'
 
         return None, None
 
