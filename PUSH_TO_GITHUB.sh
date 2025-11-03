@@ -1,0 +1,37 @@
+#!/bin/bash
+# Script pour pousser le code vers GitHub
+# Repository: https://github.com/Datch06/Scrap_Email.git
+
+echo "📦 Push vers GitHub Repository"
+echo "================================"
+echo ""
+echo "Repository: https://github.com/Datch06/Scrap_Email.git"
+echo ""
+echo "Pour pousser le code, vous devez créer un Personal Access Token GitHub:"
+echo ""
+echo "1. Allez sur: https://github.com/settings/tokens"
+echo "2. Cliquez sur 'Generate new token' → 'Generate new token (classic)'"
+echo "3. Nom: scrap-email-deploy"
+echo "4. Sélectionnez: ✅ repo (Full control)"
+echo "5. Copiez le token (commence par ghp_...)"
+echo ""
+echo "Ensuite, exécutez ces commandes:"
+echo ""
+echo "cd /var/www/Scrap_Email"
+echo ""
+echo "# Méthode 1: URL avec token"
+echo "git remote set-url origin https://VOTRE_TOKEN@github.com/Datch06/Scrap_Email.git"
+echo "git push -u origin main"
+echo ""
+echo "# OU Méthode 2: Credential helper"
+echo "git config --global credential.helper store"
+echo "git push -u origin main"
+echo "# Entrez: Datch06 comme username"
+echo "# Entrez: Votre token comme password"
+echo ""
+echo "================================"
+echo ""
+echo "État actuel du repository local:"
+git log --oneline -3
+echo ""
+git status
