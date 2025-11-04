@@ -69,6 +69,11 @@ class Site(Base):
     cms_version = Column(String(20), nullable=True)  # Version du CMS si détectable
     cms_detected_at = Column(DateTime, nullable=True)  # Date de détection
 
+    # Blacklist
+    blacklisted = Column(Boolean, default=False, index=True)
+    blacklist_reason = Column(Text, nullable=True)
+    blacklisted_at = Column(DateTime, nullable=True)
+
     # Métadonnées
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

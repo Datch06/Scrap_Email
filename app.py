@@ -141,6 +141,9 @@ def get_stats():
             cms_counts[cms] = count
         emails_deliverable = session.query(Site).filter(Site.email_deliverable == True).count()
 
+        # Stats Blacklist
+        sites_blacklisted = session.query(Site).filter(Site.blacklisted == True).count()
+
         return jsonify({
             'total_sites': total_sites,
             'status_counts': status_counts,
@@ -169,6 +172,9 @@ def get_stats():
             'sites_with_cms': sites_with_cms,
             'cms_counts': cms_counts,
             'cms_rate': round((sites_with_cms / total_sites * 100) if total_sites > 0 else 0, 1),
+            # Stats Blacklist
+            'sites_blacklisted': sites_blacklisted,
+            'blacklist_rate': round((sites_blacklisted / total_sites * 100) if total_sites > 0 else 0, 1),
         })
 
     finally:
@@ -195,9 +201,14 @@ def get_sites():
         has_email = request.args.get('has_email')
         has_siret = request.args.get('has_siret')
         has_leaders = request.args.get('has_leaders')
+        include_blacklisted = request.args.get('include_blacklisted', 'false').lower() == 'true'
 
         # Construire la requête
         query = session.query(Site)
+
+        # Exclure les sites blacklistés par défaut
+        if not include_blacklisted:
+            query = query.filter(Site.blacklisted == False)
 
         # Filtre par statut
         if status_filter:
@@ -378,6 +389,57 @@ def delete_site(site_id):
         session.commit()
 
         return jsonify({'success': True})
+
+    finally:
+        session.close()
+
+
+@app.route('/api/sites/<int:site_id>/blacklist', methods=['POST'])
+def blacklist_site(site_id):
+    """Blacklister un site"""
+    session = get_session()
+
+    try:
+        site = session.query(Site).filter(Site.id == site_id).first()
+        if not site:
+            return jsonify({'error': 'Site not found'}), 404
+
+        data = request.json or {}
+        reason = data.get('reason', '')
+
+        site.blacklisted = True
+        site.blacklist_reason = reason
+        site.blacklisted_at = datetime.utcnow()
+        session.commit()
+
+        return jsonify({
+            'success': True,
+            'site': site.to_dict()
+        })
+
+    finally:
+        session.close()
+
+
+@app.route('/api/sites/<int:site_id>/unblacklist', methods=['POST'])
+def unblacklist_site(site_id):
+    """Retirer un site de la blacklist"""
+    session = get_session()
+
+    try:
+        site = session.query(Site).filter(Site.id == site_id).first()
+        if not site:
+            return jsonify({'error': 'Site not found'}), 404
+
+        site.blacklisted = False
+        site.blacklist_reason = None
+        site.blacklisted_at = None
+        session.commit()
+
+        return jsonify({
+            'success': True,
+            'site': site.to_dict()
+        })
 
     finally:
         session.close()
