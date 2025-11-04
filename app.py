@@ -744,6 +744,30 @@ def send_campaign(campaign_id):
     })
 
 
+@app.route('/api/campaigns/<int:campaign_id>/test', methods=['POST'])
+def send_test_campaign(campaign_id):
+    """Envoyer des emails de test pour une campagne"""
+    from campaign_manager import CampaignManager
+    try:
+        data = request.json or {}
+        test_emails = data.get('test_emails', [])
+        test_domain = data.get('test_domain', 'test.example.com')
+
+        if not test_emails:
+            return jsonify({'error': 'Aucune adresse email de test fournie'}), 400
+
+        if not isinstance(test_emails, list):
+            test_emails = [test_emails]
+
+        manager = CampaignManager()
+        results = manager.send_test_email(campaign_id, test_emails, test_domain)
+
+        return jsonify(results)
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/api/templates', methods=['GET'])
 def get_templates():
     """Lister les templates d'emails"""

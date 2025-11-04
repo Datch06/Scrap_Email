@@ -349,6 +349,75 @@ class CampaignManager:
         ).all()
         return [c.to_dict() for c in campaigns]
 
+    def send_test_email(self, campaign_id: int, test_emails: List[str], test_domain: str = "test.example.com") -> Dict:
+        """
+        Envoyer un email de test avec le contenu de la campagne
+
+        Args:
+            campaign_id: ID de la campagne
+            test_emails: Liste des emails de test
+            test_domain: Domaine fictif pour la personnalisation
+
+        Returns:
+            Dict avec résultats d'envoi
+        """
+        campaign = self.campaign_session.query(Campaign).get(campaign_id)
+        if not campaign:
+            raise ValueError(f"Campagne {campaign_id} introuvable")
+
+        # Créer un site fictif pour la personnalisation
+        test_site = Site(
+            domain=test_domain,
+            emails=test_emails[0],
+            siret="12345678901234",
+            siren="123456789",
+            leaders="Jean Dupont, Marie Martin",
+            source_url="https://example.com"
+        )
+
+        results = {
+            'campaign_id': campaign.id,
+            'campaign_name': campaign.name,
+            'sent': [],
+            'failed': []
+        }
+
+        for email in test_emails:
+            try:
+                # Personnaliser le contenu avec le site de test
+                personalized_html = self.personalize_email(campaign.html_body, test_site)
+                personalized_subject = self.personalize_email(campaign.subject, test_site)
+
+                # Ajouter un préfixe [TEST] au sujet
+                personalized_subject = f"[TEST] {personalized_subject}"
+
+                # Envoyer l'email
+                success = self.ses_manager.send_email(
+                    to_email=email,
+                    subject=personalized_subject,
+                    html_body=personalized_html,
+                    text_body=campaign.text_body,
+                    reply_to=campaign.reply_to
+                )
+
+                if success:
+                    results['sent'].append(email)
+                    logger.info(f"✅ Email de test envoyé à {email}")
+                else:
+                    results['failed'].append({'email': email, 'error': 'Échec envoi SES'})
+                    logger.error(f"❌ Échec envoi test à {email}")
+
+            except Exception as e:
+                results['failed'].append({'email': email, 'error': str(e)})
+                logger.error(f"❌ Erreur envoi test à {email}: {e}")
+
+        results['total_sent'] = len(results['sent'])
+        results['total_failed'] = len(results['failed'])
+
+        logger.info(f"📊 Test campagne '{campaign.name}': {results['total_sent']} envoyés, {results['total_failed']} échoués")
+
+        return results
+
 
 if __name__ == '__main__':
     manager = CampaignManager()
