@@ -21,6 +21,11 @@ class DBHelper:
 
     def add_site(self, domain, source_url=None):
         """Ajouter un nouveau site ou récupérer s'il existe déjà"""
+        # Exclure les domaines .gouv.fr
+        if domain.endswith('.gouv.fr'):
+            print(f"⛔ Exclu (domaine .gouv.fr): {domain}")
+            return None
+
         site = self.session.query(Site).filter(Site.domain == domain).first()
 
         if not site:
