@@ -161,7 +161,7 @@ class SESManager:
         html_body: str,
         text_body: Optional[str] = None,
         reply_to: Optional[str] = None
-    ) -> bool:
+    ) -> Dict:
         """
         Envoyer un email
 
@@ -173,7 +173,7 @@ class SESManager:
             reply_to: Email de réponse (optionnel)
 
         Returns:
-            True si envoyé avec succès
+            Dict avec 'success' (bool) et 'message_id' (str) si succès
         """
         try:
             # Préparer le message
@@ -204,7 +204,7 @@ class SESManager:
             message_id = response['MessageId']
 
             logger.info(f"✅ Email envoyé à {to_email} (ID: {message_id})")
-            return True
+            return {'success': True, 'message_id': message_id}
 
         except ClientError as e:
             error_code = e.response['Error']['Code']
@@ -217,7 +217,7 @@ class SESManager:
             else:
                 logger.error(f"❌ Erreur envoi à {to_email}: {error_code} - {error_message}")
 
-            return False
+            return {'success': False, 'error': error_message}
 
     def send_bulk_emails(
         self,

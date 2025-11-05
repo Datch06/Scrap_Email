@@ -270,8 +270,11 @@ async function loadCampaigns() {
                     <th>Statut</th>
                     <th>Destinataires</th>
                     <th>Envoyés</th>
+                    <th>Délivrés</th>
                     <th>Ouverts</th>
                     <th>Cliqués</th>
+                    <th>Bounces</th>
+                    <th>Plaintes</th>
                     <th>Créée le</th>
                     <th>Actions</th>
                 </tr>
@@ -292,8 +295,11 @@ async function loadCampaigns() {
                     <td>${statusBadge}</td>
                     <td>${campaign.total_recipients}</td>
                     <td>${campaign.emails_sent}</td>
+                    <td>${campaign.emails_delivered || 0} <small class="text-muted">(${campaign.emails_sent > 0 ? Math.round(((campaign.emails_delivered || 0) / campaign.emails_sent) * 100) : 0}%)</small></td>
                     <td>${campaign.emails_opened} <small class="text-muted">(${campaign.open_rate}%)</small></td>
                     <td>${campaign.emails_clicked} <small class="text-muted">(${campaign.click_rate}%)</small></td>
+                    <td><span class="${(campaign.emails_bounced || 0) > 0 ? 'text-danger' : ''}">${campaign.emails_bounced || 0}</span> <small class="text-muted">(${campaign.bounce_rate}%)</small></td>
+                    <td><span class="${(campaign.emails_complained || 0) > 0 ? 'text-warning' : ''}">${campaign.emails_complained || 0}</span></td>
                     <td>${createdDate}</td>
                     <td>
                         <button class="btn btn-sm btn-primary" onclick="viewCampaign(${campaign.id})">
@@ -389,7 +395,7 @@ async function viewCampaign(campaignId) {
 
         let html = `
             <div class="row mb-4">
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <div class="card">
                         <div class="card-body text-center">
                             <h3>${campaign.total_recipients}</h3>
@@ -397,7 +403,7 @@ async function viewCampaign(campaignId) {
                         </div>
                     </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <div class="card">
                         <div class="card-body text-center">
                             <h3>${campaign.emails_sent}</h3>
@@ -405,19 +411,52 @@ async function viewCampaign(campaignId) {
                         </div>
                     </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <div class="card">
                         <div class="card-body text-center">
-                            <h3>${campaign.open_rate}%</h3>
-                            <small class="text-muted">Taux d'ouverture</small>
+                            <h3>${campaign.emails_delivered || 0}</h3>
+                            <small class="text-muted">Délivrés</small>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h3>${campaign.open_rate}%</h3>
+                            <small class="text-muted">Ouverture</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2">
                     <div class="card">
                         <div class="card-body text-center">
                             <h3>${campaign.click_rate}%</h3>
-                            <small class="text-muted">Taux de clic</small>
+                            <small class="text-muted">Clic</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="card border-${(campaign.emails_bounced || 0) > 0 ? 'danger' : 'secondary'}">
+                        <div class="card-body text-center">
+                            <h3 class="${(campaign.emails_bounced || 0) > 0 ? 'text-danger' : ''}">${campaign.emails_bounced || 0}</h3>
+                            <small class="text-muted">Bounces (${campaign.bounce_rate}%)</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-md-12">
+                    <div class="card border-${(campaign.emails_complained || 0) > 0 ? 'warning' : 'secondary'}">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col-auto">
+                                    <i class="bi bi-exclamation-triangle-fill ${(campaign.emails_complained || 0) > 0 ? 'text-warning' : 'text-muted'}" style="font-size: 2rem;"></i>
+                                </div>
+                                <div class="col">
+                                    <h5 class="mb-0">Plaintes (Spam) : ${campaign.emails_complained || 0}</h5>
+                                    <small class="text-muted">Les emails signalés comme spam sont automatiquement désinscrits</small>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

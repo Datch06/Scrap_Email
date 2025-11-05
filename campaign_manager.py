@@ -273,7 +273,7 @@ class CampaignManager:
             personalized_subject = self.personalize_email(campaign.subject, site, campaign.id)
 
             # Envoyer via SES
-            success = self.ses_manager.send_email(
+            result = self.ses_manager.send_email(
                 to_email=campaign_email.to_email,
                 subject=personalized_subject,
                 html_body=personalized_html,
@@ -281,16 +281,18 @@ class CampaignManager:
                 reply_to=campaign.reply_to
             )
 
-            if success:
+            if result['success']:
                 campaign_email.status = EmailStatus.SENT
                 campaign_email.sent_at = datetime.utcnow()
+                campaign_email.message_id = result.get('message_id')  # Enregistrer le message_id
                 campaign.emails_sent += 1
             else:
                 campaign_email.status = EmailStatus.FAILED
+                campaign_email.error_message = result.get('error', 'Unknown error')
                 campaign.emails_failed += 1
 
             self.campaign_session.commit()
-            return success
+            return result['success']
 
         except Exception as e:
             logger.error(f"❌ Erreur envoi à {campaign_email.to_email}: {e}")
@@ -449,7 +451,7 @@ class CampaignManager:
                 personalized_subject = f"[TEST] {personalized_subject}"
 
                 # Envoyer l'email
-                success = self.ses_manager.send_email(
+                result = self.ses_manager.send_email(
                     to_email=email,
                     subject=personalized_subject,
                     html_body=personalized_html,
@@ -457,11 +459,11 @@ class CampaignManager:
                     reply_to=campaign.reply_to
                 )
 
-                if success:
+                if result['success']:
                     results['sent'].append(email)
                     logger.info(f"✅ Email de test envoyé à {email}")
                 else:
-                    results['failed'].append({'email': email, 'error': 'Échec envoi SES'})
+                    results['failed'].append({'email': email, 'error': result.get('error', 'Échec envoi SES')})
                     logger.error(f"❌ Échec envoi test à {email}")
 
             except Exception as e:

@@ -854,6 +854,226 @@ def unsubscribe():
 
 
 # ============================================================================
+# ROUTES - AWS SES WEBHOOKS (SNS)
+# ============================================================================
+
+@app.route('/api/ses/webhook', methods=['POST'])
+def ses_webhook():
+    """
+    Webhook pour recevoir les notifications AWS SES via SNS
+    Gère: Bounces, Complaints, Deliveries, Opens, Clicks
+    """
+    import json
+    from datetime import datetime
+
+    try:
+        # Récupérer le corps de la requête
+        data = request.get_json(force=True)
+
+        # Vérifier le type de message SNS
+        message_type = request.headers.get('x-amz-sns-message-type')
+
+        # Confirmation d'abonnement SNS
+        if message_type == 'SubscriptionConfirmation':
+            subscribe_url = data.get('SubscribeURL')
+            logger.info(f"📨 SNS Subscription confirmation: {subscribe_url}")
+            # TODO: Confirmer automatiquement l'abonnement
+            return jsonify({'status': 'subscription_pending', 'url': subscribe_url}), 200
+
+        # Notification SNS
+        if message_type == 'Notification':
+            # Parser le message
+            message = json.loads(data.get('Message', '{}'))
+            notification_type = message.get('notificationType')
+
+            campaign_session = get_campaign_session()
+
+            try:
+                if notification_type == 'Bounce':
+                    handle_bounce(message, campaign_session)
+                elif notification_type == 'Complaint':
+                    handle_complaint(message, campaign_session)
+                elif notification_type == 'Delivery':
+                    handle_delivery(message, campaign_session)
+                elif notification_type == 'Open':
+                    handle_open(message, campaign_session)
+                elif notification_type == 'Click':
+                    handle_click(message, campaign_session)
+
+                campaign_session.commit()
+                return jsonify({'status': 'success', 'type': notification_type}), 200
+
+            except Exception as e:
+                campaign_session.rollback()
+                logger.error(f"❌ Erreur traitement webhook: {e}")
+                return jsonify({'status': 'error', 'message': str(e)}), 500
+            finally:
+                campaign_session.close()
+
+        return jsonify({'status': 'unknown_type'}), 200
+
+    except Exception as e:
+        logger.error(f"❌ Erreur webhook SES: {e}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
+def handle_bounce(message, session):
+    """Gérer un bounce"""
+    from campaign_database import CampaignEmail, Campaign, EmailStatus
+
+    bounce = message.get('bounce', {})
+    mail = message.get('mail', {})
+
+    message_id = mail.get('messageId')
+    bounce_type = bounce.get('bounceType', 'Unknown')  # Permanent ou Temporary
+    recipients = bounce.get('bouncedRecipients', [])
+
+    logger.info(f"📫 Bounce reçu - Type: {bounce_type}, Message ID: {message_id}")
+
+    # Mettre à jour l'email dans la base
+    campaign_email = session.query(CampaignEmail).filter(
+        CampaignEmail.message_id == message_id
+    ).first()
+
+    if campaign_email:
+        campaign_email.status = EmailStatus.BOUNCED
+        campaign_email.bounced_at = datetime.utcnow()
+        campaign_email.bounce_type = 'hard' if bounce_type == 'Permanent' else 'soft'
+        campaign_email.error_message = bounce.get('bouncedRecipients', [{}])[0].get('diagnosticCode', '')
+
+        # Incrémenter le compteur de la campagne
+        campaign = session.query(Campaign).get(campaign_email.campaign_id)
+        if campaign:
+            campaign.emails_bounced += 1
+
+        logger.info(f"  ✅ Email {campaign_email.to_email} marqué comme bounced")
+
+
+def handle_complaint(message, session):
+    """Gérer une plainte (spam)"""
+    from campaign_database import CampaignEmail, Campaign, EmailStatus
+
+    complaint = message.get('complaint', {})
+    mail = message.get('mail', {})
+
+    message_id = mail.get('messageId')
+    recipients = complaint.get('complainedRecipients', [])
+
+    logger.info(f"⚠️ Plainte reçue - Message ID: {message_id}")
+
+    # Mettre à jour l'email dans la base
+    campaign_email = session.query(CampaignEmail).filter(
+        CampaignEmail.message_id == message_id
+    ).first()
+
+    if campaign_email:
+        campaign_email.status = EmailStatus.COMPLAINED
+
+        # Incrémenter le compteur de la campagne
+        campaign = session.query(Campaign).get(campaign_email.campaign_id)
+        if campaign:
+            campaign.emails_complained += 1
+
+        # Ajouter automatiquement à la liste de désinscription
+        from campaign_database import Unsubscribe
+        existing = session.query(Unsubscribe).filter(
+            Unsubscribe.email == campaign_email.to_email
+        ).first()
+
+        if not existing:
+            unsubscribe = Unsubscribe(
+                email=campaign_email.to_email,
+                reason='Spam complaint',
+                campaign_id=campaign_email.campaign_id,
+                unsubscribed_at=datetime.utcnow()
+            )
+            session.add(unsubscribe)
+            logger.info(f"  ✅ Email {campaign_email.to_email} ajouté à la liste de désinscription")
+
+
+def handle_delivery(message, session):
+    """Gérer une livraison réussie"""
+    from campaign_database import CampaignEmail, Campaign, EmailStatus
+
+    delivery = message.get('delivery', {})
+    mail = message.get('mail', {})
+
+    message_id = mail.get('messageId')
+
+    # Mettre à jour l'email dans la base
+    campaign_email = session.query(CampaignEmail).filter(
+        CampaignEmail.message_id == message_id
+    ).first()
+
+    if campaign_email and campaign_email.status == EmailStatus.SENT:
+        campaign_email.status = EmailStatus.DELIVERED
+        campaign_email.delivered_at = datetime.utcnow()
+
+        # Incrémenter le compteur de la campagne
+        campaign = session.query(Campaign).get(campaign_email.campaign_id)
+        if campaign:
+            campaign.emails_delivered += 1
+
+
+def handle_open(message, session):
+    """Gérer une ouverture d'email"""
+    from campaign_database import CampaignEmail, Campaign, EmailStatus
+
+    open_data = message.get('open', {})
+    mail = message.get('mail', {})
+
+    message_id = mail.get('messageId')
+
+    # Mettre à jour l'email dans la base
+    campaign_email = session.query(CampaignEmail).filter(
+        CampaignEmail.message_id == message_id
+    ).first()
+
+    if campaign_email:
+        if campaign_email.status == EmailStatus.DELIVERED:
+            campaign_email.status = EmailStatus.OPENED
+
+        if not campaign_email.opened_at:
+            campaign_email.opened_at = datetime.utcnow()
+
+            # Incrémenter le compteur de la campagne (seulement la première ouverture)
+            campaign = session.query(Campaign).get(campaign_email.campaign_id)
+            if campaign:
+                campaign.emails_opened += 1
+
+        campaign_email.open_count += 1
+
+
+def handle_click(message, session):
+    """Gérer un clic sur un lien"""
+    from campaign_database import CampaignEmail, Campaign, EmailStatus
+
+    click_data = message.get('click', {})
+    mail = message.get('mail', {})
+
+    message_id = mail.get('messageId')
+
+    # Mettre à jour l'email dans la base
+    campaign_email = session.query(CampaignEmail).filter(
+        CampaignEmail.message_id == message_id
+    ).first()
+
+    if campaign_email:
+        if campaign_email.status == EmailStatus.OPENED:
+            campaign_email.status = EmailStatus.CLICKED
+
+        if not campaign_email.clicked_at:
+            campaign_email.clicked_at = datetime.utcnow()
+
+            # Incrémenter le compteur de la campagne (seulement le premier clic)
+            campaign = session.query(Campaign).get(campaign_email.campaign_id)
+            if campaign:
+                campaign.emails_clicked += 1
+
+        campaign_email.click_count += 1
+
+
+# ============================================================================
 # LANCEMENT
 # ============================================================================
 
