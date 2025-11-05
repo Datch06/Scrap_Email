@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Désinscription - Perfect Cocon SEO</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .unsubscribe-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            padding: 40px;
+        }
+
+        .icon-circle {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 40px;
+        }
+
+        .success-icon {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .error-icon {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .brand {
+            color: #667eea;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="unsubscribe-card">
+            {% if success %}
+                <!-- SUCCESS STATE -->
+                <div class="icon-circle success-icon">
+                    <i class="bi bi-check-circle-fill"></i>
+                </div>
+
+                {% if already_unsubscribed %}
+                    <h2 class="text-center mb-3">Déjà désinscrit</h2>
+                    <p class="text-center text-muted">
+                        L'adresse email <strong>{{ email }}</strong> était déjà présente dans notre liste de désinscription.
+                    </p>
+                {% else %}
+                    <h2 class="text-center mb-3">Désinscription réussie</h2>
+                    <p class="text-center text-muted">
+                        L'adresse email <strong>{{ email }}</strong> a été retirée de notre liste de diffusion.
+                    </p>
+                {% endif %}
+
+                <div class="alert alert-success mt-4" role="alert">
+                    <i class="bi bi-info-circle-fill"></i>
+                    <strong>Vous ne recevrez plus d'emails de notre part.</strong>
+                </div>
+
+                <p class="text-center mt-4 mb-0">
+                    <small class="text-muted">
+                        Si vous souhaitez nous contacter, envoyez un email à
+                        <a href="mailto:david@perfect-cocon-seo.fr">david@perfect-cocon-seo.fr</a>
+                    </small>
+                </p>
+
+            {% else %}
+                <!-- ERROR STATE -->
+                <div class="icon-circle error-icon">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                </div>
+
+                <h2 class="text-center mb-3">Erreur</h2>
+
+                <div class="alert alert-danger" role="alert">
+                    <i class="bi bi-x-circle-fill"></i>
+                    {{ error }}
+                </div>
+
+                <p class="text-center text-muted">
+                    Si le problème persiste, contactez-nous à
+                    <a href="mailto:david@perfect-cocon-seo.fr">david@perfect-cocon-seo.fr</a>
+                </p>
+
+            {% endif %}
+
+            <hr class="my-4">
+
+            <p class="text-center text-muted mb-0">
+                <span class="brand">Perfect Cocon SEO</span><br>
+                <small>Prospection de backlinks de qualité</small>
+            </p>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

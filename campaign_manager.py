@@ -100,18 +100,25 @@ class CampaignManager:
         if campaign.only_deliverable:
             query = query.filter(Site.email_deliverable == True)
 
-        # Exclure les emails déjà dans cette campagne
+        # Récupérer les emails à exclure (déjà envoyés + désinscrits)
         sent_emails = self.campaign_session.query(CampaignEmail.to_email).filter(
             CampaignEmail.campaign_id == campaign.id
         ).all()
         sent_emails = [e[0] for e in sent_emails]
 
-        if sent_emails:
-            # Filtrer les sites dont l'email principal est déjà envoyé
+        # Récupérer les emails désinscrits
+        unsubscribed = self.campaign_session.query(Unsubscribe.email).all()
+        unsubscribed_emails = [e[0] for e in unsubscribed]
+
+        # Combiner les exclusions
+        excluded_emails = set(sent_emails + unsubscribed_emails)
+
+        if excluded_emails:
+            # Filtrer les sites dont l'email principal est exclu
             eligible_sites = []
             for site in query.all():
                 primary_email = site.emails.split(',')[0].split(';')[0].strip()
-                if primary_email not in sent_emails:
+                if primary_email not in excluded_emails:
                     eligible_sites.append(site)
             return eligible_sites
 
@@ -162,13 +169,55 @@ class CampaignManager:
             'status': 'scheduled'
         }
 
-    def personalize_email(self, html_body: str, site: Site) -> str:
+    def add_unsubscribe_footer(self, html_body: str, email: str, campaign_id: int = None) -> str:
+        """
+        Ajouter un footer avec lien de désinscription au HTML
+
+        Args:
+            html_body: Contenu HTML
+            email: Email du destinataire
+            campaign_id: ID de la campagne (optionnel)
+
+        Returns:
+            HTML avec footer de désinscription
+        """
+        # Construire le lien de désinscription
+        unsubscribe_url = f'https://admin.perfect-cocon-seo.fr/unsubscribe?email={email}'
+        if campaign_id:
+            unsubscribe_url += f'&campaign_id={campaign_id}'
+
+        # Footer HTML
+        footer_html = f'''
+        <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e0e0e0; text-align: center; font-size: 12px; color: #888;">
+            <p>Vous recevez cet email car nous pensons que notre service pourrait vous intéresser.</p>
+            <p>
+                <a href="{unsubscribe_url}" style="color: #888; text-decoration: underline;">
+                    Se désinscrire de nos communications
+                </a>
+            </p>
+            <p style="margin-top: 10px;">
+                Perfect Cocon SEO - Prospection de backlinks de qualité
+            </p>
+        </div>
+        '''
+
+        # Si l'email contient déjà une balise de fermeture </body>, insérer avant
+        if '</body>' in html_body:
+            html_body = html_body.replace('</body>', footer_html + '</body>')
+        else:
+            # Sinon, ajouter à la fin
+            html_body += footer_html
+
+        return html_body
+
+    def personalize_email(self, html_body: str, site: Site, campaign_id: int = None) -> str:
         """
         Personnaliser un email avec les données du site
 
         Args:
             html_body: Template HTML
             site: Site destinataire
+            campaign_id: ID de la campagne (optionnel, pour le lien de désinscription)
 
         Returns:
             HTML personnalisé
@@ -188,9 +237,17 @@ class CampaignManager:
         for key, value in variables.items():
             personalized = personalized.replace(f'{{{{{key}}}}}', str(value))
 
-        # Ajouter le lien de désinscription
+        # Construire le lien de désinscription
         unsubscribe_link = f'https://admin.perfect-cocon-seo.fr/unsubscribe?email={variables["email"]}'
-        personalized = personalized.replace('{{unsubscribe_link}}', unsubscribe_link)
+        if campaign_id:
+            unsubscribe_link += f'&campaign_id={campaign_id}'
+
+        # Si le template contient {{unsubscribe_link}}, le remplacer
+        if '{{unsubscribe_link}}' in personalized:
+            personalized = personalized.replace('{{unsubscribe_link}}', unsubscribe_link)
+        else:
+            # Sinon, ajouter automatiquement un footer de désinscription
+            personalized = self.add_unsubscribe_footer(personalized, variables["email"], campaign_id)
 
         return personalized
 
@@ -212,8 +269,8 @@ class CampaignManager:
                 raise ValueError(f"Site {campaign_email.site_id} introuvable")
 
             # Personnaliser le contenu
-            personalized_html = self.personalize_email(campaign.html_body, site)
-            personalized_subject = self.personalize_email(campaign.subject, site)
+            personalized_html = self.personalize_email(campaign.html_body, site, campaign.id)
+            personalized_subject = self.personalize_email(campaign.subject, site, campaign.id)
 
             # Envoyer via SES
             success = self.ses_manager.send_email(
@@ -385,8 +442,8 @@ class CampaignManager:
         for email in test_emails:
             try:
                 # Personnaliser le contenu avec le site de test
-                personalized_html = self.personalize_email(campaign.html_body, test_site)
-                personalized_subject = self.personalize_email(campaign.subject, test_site)
+                personalized_html = self.personalize_email(campaign.html_body, test_site, campaign.id)
+                personalized_subject = self.personalize_email(campaign.subject, test_site, campaign.id)
 
                 # Ajouter un préfixe [TEST] au sujet
                 personalized_subject = f"[TEST] {personalized_subject}"

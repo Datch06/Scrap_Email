@@ -13,6 +13,9 @@
             <p class="text-muted">Créez et gérez vos campagnes d'envoi d'emails</p>
         </div>
         <div class="col-auto">
+            <button class="btn btn-info me-2" onclick="openTestModalWithSelect()">
+                <i class="bi bi-envelope-check"></i> Tester une Campagne
+            </button>
             <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createCampaignModal">
                 <i class="bi bi-plus-circle"></i> Nouvelle Campagne
             </button>
@@ -152,6 +155,56 @@
     </div>
 </div>
 
+<!-- Modal: Tester une campagne -->
+<div class="modal fade" id="testCampaignModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-envelope-check"></i> Tester la Campagne
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Envoyez un email de test pour vérifier le rendu et le contenu avant l'envoi massif.</p>
+                <p class="text-muted"><small>Le sujet aura le préfixe <strong>[TEST]</strong> et les variables seront remplacées par des données fictives.</small></p>
+
+                <div class="mb-3" id="campaign-selector-container" style="display:none">
+                    <label class="form-label">Campagne à tester *</label>
+                    <select class="form-select" id="test-campaign-select">
+                        <option value="">Sélectionnez une campagne</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Adresses email de test *</label>
+                    <textarea
+                        class="form-control"
+                        id="test-emails"
+                        rows="3"
+                        placeholder="exemple@gmail.com&#10;autre@example.com&#10;test@test.fr"
+                        required></textarea>
+                    <small class="text-muted">Une adresse par ligne</small>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Domaine de test (optionnel)</label>
+                    <input type="text" class="form-control" id="test-domain" placeholder="exemple-test.fr" value="site-test-exemple.fr">
+                    <small class="text-muted">Utilisé pour remplacer la variable {{domain}}</small>
+                </div>
+
+                <div id="test-result" class="mt-3" style="display:none"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-info" id="btn-send-test">
+                    <i class="bi bi-send"></i> Envoyer le Test
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block extra_js %}
@@ -245,6 +298,9 @@ async function loadCampaigns() {
                     <td>
                         <button class="btn btn-sm btn-primary" onclick="viewCampaign(${campaign.id})">
                             <i class="bi bi-eye"></i> Voir
+                        </button>
+                        <button class="btn btn-sm btn-info" onclick="testCampaign(${campaign.id}, '${campaign.name}')">
+                            <i class="bi bi-envelope-check"></i> Tester
                         </button>
                     </td>
                 </tr>
@@ -475,6 +531,180 @@ document.getElementById('btn-send-campaign').addEventListener('click', async fun
     } finally {
         btn.disabled = false;
         btn.innerHTML = '<i class="bi bi-send"></i> Lancer l\'Envoi';
+    }
+});
+
+// Tester une campagne
+let currentTestCampaignId = null;
+let currentTestCampaignName = null;
+let allCampaigns = [];
+
+// Ouvrir le modal avec sélecteur de campagne
+async function openTestModalWithSelect() {
+    // Charger les campagnes si pas encore chargé
+    if (allCampaigns.length === 0) {
+        try {
+            const response = await fetch('/api/campaigns');
+            allCampaigns = await response.json();
+        } catch (error) {
+            alert('❌ Erreur lors du chargement des campagnes: ' + error.message);
+            return;
+        }
+    }
+
+    if (allCampaigns.length === 0) {
+        alert('⚠️ Aucune campagne disponible. Créez d\'abord une campagne avant de la tester.');
+        return;
+    }
+
+    // Remplir le sélecteur
+    const select = document.getElementById('test-campaign-select');
+    select.innerHTML = '<option value="">Sélectionnez une campagne</option>';
+    allCampaigns.forEach(campaign => {
+        const option = document.createElement('option');
+        option.value = campaign.id;
+        option.textContent = `${campaign.name} (${campaign.status})`;
+        select.appendChild(option);
+    });
+
+    // Afficher le sélecteur, réinitialiser le formulaire
+    document.getElementById('campaign-selector-container').style.display = 'block';
+    document.getElementById('test-emails').value = '';
+    document.getElementById('test-domain').value = 'site-test-exemple.fr';
+    document.getElementById('test-result').style.display = 'none';
+    currentTestCampaignId = null;
+
+    // Afficher le modal
+    const modal = new bootstrap.Modal(document.getElementById('testCampaignModal'));
+    modal.show();
+}
+
+// Ouvrir le modal depuis le tableau (campagne déjà sélectionnée)
+function testCampaign(campaignId, campaignName) {
+    currentTestCampaignId = campaignId;
+    currentTestCampaignName = campaignName;
+
+    // Cacher le sélecteur, réinitialiser le formulaire
+    document.getElementById('campaign-selector-container').style.display = 'none';
+    document.getElementById('test-emails').value = '';
+    document.getElementById('test-domain').value = 'site-test-exemple.fr';
+    document.getElementById('test-result').style.display = 'none';
+
+    // Afficher le modal
+    const modal = new bootstrap.Modal(document.getElementById('testCampaignModal'));
+    modal.show();
+}
+
+document.getElementById('btn-send-test').addEventListener('click', async function() {
+    // Si le sélecteur est visible, récupérer l'ID depuis le select
+    const selectorContainer = document.getElementById('campaign-selector-container');
+    if (selectorContainer.style.display !== 'none') {
+        const selectValue = document.getElementById('test-campaign-select').value;
+        if (!selectValue) {
+            alert('⚠️ Veuillez sélectionner une campagne à tester');
+            return;
+        }
+        currentTestCampaignId = parseInt(selectValue);
+    }
+
+    if (!currentTestCampaignId) {
+        alert('⚠️ Aucune campagne sélectionnée');
+        return;
+    }
+
+    const emailsText = document.getElementById('test-emails').value.trim();
+    if (!emailsText) {
+        alert('⚠️ Veuillez entrer au moins une adresse email');
+        return;
+    }
+
+    // Séparer les emails (par ligne, virgule ou point-virgule)
+    const testEmails = emailsText
+        .split(/[\n,;]+/)
+        .map(e => e.trim())
+        .filter(e => e.length > 0);
+
+    if (testEmails.length === 0) {
+        alert('⚠️ Aucune adresse email valide trouvée');
+        return;
+    }
+
+    const testDomain = document.getElementById('test-domain').value.trim() || 'site-test-exemple.fr';
+
+    const btn = this;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Envoi...';
+
+    try {
+        const response = await fetch(`/api/campaigns/${currentTestCampaignId}/test`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                test_emails: testEmails,
+                test_domain: testDomain
+            })
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            // Afficher les résultats
+            let html = '<div class="alert alert-success">';
+            html += `<h6><i class="bi bi-check-circle"></i> Test envoyé avec succès!</h6>`;
+            html += `<p><strong>Campagne:</strong> ${result.campaign_name}</p>`;
+            html += `<p><strong>Envoyés:</strong> ${result.total_sent} / ${testEmails.length}</p>`;
+
+            if (result.sent.length > 0) {
+                html += '<p><strong>✅ Succès:</strong></p><ul class="mb-0">';
+                result.sent.forEach(email => {
+                    html += `<li>${email}</li>`;
+                });
+                html += '</ul>';
+            }
+
+            if (result.failed.length > 0) {
+                html += '<p class="mt-2"><strong>❌ Échecs:</strong></p><ul class="mb-0">';
+                result.failed.forEach(item => {
+                    if (typeof item === 'object') {
+                        html += `<li>${item.email}: ${item.error}</li>`;
+                    } else {
+                        html += `<li>${item}</li>`;
+                    }
+                });
+                html += '</ul>';
+            }
+
+            html += '<p class="mt-3 mb-0"><small class="text-muted">Vérifiez votre boîte de réception (incluant spam/promotions). Le sujet commence par <strong>[TEST]</strong>.</small></p>';
+            html += '</div>';
+
+            document.getElementById('test-result').innerHTML = html;
+            document.getElementById('test-result').style.display = 'block';
+
+            // Vider les champs si tout est réussi
+            if (result.total_failed === 0) {
+                setTimeout(() => {
+                    document.getElementById('test-emails').value = '';
+                }, 2000);
+            }
+        } else {
+            // Erreur
+            let html = '<div class="alert alert-danger">';
+            html += `<strong>❌ Erreur:</strong> ${result.error || 'Erreur inconnue'}`;
+            html += '</div>';
+
+            document.getElementById('test-result').innerHTML = html;
+            document.getElementById('test-result').style.display = 'block';
+        }
+    } catch (error) {
+        let html = '<div class="alert alert-danger">';
+        html += `<strong>❌ Erreur:</strong> ${error.message}`;
+        html += '</div>';
+
+        document.getElementById('test-result').innerHTML = html;
+        document.getElementById('test-result').style.display = 'block';
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-send"></i> Envoyer le Test';
     }
 });
 

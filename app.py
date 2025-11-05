@@ -3,10 +3,11 @@
 Application Flask pour l'interface de gestion du scraping
 """
 
-from flask import Flask, render_template, jsonify, request, send_file
+from flask import Flask, render_template, jsonify, request, send_file, redirect, url_for
 from flask_cors import CORS
 from sqlalchemy import func, case
 from database import init_db, get_session, Site, ScrapingJob, SiteStatus
+from campaign_database import get_campaign_session, Unsubscribe
 from datetime import datetime, timedelta
 import json
 import csv
@@ -794,6 +795,62 @@ def get_template(template_id):
         return jsonify(template.to_dict())
     finally:
         session.close()
+
+
+# ============================================================================
+# ROUTES - UNSUBSCRIBE
+# ============================================================================
+
+@app.route('/unsubscribe')
+def unsubscribe():
+    """Page de désinscription des emails"""
+    email = request.args.get('email', '').strip()
+    reason = request.args.get('reason', '').strip()
+    campaign_id = request.args.get('campaign_id', None)
+
+    if not email:
+        return render_template('unsubscribe.html',
+                             error="Aucune adresse email fournie",
+                             success=False)
+
+    # Ajouter l'email à la liste des désinscriptions
+    campaign_session = get_campaign_session()
+
+    try:
+        # Vérifier si déjà désinscrit
+        existing = campaign_session.query(Unsubscribe).filter(
+            Unsubscribe.email == email
+        ).first()
+
+        if existing:
+            return render_template('unsubscribe.html',
+                                 email=email,
+                                 success=True,
+                                 already_unsubscribed=True)
+
+        # Ajouter à la liste
+        unsubscribe_record = Unsubscribe(
+            email=email,
+            reason=reason if reason else None,
+            campaign_id=int(campaign_id) if campaign_id else None,
+            unsubscribed_at=datetime.utcnow()
+        )
+
+        campaign_session.add(unsubscribe_record)
+        campaign_session.commit()
+
+        return render_template('unsubscribe.html',
+                             email=email,
+                             success=True,
+                             already_unsubscribed=False)
+
+    except Exception as e:
+        campaign_session.rollback()
+        return render_template('unsubscribe.html',
+                             error=f"Erreur lors de la désinscription: {str(e)}",
+                             success=False)
+    finally:
+        campaign_session.close()
 
 
 # ============================================================================
