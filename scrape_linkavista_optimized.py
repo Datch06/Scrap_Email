@@ -140,6 +140,11 @@ class LinkAvistaScraperOptimized:
         print("="*80)
 
         for idx, domain in enumerate(all_domains, 1):
+            # Exclure les domaines .gouv.fr
+            if domain.endswith('.gouv.fr'):
+                total_skipped += 1
+                continue
+
             # Vérifier si déjà en base
             existing = db_session.query(Site).filter_by(domain=domain).first()
             if existing:

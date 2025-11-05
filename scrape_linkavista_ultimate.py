@@ -162,6 +162,11 @@ class LinkAvistaUltimateScraper:
         total_emails = 0
 
         for idx, domain in enumerate(sorted(all_domains), 1):
+            # Exclure les domaines .gouv.fr
+            if domain.endswith('.gouv.fr'):
+                total_skipped += 1
+                continue
+
             # Vérifier si déjà en base
             existing = db_session.query(Site).filter_by(domain=domain).first()
             if existing:
