@@ -4,6 +4,7 @@ Gestionnaire de campagnes d'emails
 """
 
 import time
+import re
 from datetime import datetime
 from typing import List, Dict, Optional
 import logging
@@ -272,6 +273,10 @@ class CampaignManager:
             personalized_html = self.personalize_email(campaign.html_body, site, campaign.id)
             personalized_subject = self.personalize_email(campaign.subject, site, campaign.id)
 
+            # Nettoyer le HTML du sujet (le sujet doit être en texte brut)
+            personalized_subject = re.sub(r'<[^>]+>', '', personalized_subject)
+            personalized_subject = personalized_subject.strip()
+
             # Envoyer via SES
             result = self.ses_manager.send_email(
                 to_email=campaign_email.to_email,
@@ -446,6 +451,10 @@ class CampaignManager:
                 # Personnaliser le contenu avec le site de test
                 personalized_html = self.personalize_email(campaign.html_body, test_site, campaign.id)
                 personalized_subject = self.personalize_email(campaign.subject, test_site, campaign.id)
+
+                # Nettoyer le HTML du sujet (le sujet doit être en texte brut)
+                personalized_subject = re.sub(r'<[^>]+>', '', personalized_subject)
+                personalized_subject = personalized_subject.strip()
 
                 # Ajouter un préfixe [TEST] au sujet
                 personalized_subject = f"[TEST] {personalized_subject}"
