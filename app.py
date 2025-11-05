@@ -11,7 +11,12 @@ from campaign_database import get_campaign_session, Unsubscribe
 from datetime import datetime, timedelta
 import json
 import csv
+import logging
 from io import StringIO, BytesIO
+
+# Logger
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 CORS(app)
@@ -877,8 +882,20 @@ def ses_webhook():
         if message_type == 'SubscriptionConfirmation':
             subscribe_url = data.get('SubscribeURL')
             logger.info(f"📨 SNS Subscription confirmation: {subscribe_url}")
-            # TODO: Confirmer automatiquement l'abonnement
-            return jsonify({'status': 'subscription_pending', 'url': subscribe_url}), 200
+
+            # Confirmer automatiquement l'abonnement
+            try:
+                import requests
+                response = requests.get(subscribe_url, timeout=10)
+                if response.status_code == 200:
+                    logger.info("✅ Abonnement SNS confirmé automatiquement")
+                    return jsonify({'status': 'subscription_confirmed'}), 200
+                else:
+                    logger.error(f"❌ Erreur confirmation SNS: HTTP {response.status_code}")
+                    return jsonify({'status': 'confirmation_failed', 'url': subscribe_url}), 500
+            except Exception as e:
+                logger.error(f"❌ Exception lors de la confirmation SNS: {e}")
+                return jsonify({'status': 'confirmation_error', 'url': subscribe_url, 'error': str(e)}), 500
 
         # Notification SNS
         if message_type == 'Notification':

@@ -19,6 +19,7 @@ try:
         AWS_REGION,
         SES_SENDER_EMAIL,
         SES_SENDER_NAME,
+        SES_CONFIGURATION_SET,
         MAX_SEND_RATE,
         DELAY_BETWEEN_EMAILS,
         validate_config
@@ -192,7 +193,8 @@ class SESManager:
             params = {
                 'Source': f'"{self.sender_name}" <{self.sender_email}>',
                 'Destination': {'ToAddresses': [to_email]},
-                'Message': message
+                'Message': message,
+                'ConfigurationSetName': SES_CONFIGURATION_SET
             }
 
             # Ajouter Reply-To si fourni
