@@ -400,6 +400,31 @@ def delete_site(site_id):
         session.close()
 
 
+@app.route('/api/sites/<int:site_id>/toggle-active', methods=['POST'])
+def toggle_site_active(site_id):
+    """Activer ou désactiver un site"""
+    session = get_session()
+
+    try:
+        site = session.query(Site).filter(Site.id == site_id).first()
+        if not site:
+            return jsonify({'error': 'Site not found'}), 404
+
+        # Inverser le statut is_active
+        site.is_active = not getattr(site, 'is_active', True)
+        site.updated_at = datetime.utcnow()
+        session.commit()
+
+        return jsonify({
+            'success': True,
+            'is_active': site.is_active,
+            'site': site.to_dict()
+        })
+
+    finally:
+        session.close()
+
+
 @app.route('/api/sites/<int:site_id>/blacklist', methods=['POST'])
 def blacklist_site(site_id):
     """Blacklister un site"""

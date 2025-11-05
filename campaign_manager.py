@@ -95,7 +95,8 @@ class CampaignManager:
             Site.emails != '',
             Site.emails != 'NO EMAIL FOUND',
             Site.email_validated == True,
-            Site.email_validation_score >= campaign.min_validation_score
+            Site.email_validation_score >= campaign.min_validation_score,
+            Site.is_active == True  # Exclure les sites désactivés
         )
 
         if campaign.only_deliverable:

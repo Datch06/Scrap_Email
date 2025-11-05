@@ -74,6 +74,9 @@ class Site(Base):
     blacklist_reason = Column(Text, nullable=True)
     blacklisted_at = Column(DateTime, nullable=True)
 
+    # Activation/Désactivation
+    is_active = Column(Boolean, default=True, index=True)  # Permet de désactiver un site sans le supprimer
+
     # Métadonnées
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -108,6 +111,8 @@ class Site(Base):
             'leaders_checked': self.leaders_checked,
             'leaders_found_at': self.leaders_found_at.isoformat() if self.leaders_found_at else None,
             'leaders': self.leaders,
+            'blacklisted': self.blacklisted,
+            'is_active': self.is_active if hasattr(self, 'is_active') else True,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
             'last_error': self.last_error,

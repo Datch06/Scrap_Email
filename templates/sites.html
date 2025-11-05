@@ -210,8 +210,10 @@ function renderSitesTable(sites) {
                 <button class="btn btn-sm btn-info" onclick="viewSite(${site.id})">
                     <i class="bi bi-eye"></i>
                 </button>
-                <button class="btn btn-sm btn-danger" onclick="deleteSite(${site.id})">
-                    <i class="bi bi-trash"></i>
+                <button class="btn btn-sm ${site.is_active ? 'btn-warning' : 'btn-success'}"
+                        onclick="toggleSiteActive(${site.id}, ${site.is_active})"
+                        title="${site.is_active ? 'Désactiver ce site' : 'Activer ce site'}">
+                    <i class="bi bi-${site.is_active ? 'pause-circle' : 'play-circle'}"></i>
                 </button>
             </td>
         </tr>
@@ -349,17 +351,38 @@ async function viewSite(id) {
     }
 }
 
-// Supprimer un site
-async function deleteSite(id) {
-    if (!confirm('Voulez-vous vraiment supprimer ce site ?')) return;
+// Activer/Désactiver un site
+async function toggleSiteActive(id, currentStatus) {
+    const action = currentStatus ? 'désactiver' : 'activer';
+    if (!confirm(`Voulez-vous vraiment ${action} ce site ?\n\n${currentStatus ? '⚠️ Le site sera exclu des campagnes d\'emailing.' : '✅ Le site pourra à nouveau recevoir des emails de campagne.'}`)) return;
 
     try {
-        const response = await fetch(`/api/sites/${id}`, {method: 'DELETE'});
+        const response = await fetch(`/api/sites/${id}/toggle-active`, {method: 'POST'});
         if (response.ok) {
+            const data = await response.json();
+            const statusText = data.is_active ? 'activé' : 'désactivé';
+            alert(`✅ Site ${statusText} avec succès`);
             loadSites(currentPage);
         }
     } catch (error) {
         console.error('Erreur:', error);
+        alert('❌ Erreur lors du changement de statut');
+    }
+}
+
+// Supprimer un site
+async function deleteSite(id) {
+    if (!confirm('⚠️ ATTENTION : Voulez-vous vraiment SUPPRIMER DÉFINITIVEMENT ce site ?\n\nCette action est IRRÉVERSIBLE.\nToutes les données seront perdues.\n\nPour simplement exclure un site des campagnes, utilisez plutôt le bouton Désactiver.')) return;
+
+    try {
+        const response = await fetch(`/api/sites/${id}`, {method: 'DELETE'});
+        if (response.ok) {
+            alert('✅ Site supprimé');
+            loadSites(currentPage);
+        }
+    } catch (error) {
+        console.error('Erreur:', error);
+        alert('❌ Erreur lors de la suppression');
     }
 }
 
