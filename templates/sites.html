@@ -215,6 +215,9 @@ function renderSitesTable(sites) {
                         title="${site.is_active ? 'Désactiver ce site' : 'Activer ce site'}">
                     <i class="bi bi-${site.is_active ? 'pause-circle' : 'play-circle'}"></i>
                 </button>
+                <button class="btn btn-sm btn-danger" onclick="deleteSite(${site.id})" title="Supprimer définitivement">
+                    <i class="bi bi-trash"></i>
+                </button>
             </td>
         </tr>
     `).join('');
