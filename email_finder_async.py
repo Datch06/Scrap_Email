@@ -73,24 +73,46 @@ class AsyncEmailFinder:
         # Emails qui contiennent des caractères suspects avant/après @
         local_part, domain_part = email.split('@', 1)
 
-        # Local part ne doit pas contenir certains patterns
+        # Filtrer si contient "@" suivi de caractères inhabituels
+        # Un vrai email a format: text@domain.tld
+        # Les faux positifs ont souvent: word@word (sans domaine valide après)
+
+        # Liste exhaustive de patterns invalides
         invalid_patterns = [
+            # JS/CSS patterns
             'window.', 'location.', '.location', '.click', '.host',
-            'math.', 'document.', 'module.', 'ion.', 'navig@ion',
-            '+window', 'authentic@ion', 'av@ars', 'm@h.', 'h.floor',
-            'ific@ion', 'octoc@', 'moder@or', '.js', '.css', '.svg',
-            '.png', '.jpg', '.gif', '.webp', 'st@us', 'gst@ic',
-            'flo@-', 'separ@e', 'fe@ured', 'anim@ion', 'rel@ed',
+            'math.', 'document.', 'module.', 'navig@', 'authentic@',
+            'av@ars', 'm@h.', 'h.floor', 'ific@', 'octoc@', 'moder@',
+            'gst@ic', 'flo@', 'separ@', 'fe@ure', 'anim@', 'rel@',
             'gener@', 'd@aset', 'l@est', '@tachment', '@tribute',
             'grav@ar', 'c@egory', 'templ@', 'form@', 'transl@',
             '@tentes', 'inform@', 'cor@', 'alis@', 'explor@',
-            'duc@', 'entrepreneuri@', 'pl@eformes', 'administr@',
-            'bersch@', 'blumendekor@', 'temper@', 'vibration.fr',
-            'pexels_', 'et_anim@', 'filter-fe@', 'bei-temper@'
+            'duc@', 'entrepreneuri@', 'pl@t', 'administr@',
+            'bersch@', 'blumendekor@', 'temper@', 'pexels_',
+            'et_anim@', 'filter-fe@', 'bei-temper@', 'signific@',
+            'pr@ique', 'complic@', 'justific@', 'prest@', 'in@ten',
+            'intern@', 'consomm@', 'utilis@', 'am@eur', 'irrit@',
+            'feugi@', 'ipsum@', 'cookied@', 'gre@', 'ach@', 'c@her',
+            'ec@-', 'Online-Lernpl@', 'Unternehmensber@', 'Zertifik@',
+            'st@ues', 'wh@would', 'gust@ive', 'anti-inflamm@',
+            'intr@ent', 'vpncre@', 'sportsd@'
         ]
 
         if any(pattern in email_lower for pattern in invalid_patterns):
             return False
+
+        # Vérifier si le domaine est un vrai domaine (pas un mot français/allemand)
+        # Les vrais domaines ont des TLDs connus
+        valid_tlds = [
+            'com', 'fr', 'org', 'net', 'eu', 'de', 'be', 'ch', 'uk',
+            'co', 'info', 'io', 'ai', 'tech', 'xyz', 'online', 'site',
+            'email', 'pro', 'biz', 'us', 'ca', 'es', 'it', 'nl'
+        ]
+
+        if len(domain_parts) >= 2:
+            tld = domain_parts[-1].lower()
+            if tld not in valid_tlds:
+                return False
 
         # Les emails ne doivent pas avoir des extensions de fichiers
         if re.search(r'\.(js|css|svg|png|jpg|gif|webp|html|php|asp|jpeg)$', email_lower):
