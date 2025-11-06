@@ -79,14 +79,29 @@ class AsyncEmailFinder:
             'math.', 'document.', 'module.', 'ion.', 'navig@ion',
             '+window', 'authentic@ion', 'av@ars', 'm@h.', 'h.floor',
             'ific@ion', 'octoc@', 'moder@or', '.js', '.css', '.svg',
-            '.png', '.jpg', '.gif', '.webp', 'st@us'
+            '.png', '.jpg', '.gif', '.webp', 'st@us', 'gst@ic',
+            'flo@-', 'separ@e', 'fe@ured', 'anim@ion', 'rel@ed',
+            'gener@', 'd@aset', 'l@est', '@tachment', '@tribute',
+            'grav@ar', 'c@egory', 'templ@', 'form@', 'transl@',
+            '@tentes', 'inform@', 'cor@', 'alis@', 'explor@',
+            'duc@', 'entrepreneuri@', 'pl@eformes', 'administr@',
+            'bersch@', 'blumendekor@', 'temper@', 'vibration.fr',
+            'pexels_', 'et_anim@', 'filter-fe@', 'bei-temper@'
         ]
 
         if any(pattern in email_lower for pattern in invalid_patterns):
             return False
 
         # Les emails ne doivent pas avoir des extensions de fichiers
-        if re.search(r'\.(js|css|svg|png|jpg|gif|webp|html|php|asp)$', email_lower):
+        if re.search(r'\.(js|css|svg|png|jpg|gif|webp|html|php|asp|jpeg)$', email_lower):
+            return False
+
+        # Les emails ne doivent pas contenir des points consécutifs ou des patterns CSS
+        if '..' in email or email.startswith('.') or email.startswith('-'):
+            return False
+
+        # Pattern trop spécifique pour les classes CSS
+        if local_part.startswith('.') or local_part.startswith('-') or local_part.startswith('+'):
             return False
 
         # Le domaine doit avoir au moins 2 caractères avant le TLD
@@ -101,19 +116,24 @@ class AsyncEmailFinder:
         return True
 
     def extract_emails_from_html(self, html: str) -> Set[str]:
-        """Extraire tous les emails d'un HTML"""
+        """Extraire tous les emails d'un HTML en utilisant une approche stricte"""
         emails = set()
 
-        # Pattern standard
-        standard_emails = self.email_pattern.findall(html)
-        emails.update(standard_emails)
+        # Enlever tout le JavaScript et CSS pour éviter les faux positifs
+        # Supprimer les balises <script> et <style>
+        html_cleaned = re.sub(r'<script[^>]*>.*?</script>', '', html, flags=re.DOTALL | re.IGNORECASE)
+        html_cleaned = re.sub(r'<style[^>]*>.*?</style>', '', html_cleaned, flags=re.DOTALL | re.IGNORECASE)
 
-        # Pattern mailto:
-        mailto_emails = self.mailto_pattern.findall(html)
+        # Pattern mailto: (le plus fiable)
+        mailto_emails = self.mailto_pattern.findall(html_cleaned)
         emails.update(mailto_emails)
 
-        # Pattern obfusqué
-        obfuscated_matches = self.obfuscated_pattern.findall(html)
+        # Pattern standard (seulement dans le HTML nettoyé)
+        standard_emails = self.email_pattern.findall(html_cleaned)
+        emails.update(standard_emails)
+
+        # Pattern obfusqué (seulement dans le texte visible)
+        obfuscated_matches = self.obfuscated_pattern.findall(html_cleaned)
         for match in obfuscated_matches:
             # Reconstituer l'email: user @ domain . tld
             email = f"{match[0].strip()}@{match[1].strip()}.{match[2].strip()}"
