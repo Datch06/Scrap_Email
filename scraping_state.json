@@ -1,0 +1,75 @@
+{
+  "sellers_in_progress": [
+    {
+      "domain": "20minutes.fr",
+      "pages_crawled": 138119,
+      "current_url": "https://www.20minutes.fr/insolite/4017561-20230106-arts-rue-couple-musiciens-rallie-villages-velo-donner-spectacles",
+      "buyers_found": 5294,
+      "last_update": "2025-11-12T01:33:34.937160+01:00"
+    },
+    {
+      "domain": "actes-sud.fr",
+      "pages_crawled": 40248,
+      "current_url": "https://www.actes-sud.fr/cesar-le-rhone-pour-memoire",
+      "buyers_found": 433,
+      "last_update": "2025-11-12T01:38:15.508466+01:00"
+    },
+    {
+      "domain": "actu.fr",
+      "pages_crawled": 88689,
+      "current_url": "https://actu.fr/bourgogne-franche-comte/saint-claude_39478/vous-aimez-le-ski-nordique-et-la-fondue-bienvenue-dans-le-jura_62271766.html",
+      "buyers_found": 5992,
+      "last_update": "2025-11-12T01:31:23.059652+01:00"
+    },
+    {
+      "domain": "atlantico.fr",
+      "pages_crawled": 36804,
+      "current_url": "https://atlantico.fr/explore/tag/naturalisation",
+      "buyers_found": 330,
+      "last_update": "2025-11-12T01:36:42.797601+01:00"
+    },
+    {
+      "domain": "blogs.mediapart.fr",
+      "pages_crawled": 43211,
+      "current_url": "https://blogs.mediapart.fr/edition/la-balle-au-bond/article/020710/pourquoi-nous-aimons-le-vuvuzela",
+      "buyers_found": 2320,
+      "last_update": "2025-11-12T01:39:44.487702+01:00"
+    },
+    {
+      "domain": "centrepresseaveyron.fr",
+      "pages_crawled": 159545,
+      "current_url": "https://www.centrepresseaveyron.fr/2020/05/12/des-masques-distribues-a-la-population-ce-mercredi-13-mai,8884846.php",
+      "buyers_found": 1852,
+      "last_update": "2025-11-12T01:36:17.357575+01:00"
+    },
+    {
+      "domain": "cnil.fr",
+      "pages_crawled": 10949,
+      "current_url": "http://www.cnil.fr/fr/tag/Lobbying",
+      "buyers_found": 235,
+      "last_update": "2025-11-12T01:37:43.775915+01:00"
+    },
+    {
+      "domain": "diplomatie.gouv.fr",
+      "pages_crawled": 33025,
+      "current_url": "https://diplomatie.gouv.fr/fr/emplois-stages-concours/fr/services-aux-francais/notariat/fr/le-ministere-et-son-reseau/",
+      "buyers_found": 206,
+      "last_update": "2025-11-12T01:51:01.441767+01:00"
+    },
+    {
+      "domain": "estrepublicain.fr",
+      "pages_crawled": 35484,
+      "current_url": "https://estrepublicain.fr/archives/2021/18-03",
+      "buyers_found": 400,
+      "last_update": "2025-11-12T01:37:57.588435+01:00"
+    },
+    {
+      "domain": "europe1.fr",
+      "pages_crawled": 53081,
+      "current_url": "https://europe1.fr/sport/jo-de-tokyo-debut-du-relais-de-la-flamme-olympique-a-fukushima-sans-spectateurs-4033767",
+      "buyers_found": 644,
+      "last_update": "2025-11-12T01:37:14.455237+01:00"
+    }
+  ],
+  "last_update": "2025-11-12T01:51:05.477489+01:00"
+}

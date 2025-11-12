@@ -163,7 +163,8 @@ class CampaignEmail(Base):
     __tablename__ = 'campaign_emails'
 
     id = Column(Integer, primary_key=True)
-    campaign_id = Column(Integer, ForeignKey('campaigns.id'), nullable=False, index=True)
+    campaign_id = Column(Integer, ForeignKey('campaigns.id'), nullable=True, index=True)  # Nullable for scenario emails
+    sequence_id = Column(Integer, ForeignKey('contact_sequences.id'), nullable=True, index=True)  # Link to scenario sequence
     site_id = Column(Integer, nullable=False, index=True)  # Référence à la table sites
 
     # Destinataire
@@ -201,6 +202,7 @@ class CampaignEmail(Base):
 
     # Relations
     campaign = relationship("Campaign", back_populates="emails")
+    sequence = relationship("ContactSequence", back_populates="emails", foreign_keys=[sequence_id])
 
     def to_dict(self):
         return {
@@ -390,6 +392,7 @@ class ContactSequence(Base):
     # Relations
     scenario = relationship("Scenario", back_populates="sequences")
     current_step = relationship("ScenarioStep", foreign_keys=[current_step_id])
+    emails = relationship("CampaignEmail", back_populates="sequence", foreign_keys="CampaignEmail.sequence_id")
 
     def to_dict(self):
         return {

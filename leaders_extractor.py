@@ -21,19 +21,16 @@ class LeadersExtractor:
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
         })
 
-        # Patterns pour détecter les dirigeants
+        # Patterns pour détecter les dirigeants (strictes pour éviter faux positifs)
         self.leader_patterns = [
-            # Président
-            re.compile(r'Président(?:\s+(?:du\s+conseil\s+d\'administration|directeur\s+général))?\s*:?\s*([A-ZÉÈÊËÀÂÄÔÖÙÛÜÇ][a-zéèêëàâäôöùûüç]+(?:\s+[A-ZÉÈÊËÀÂÄÔÖÙÛÜÇ][a-zéèêëàâäôöùûüç]+)+)', re.IGNORECASE),
+            # Format "Fonction : Prénom NOM" ou "Fonction: Prénom NOM"
+            re.compile(r'(?:Président|Directeur\s+général|Gérant(?:e)?)\s*:\s*([A-ZÉÈÊËÀÂÄÔÖÙÛÜÇ][a-zéèêëàâäôöùûüç]+(?:[\s-][A-ZÉÈÊËÀÂÄÔÖÙÛÜÇ][a-zéèêëàâäôöùûüç]+){1,3})\b', re.IGNORECASE),
 
-            # Directeur
-            re.compile(r'Directeur\s+[Gg]énéral\s*:?\s*([A-ZÉÈÊËÀÂÄÔÖÙÛÜÇ][a-zéèêëàâäôöùûüç]+(?:\s+[A-ZÉÈÊËÀÂÄÔÖÙÛÜÇ][a-zéèêëàâäôöùûüç]+)+)', re.IGNORECASE),
+            # Format "Prénom NOM - Fonction" (nom avant fonction)
+            re.compile(r'\b([A-ZÉÈÊËÀÂÄÔÖÙÛÜÇ][a-zéèêëàâäôöùûüç]+\s+[A-Z]{2,}[A-Z]+)\s*[-–]\s*(?:Président|Directeur|Gérant|PDG|CEO)\b'),
 
-            # Gérant
-            re.compile(r'Gérant(?:e)?\s*:?\s*([A-ZÉÈÊËÀÂÄÔÖÙÛÜÇ][a-zéèêëàâäôöùûüç]+(?:\s+[A-ZÉÈÊËÀÂÄÔÖÙÛÜÇ][a-zéèêëàâäôöùûüç]+)+)', re.IGNORECASE),
-
-            # CEO/Directeur/Président en début de ligne
-            re.compile(r'([A-ZÉÈÊËÀÂÄÔÖÙÛÜÇ][a-zéèêëàâäôöùûüç]+(?:\s+[A-ZÉÈÊËÀÂÄÔÖÙÛÜÇ][a-zéèêëàâäôöùûüç]+)+)\s*-?\s*(?:Président|Directeur|Gérant|CEO|PDG)', re.IGNORECASE),
+            # Format très spécifique sur societe.com/pappers
+            re.compile(r'\bDirigeant\s*:\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,3})\b'),
         ]
 
     def clean_leader_name(self, name):
@@ -49,7 +46,12 @@ class LeadersExtractor:
         invalid_keywords = [
             'sas', 'sarl', 'sa ', 'eurl', 'sci', 'sasu',
             'société', 'company', 'limited', 'inc',
-            'monsieur', 'madame', 'mme', 'mr', 'm.'
+            'monsieur', 'madame', 'mme', 'mr', 'm.',
+            'management', 'holding', 'group', 'consulting',
+            'conseil', 'gestion', 'finance', 'invest',
+            'capital', 'partners', 'associés', 'associé',
+            'services', 'solutions', 'international',
+            'ancien', 'ancienne', 'liquidateur', 'mandataire'
         ]
 
         name_lower = name.lower()
@@ -62,8 +64,43 @@ class LeadersExtractor:
         if len(parts) < 2:
             return None
 
+        # Rejeter si tous les mots sont en MAJUSCULES (souvent des sociétés)
+        if all(part.isupper() for part in parts if len(part) > 1):
+            return None
+
         # Vérifier que chaque partie commence par une majuscule
         if not all(part[0].isupper() for part in parts if part):
+            return None
+
+        # Vérifier qu'il n'y a pas de mots suspects typiques des sociétés
+        suspicious_patterns = [
+            r'\b[A-Z]{3,}\b',  # Acronymes de 3+ lettres (ex: TWS, AME, SARL)
+            r'\b\d+\b',         # Numéros
+        ]
+
+        for pattern in suspicious_patterns:
+            if re.search(pattern, name):
+                # Exception: les particules comme "De", "Le", "La" sont OK
+                if not re.match(r'^(De|Le|La|Du|Des)\b', name, re.IGNORECASE):
+                    return None
+
+        # Rejeter les noms avec moins de 4 caractères au total
+        if len(name.replace(' ', '')) < 4:
+            return None
+
+        # Rejeter si contient des mots de liaison/verbes
+        stop_words = ['le', 'la', 'de', 'du', 'des', 'voir', 'depuis', 'pour',
+                      'avec', 'sans', 'dans', 'sur', 'par', 'en', 'au', 'aux',
+                      'été', 'accède', 'désignée', 'afficher', 'fiche']
+
+        words_lower = [w.lower() for w in parts]
+        for word in words_lower:
+            if word in stop_words and word not in ['de', 'le', 'la', 'du']:
+                return None
+
+        # Vérifier format typique : Prénom Nom ou Nom Prénom
+        # Au moins un mot doit avoir plus de 2 lettres
+        if not any(len(part) > 2 for part in parts):
             return None
 
         return name

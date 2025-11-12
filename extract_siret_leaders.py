@@ -9,6 +9,9 @@ from database import get_session, Site
 from siret_extractor import SiretExtractor
 from leaders_extractor import LeadersExtractor
 import time
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import NullPool
 
 
 def extract_siret_and_leaders(batch_size=50, max_sites=None, skip_existing_siret=True, skip_existing_leaders=True, delay=2):
@@ -22,12 +25,11 @@ def extract_siret_and_leaders(batch_size=50, max_sites=None, skip_existing_siret
         skip_existing_leaders: Ignorer les sites avec dirigeants déjà trouvés
         delay: Délai en secondes entre chaque requête (éviter rate limit)
     """
-    session = get_session()
-    siret_extractor = SiretExtractor()
-    leaders_extractor = LeadersExtractor()
+    # Session temporaire pour lire la liste des sites
+    temp_session = get_session()
 
     # Construire la requête
-    query = session.query(Site)
+    query = temp_session.query(Site.id, Site.domain, Site.siret_checked, Site.leaders_checked)
 
     if skip_existing_siret:
         query = query.filter(Site.siret_checked == False)
@@ -36,6 +38,10 @@ def extract_siret_and_leaders(batch_size=50, max_sites=None, skip_existing_siret
 
     if max_sites:
         total_sites = min(total_sites, max_sites)
+
+    # Récupérer la liste des sites (id, domain) pour éviter de garder la session ouverte
+    sites_to_process = query.limit(total_sites).all()
+    temp_session.close()
 
     print("="*80)
     print("🔍 EXTRACTION SIRET ET DIRIGEANTS")
@@ -48,91 +54,114 @@ def extract_siret_and_leaders(batch_size=50, max_sites=None, skip_existing_siret
     print("="*80)
     print()
 
+    siret_extractor = SiretExtractor()
+    leaders_extractor = LeadersExtractor()
+
     processed = 0
     siret_found = 0
     leaders_found = 0
     errors = 0
 
-    offset = 0
+    for site_id, site_domain, siret_checked, leaders_checked in sites_to_process:
+        processed += 1
+        progress = (processed / total_sites) * 100
 
-    while offset < total_sites:
-        # Récupérer un batch
-        batch = query.limit(batch_size).offset(offset).all()
+        print(f"[{processed:5}/{total_sites}] ({progress:5.1f}%) {site_domain:<50}", end=" ", flush=True)
 
-        if not batch:
-            break
+        # CRÉER UNE SESSION DÉDIÉE pour ce site (évite les locks)
+        engine = create_engine(
+            'sqlite:///scrap_email.db',
+            connect_args={'timeout': 30, 'check_same_thread': False},
+            poolclass=NullPool
+        )
+        Session = sessionmaker(bind=engine)
+        session = Session()
 
-        for site in batch:
-            processed += 1
-            progress = (processed / total_sites) * 100
+        try:
+            # Charger le site avec cette session dédiée
+            site = session.query(Site).filter_by(id=site_id).first()
 
-            print(f"[{processed:5}/{total_sites}] ({progress:5.1f}%) {site.domain:<50}", end=" ", flush=True)
+            if not site:
+                print("❌ Site introuvable")
+                continue
 
-            try:
-                # ÉTAPE 1 : Extraire SIRET si nécessaire
-                if not site.siret_checked or not skip_existing_siret:
-                    result = siret_extractor.extract_from_domain(site.domain)
+            # ÉTAPE 1 : Extraire SIRET si nécessaire
+            if not site.siret_checked or not skip_existing_siret:
+                result = siret_extractor.extract_from_domain(site_domain)
 
-                    if result:
-                        site.siret = result.get('siret')
-                        site.siren = result.get('siren')
-                        site.siret_type = result.get('type')
-                        site.siret_found_at = datetime.utcnow()
-                        siret_found += 1
-                        print(f"✅ SIRET:{result.get('siret') or result.get('siren')[:14]}", end=" ")
-                    else:
-                        site.siret = 'NON TROUVÉ'
-                        print("⚠️  Pas de SIRET", end=" ")
+                if result:
+                    site.siret = result.get('siret')
+                    site.siren = result.get('siren')
+                    site.siret_type = result.get('type')
+                    site.siret_found_at = datetime.utcnow()
+                    siret_found += 1
+                    print(f"✅ SIRET:{result.get('siret') or result.get('siren')[:14]}", end=" ")
+                else:
+                    site.siret = 'NON TROUVÉ'
+                    print("⚠️  Pas de SIRET", end=" ")
 
-                    site.siret_checked = True
+                site.siret_checked = True
 
-                # ÉTAPE 2: Extraire dirigeants si on a un SIREN
-                if site.siren and site.siren != 'NON TROUVÉ':
-                    if not site.leaders_checked or not skip_existing_leaders:
+            # ÉTAPE 2: Extraire dirigeants si on a un SIREN
+            if site.siren and site.siren != 'NON TROUVÉ':
+                if not site.leaders_checked or not skip_existing_leaders:
+                    leaders_result = leaders_extractor.extract_from_siren(site.siren)
+
+                    if leaders_result['status'] == 'rate_limited':
+                        print("⏸  Rate limit - pause 60s...")
+                        time.sleep(60)
+                        # Réessayer
                         leaders_result = leaders_extractor.extract_from_siren(site.siren)
 
-                        if leaders_result['status'] == 'rate_limited':
-                            print("⏸  Rate limit - pause 60s...")
-                            time.sleep(60)
-                            # Réessayer
-                            leaders_result = leaders_extractor.extract_from_siren(site.siren)
+                    if leaders_result['leaders']:
+                        site.leaders = '; '.join(leaders_result['leaders'])
+                        site.leaders_found_at = datetime.utcnow()
+                        leaders_found += 1
+                        print(f"👤 {len(leaders_result['leaders'])} dir.")
+                    else:
+                        site.leaders = 'NON TROUVÉ'
+                        print("👤 Pas de dir.")
 
-                        if leaders_result['leaders']:
-                            site.leaders = '; '.join(leaders_result['leaders'])
-                            site.leaders_found_at = datetime.utcnow()
-                            leaders_found += 1
-                            print(f"👤 {len(leaders_result['leaders'])} dir.")
-                        else:
-                            site.leaders = 'NON TROUVÉ'
-                            print("👤 Pas de dir.")
-
-                        site.leaders_checked = True
-                else:
-                    print()
-
-                # Commit
-                session.commit()
-
-            except Exception as e:
-                print(f"❌ Erreur: {str(e)[:30]}")
-                session.rollback()
-                errors += 1
-
-            # Pause pour éviter rate limiting
-            if processed % 10 == 0:
-                time.sleep(delay * 2)
+                    site.leaders_checked = True
             else:
-                time.sleep(delay)
+                print()
 
-        offset += batch_size
+            # Commit avec retry
+            for retry in range(3):
+                try:
+                    session.commit()
+                    break
+                except Exception as e:
+                    if "locked" in str(e).lower() and retry < 2:
+                        time.sleep(2)
+                        session.rollback()
+                    else:
+                        raise
+
+        except Exception as e:
+            print(f"❌ Erreur: {str(e)[:30]}")
+            try:
+                session.rollback()
+            except:
+                pass
+            errors += 1
+
+        finally:
+            # IMPORTANT : Fermer la session et disposer de l'engine
+            session.close()
+            engine.dispose()
+
+        # Pause pour éviter rate limiting
+        if processed % 10 == 0:
+            time.sleep(delay * 2)
+        else:
+            time.sleep(delay)
 
         # Stats intermédiaires
         if processed % 100 == 0:
             print()
             print(f"📊 Stats: {siret_found} SIRET, {leaders_found} dirigeants, {errors} erreurs")
             print()
-
-    session.close()
 
     # Résumé final
     print()

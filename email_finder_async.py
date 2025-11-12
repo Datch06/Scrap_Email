@@ -39,14 +39,21 @@ class AsyncEmailFinder:
             'example@example.com', 'email@example.com', 'contact@example.com',
             'test@test.com', 'noreply@example.com', 'vous@domaine.com',
             'your@email.com', 'name@domain.com', 'info@example.com',
-            'admin@example.com', 'support@example.com', 'webmaster@example.com'
+            'admin@example.com', 'support@example.com', 'webmaster@example.com',
+            'johndoe@domain.com', 'john.doe@example.com', 'jane.doe@example.com',
+            'mail@exemple.com', 'contact@exemple.com', 'email@domain.com',
+            'user@example.com', 'nom@exemple.org', 'prenom.nom@exemple.com',
+            'exemple@exemple.com', 'test@exemple.com', 'demo@demo.com',
+            'info@domain.com', 'contact@domain.com', 'hello@example.com'
         }
 
         # Mots-clés à ignorer dans les emails
         self.ignore_keywords = [
             'example', 'test', 'domain', 'wix', 'placeholder',
             'yourname', 'youremail', 'sentry', 'gravatar',
-            'wordpress', 'wp-content', 'dummy', 'fake'
+            'wordpress', 'wp-content', 'dummy', 'fake',
+            'johndoe', 'janedoe', 'exemple', 'demo', 'sample',
+            'username', 'prenom', 'nom.prenom', 'user.name'
         ]
 
     def is_valid_email(self, email: str) -> bool:
@@ -101,6 +108,11 @@ class AsyncEmailFinder:
         if any(pattern in email_lower for pattern in invalid_patterns):
             return False
 
+        # Le domaine doit avoir au moins 2 caractères avant le TLD
+        domain_parts = domain_part.split('.')
+        if len(domain_parts) < 2 or len(domain_parts[0]) < 2:
+            return False
+
         # Vérifier si le domaine est un vrai domaine (pas un mot français/allemand)
         # Les vrais domaines ont des TLDs connus
         valid_tlds = [
@@ -124,11 +136,6 @@ class AsyncEmailFinder:
 
         # Pattern trop spécifique pour les classes CSS
         if local_part.startswith('.') or local_part.startswith('-') or local_part.startswith('+'):
-            return False
-
-        # Le domaine doit avoir au moins 2 caractères avant le TLD
-        domain_parts = domain_part.split('.')
-        if len(domain_parts) < 2 or len(domain_parts[0]) < 2:
             return False
 
         # La partie locale ne doit pas être trop courte

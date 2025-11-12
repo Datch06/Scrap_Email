@@ -77,6 +77,10 @@ class Site(Base):
     # Activation/Désactivation
     is_active = Column(Boolean, default=True, index=True)  # Permet de désactiver un site sans le supprimer
 
+    # Tracking LinkAvista
+    is_linkavista_seller = Column(Boolean, default=False, index=True)  # Site est un vendeur de backlinks de LinkAvista
+    purchased_from = Column(String(255), nullable=True)  # Site vendeur d'où ce site a acheté un backlink
+
     # Métadonnées
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -113,6 +117,8 @@ class Site(Base):
             'leaders': self.leaders,
             'blacklisted': self.blacklisted,
             'is_active': self.is_active if hasattr(self, 'is_active') else True,
+            'is_linkavista_seller': self.is_linkavista_seller if hasattr(self, 'is_linkavista_seller') else False,
+            'purchased_from': self.purchased_from if hasattr(self, 'purchased_from') else None,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
             'last_error': self.last_error,

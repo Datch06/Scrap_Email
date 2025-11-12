@@ -17,7 +17,8 @@ from campaign_database import (
     Scenario, ScenarioStep, ScenarioStatus, StepTrigger,
     ContactSequence, SequenceStatus,
     OperationLedger,
-    CampaignEmail, EmailStatus
+    CampaignEmail, EmailStatus,
+    EmailTemplate
 )
 from ses_manager import SESManager
 
@@ -253,6 +254,45 @@ class ScenarioOrchestrator:
 
         return existing is not None
 
+    def _prepare_email_variables(self, contact: Site, scenario: Scenario, sequence: ContactSequence) -> Dict[str, str]:
+        """
+        Préparer les variables de personnalisation pour un email
+        """
+        # Variables de base
+        variables = {
+            'domain': contact.domain or '',
+            'email': contact.emails or '',
+            'contact_name': contact.contact or '',
+            'siret': contact.siret or '',
+            'phone': contact.phone or '',
+            'scenario_name': scenario.name,
+        }
+
+        # Lien de désinscription
+        unsubscribe_link = f"https://votre-domaine.com/unsubscribe?contact_id={contact.id}&scenario_id={scenario.id}"
+        variables['unsubscribe_link'] = unsubscribe_link
+
+        # Tracking links (pour les clics)
+        tracking_base = f"https://votre-domaine.com/track/click?contact_id={contact.id}&scenario_id={scenario.id}&url="
+        variables['tracking_base'] = tracking_base
+
+        return variables
+
+    def _replace_variables(self, text: str, variables: Dict[str, str]) -> str:
+        """
+        Remplacer les variables dans un texte
+        Format: {{variable_name}}
+        """
+        if not text:
+            return text
+
+        result = text
+        for key, value in variables.items():
+            placeholder = f"{{{{{key}}}}}"
+            result = result.replace(placeholder, str(value))
+
+        return result
+
     def process_pending_operations(self, scenario_id: Optional[int] = None) -> Dict[str, Any]:
         """
         Traiter les opérations en attente (emails à envoyer)
@@ -294,30 +334,88 @@ class ScenarioOrchestrator:
                     operation.reason = f'Scenario {scenario.status.value}'
                     continue
 
-                # TODO: Envoyer l'email via SES
-                # Pour l'instant, on simule l'envoi
-                logger.info(f"   📧 Envoi simulé: {contact.emails} (Template {step.template_id})")
+                # Récupérer le template
+                template = self.campaign_session.query(EmailTemplate).get(step.template_id)
+                if not template:
+                    operation.status = 'failed'
+                    operation.reason = f'Template {step.template_id} not found'
+                    failed += 1
+                    continue
 
-                # Marquer comme exécuté
-                operation.status = 'executed'
-                operation.executed_at = datetime.utcnow()
+                # Préparer les variables de personnalisation
+                variables = self._prepare_email_variables(contact, scenario, sequence)
 
-                # Mettre à jour la séquence
-                sequence = self.campaign_session.query(ContactSequence).filter_by(
-                    scenario_id=scenario.id,
-                    contact_id=contact.id,
-                    status=SequenceStatus.ACTIVE
-                ).first()
+                # Personnaliser le sujet et le corps
+                subject = self._replace_variables(template.subject, variables)
+                html_body = self._replace_variables(template.html_body, variables)
+                text_body = self._replace_variables(template.text_body, variables) if template.text_body else None
 
-                if sequence:
-                    sequence.total_emails_sent += 1
-                    sequence.last_email_sent_at = datetime.utcnow()
-                    sequence.last_action_at = datetime.utcnow()
+                # Envoyer l'email via SES
+                logger.info(f"   📧 Envoi email: {contact.emails} (Template: {template.name})")
 
-                # Mettre à jour les stats du scénario
-                scenario.total_emails_sent += 1
+                send_result = self.ses_manager.send_email(
+                    to_email=contact.emails,
+                    subject=subject,
+                    html_body=html_body,
+                    text_body=text_body
+                )
 
-                sent += 1
+                if send_result.get('success'):
+                    message_id = send_result.get('message_id')
+
+                    # Mettre à jour la séquence
+                    sequence = self.campaign_session.query(ContactSequence).filter_by(
+                        scenario_id=scenario.id,
+                        contact_id=contact.id,
+                        status=SequenceStatus.ACTIVE
+                    ).first()
+
+                    # Créer un enregistrement CampaignEmail lié à la séquence
+                    campaign_email = CampaignEmail(
+                        campaign_id=None,  # Pas de campagne classique, c'est un scénario
+                        sequence_id=sequence.id if sequence else None,
+                        site_id=contact.id,
+                        to_email=contact.emails,
+                        to_domain=contact.domain,
+                        from_name=scenario.name,
+                        from_email=self.ses_manager.sender_email,
+                        subject=subject,
+                        status=EmailStatus.SENT,
+                        message_id=message_id,
+                        sent_at=datetime.utcnow()
+                    )
+                    self.campaign_session.add(campaign_email)
+                    self.campaign_session.flush()  # Pour obtenir l'ID
+
+                    # Marquer l'opération comme exécutée
+                    operation.status = 'executed'
+                    operation.executed_at = datetime.utcnow()
+                    operation.extra_data = json.dumps({
+                        'message_id': message_id,
+                        'campaign_email_id': campaign_email.id,
+                        'template_id': step.template_id
+                    })
+
+                    if sequence:
+                        sequence.total_emails_sent += 1
+                        sequence.last_email_sent_at = datetime.utcnow()
+                        sequence.last_action_at = datetime.utcnow()
+
+                    # Mettre à jour les stats du scénario
+                    scenario.total_emails_sent += 1
+
+                    sent += 1
+                    logger.info(f"   ✅ Envoyé avec succès (Message ID: {message_id})")
+                else:
+                    # Échec de l'envoi
+                    error_msg = send_result.get('error', 'Unknown error')
+                    logger.error(f"   ❌ Échec envoi: {error_msg}")
+
+                    operation.status = 'failed'
+                    operation.reason = error_msg
+                    operation.executed_at = datetime.utcnow()
+
+                    failed += 1
 
             except Exception as e:
                 logger.error(f"   ❌ Erreur traitement opération {operation.id}: {e}")
@@ -339,22 +437,26 @@ class ScenarioOrchestrator:
         """
         logger.info(f"🎯 Événement {event_type} reçu pour email {campaign_email.id}")
 
-        # Trouver la séquence active correspondante
-        # Pour l'instant, pas de lien direct entre CampaignEmail et ContactSequence
-        # TODO: Ajouter une colonne sequence_id dans CampaignEmail
+        # Chercher la séquence directement via le lien
+        if campaign_email.sequence_id:
+            sequence = self.campaign_session.query(ContactSequence).get(campaign_email.sequence_id)
+            if sequence and sequence.status == SequenceStatus.ACTIVE:
+                self._process_event_for_sequence(sequence, event_type)
+            else:
+                logger.warning(f"   ⚠️ Séquence {campaign_email.sequence_id} non active ou introuvable")
+        else:
+            # Fallback: recherche par contact_id (pour les anciens emails)
+            if not campaign_email.site_id:
+                logger.warning("   ⚠️ Pas de site_id dans l'email, impossible de traiter l'événement")
+                return
 
-        # Recherche par contact_id (site_id)
-        if not campaign_email.site_id:
-            logger.warning("   ⚠️ Pas de site_id dans l'email, impossible de traiter l'événement")
-            return
+            active_sequences = self.campaign_session.query(ContactSequence).filter_by(
+                contact_id=campaign_email.site_id,
+                status=SequenceStatus.ACTIVE
+            ).all()
 
-        active_sequences = self.campaign_session.query(ContactSequence).filter_by(
-            contact_id=campaign_email.site_id,
-            status=SequenceStatus.ACTIVE
-        ).all()
-
-        for sequence in active_sequences:
-            self._process_event_for_sequence(sequence, event_type)
+            for sequence in active_sequences:
+                self._process_event_for_sequence(sequence, event_type)
 
     def _process_event_for_sequence(self, sequence: ContactSequence, event_type: str) -> None:
         """

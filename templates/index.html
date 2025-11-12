@@ -87,7 +87,7 @@
 
 <!-- Statistiques secondaires -->
 <div class="row mb-4">
-    <div class="col-md-4">
+    <div class="col-md-6">
         <div class="card">
             <div class="card-body">
                 <h5 class="card-title"><i class="bi bi-check-circle"></i> Sites Complets</h5>
@@ -100,17 +100,7 @@
         </div>
     </div>
 
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title"><i class="bi bi-exclamation-triangle"></i> Erreurs</h5>
-                <h3 id="sites-with-errors">-</h3>
-                <p class="text-muted mb-0">Sites avec erreurs</p>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-4">
+    <div class="col-md-6">
         <div class="card border-success">
             <div class="card-body">
                 <h5 class="card-title"><i class="bi bi-shield-check text-success"></i> Emails Validés</h5>
@@ -170,9 +160,97 @@
                     <a href="/sites?has_leaders=false" class="btn btn-outline-warning">
                         <i class="bi bi-person"></i> Chercher dirigeants
                     </a>
-                    <a href="/api/export/csv" class="btn btn-outline-secondary">
-                        <i class="bi bi-download"></i> Exporter CSV
-                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scraping en temps réel -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-primary">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-activity"></i> Scraping Backlinks en Temps Réel
+                    <span class="badge bg-success float-end" id="scraping-status">EN COURS</span>
+                </h5>
+            </div>
+            <div class="card-body">
+                <!-- Stats globales -->
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h6 class="text-muted">Sites Vendeurs</h6>
+                            <h3 class="text-primary" id="live-total-sellers">-</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h6 class="text-muted">Acheteurs Trouvés</h6>
+                            <h3 class="text-success" id="live-total-buyers">-</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h6 class="text-muted">Avec Email</h6>
+                            <h3 class="text-info" id="live-buyers-email">-</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h6 class="text-muted">Taux de Conversion</h6>
+                            <h3 class="text-warning" id="live-conversion-rate">-</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Activité dernière heure -->
+                <div class="alert alert-info mb-3">
+                    <strong><i class="bi bi-clock"></i> Dernière heure (60 dernières minutes):</strong>
+                    <span id="live-recent-buyers" class="ms-3"><strong>-</strong> nouveaux acheteurs</span>
+                    <span id="live-recent-emails" class="ms-3"><strong>-</strong> emails trouvés</span>
+                </div>
+
+                <!-- Crawlers en cours (en temps réel) -->
+                <div class="alert alert-success mb-3" id="crawlers-section" style="display: none;">
+                    <h6 class="mb-2"><i class="bi bi-gear-fill"></i> Crawlers en Cours (<span id="active-crawlers-count">0</span>)</h6>
+                    <div id="active-crawlers-list"></div>
+                </div>
+
+                <!-- Sites vendeurs en cours -->
+                <h6><i class="bi bi-list-check"></i> Derniers Sites Vendeurs Traités</h6>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead>
+                            <tr>
+                                <th>Site Vendeur</th>
+                                <th>Acheteurs Trouvés</th>
+                                <th>Dernière Mise à Jour</th>
+                            </tr>
+                        </thead>
+                        <tbody id="live-sellers-table">
+                            <tr><td colspan="3" class="text-center text-muted">Chargement...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Derniers acheteurs avec email -->
+                <h6 class="mt-3"><i class="bi bi-envelope-check"></i> Derniers Acheteurs avec Email</h6>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead>
+                            <tr>
+                                <th>Domaine Acheteur</th>
+                                <th>Email</th>
+                                <th>Acheté de</th>
+                                <th>Trouvé</th>
+                            </tr>
+                        </thead>
+                        <tbody id="live-buyers-table">
+                            <tr><td colspan="4" class="text-center text-muted">Chargement...</td></tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -199,7 +277,6 @@ async function loadStats() {
         document.getElementById('sites-with-leaders').textContent = stats.sites_with_leaders.toLocaleString();
         document.getElementById('leaders-rate').textContent = `${stats.leaders_rate}%`;
         document.getElementById('sites-complete').textContent = stats.sites_complete.toLocaleString();
-        document.getElementById('sites-with-errors').textContent = stats.sites_with_errors.toLocaleString();
 
         // Stats validation
         document.getElementById('emails-validated').textContent = (stats.emails_validated || 0).toLocaleString();
@@ -301,15 +378,131 @@ function updateCompletionChart(stats) {
     });
 }
 
+// Charger les stats de scraping en temps réel
+async function loadLiveScrapingStats() {
+    try {
+        const response = await fetch('/api/scraping-live');
+        const data = await response.json();
+
+        // Mettre à jour les stats globales
+        document.getElementById('live-total-sellers').textContent = data.summary.total_sellers.toLocaleString();
+        document.getElementById('live-total-buyers').textContent = data.summary.total_buyers.toLocaleString();
+        document.getElementById('live-buyers-email').textContent = data.summary.buyers_with_email.toLocaleString();
+        document.getElementById('live-conversion-rate').textContent = `${data.summary.conversion_rate}%`;
+
+        // Activité récente
+        document.getElementById('live-recent-buyers').innerHTML = `<strong>${data.last_hour.new_buyers}</strong> nouveaux acheteurs`;
+        document.getElementById('live-recent-emails').innerHTML = `<strong>${data.last_hour.new_emails}</strong> emails trouvés`;
+
+        // Table des vendeurs récents
+        const sellersTable = document.getElementById('live-sellers-table');
+        if (data.recent_sellers && data.recent_sellers.length > 0) {
+            sellersTable.innerHTML = data.recent_sellers.map(seller => `
+                <tr>
+                    <td><i class="bi bi-globe"></i> ${seller.domain}</td>
+                    <td><span class="badge bg-success">${seller.buyers_found}</span></td>
+                    <td><small class="text-muted">${seller.updated_at ? new Date(seller.updated_at).toLocaleString('fr-FR') : 'N/A'}</small></td>
+                </tr>
+            `).join('');
+        } else {
+            sellersTable.innerHTML = '<tr><td colspan="3" class="text-center text-muted">Aucun site vendeur traité</td></tr>';
+        }
+
+        // Table des acheteurs récents avec email
+        const buyersTable = document.getElementById('live-buyers-table');
+        if (data.latest_buyers && data.latest_buyers.length > 0) {
+            buyersTable.innerHTML = data.latest_buyers.map(buyer => `
+                <tr>
+                    <td><i class="bi bi-shop"></i> ${buyer.domain}</td>
+                    <td><code class="small">${buyer.email}</code></td>
+                    <td><small>${buyer.purchased_from}</small></td>
+                    <td><small class="text-muted">${buyer.found_at ? new Date(buyer.found_at).toLocaleString('fr-FR') : 'N/A'}</small></td>
+                </tr>
+            `).join('');
+        } else {
+            buyersTable.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Aucun acheteur avec email trouvé</td></tr>';
+        }
+
+    } catch (error) {
+        console.error('Erreur lors du chargement des stats de scraping:', error);
+    }
+}
+
+// Charger l'état en temps réel des crawlers actifs
+async function loadActiveCrawlers() {
+    try {
+        const response = await fetch('/api/scraping-state');
+        const data = await response.json();
+
+        const crawlersSection = document.getElementById('crawlers-section');
+        const crawlersCount = document.getElementById('active-crawlers-count');
+        const crawlersList = document.getElementById('active-crawlers-list');
+
+        if (data.sellers_in_progress && data.sellers_in_progress.length > 0) {
+            // Afficher la section
+            crawlersSection.style.display = 'block';
+            crawlersCount.textContent = data.sellers_in_progress.length;
+
+            // Générer l'HTML pour chaque crawler actif
+            crawlersList.innerHTML = data.sellers_in_progress.map(seller => {
+                // Tronquer l'URL si trop longue
+                const shortUrl = seller.current_url && seller.current_url.length > 80
+                    ? seller.current_url.substring(0, 80) + '...'
+                    : seller.current_url;
+
+                return `
+                    <div class="mb-2 p-2 border rounded bg-white">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <strong><i class="bi bi-globe2"></i> ${seller.domain}</strong>
+                                <div class="small text-muted mt-1">
+                                    <i class="bi bi-file-earmark-text"></i> Page actuelle: <code class="small">${shortUrl || 'Chargement...'}</code>
+                                </div>
+                                <div class="mt-1">
+                                    <span class="badge bg-info me-2">${seller.pages_crawled || 0} pages crawlées</span>
+                                    <span class="badge bg-success">${seller.buyers_found || 0} acheteurs trouvés</span>
+                                </div>
+                            </div>
+                            <div class="text-end">
+                                <small class="text-muted">
+                                    ${seller.last_update ? new Date(seller.last_update).toLocaleTimeString('fr-FR') : ''}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        } else {
+            // Masquer la section si aucun crawler actif
+            crawlersSection.style.display = 'none';
+        }
+
+    } catch (error) {
+        console.error('Erreur lors du chargement des crawlers actifs:', error);
+    }
+}
+
 // Rafraîchir les stats
 function refreshStats() {
     loadStats();
+    loadLiveScrapingStats();
+    loadActiveCrawlers();
 }
 
 // Charger au démarrage
-document.addEventListener('DOMContentLoaded', loadStats);
+document.addEventListener('DOMContentLoaded', () => {
+    loadStats();
+    loadLiveScrapingStats();
+    loadActiveCrawlers();
+});
 
-// Auto-refresh toutes les 30 secondes
+// Auto-refresh toutes les 5 secondes pour les crawlers actifs (temps réel)
+setInterval(loadActiveCrawlers, 5000);
+
+// Auto-refresh toutes les 10 secondes pour le scraping en temps réel
+setInterval(loadLiveScrapingStats, 10000);
+
+// Auto-refresh toutes les 30 secondes pour les stats globales
 setInterval(loadStats, 30000);
 </script>
 {% endblock %}

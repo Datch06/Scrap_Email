@@ -1395,11 +1395,23 @@ def handle_open(message, session):
             campaign_email.opened_at = datetime.utcnow()
 
             # Incrémenter le compteur de la campagne (seulement la première ouverture)
-            campaign = session.query(Campaign).get(campaign_email.campaign_id)
-            if campaign:
-                campaign.emails_opened += 1
+            if campaign_email.campaign_id:
+                campaign = session.query(Campaign).get(campaign_email.campaign_id)
+                if campaign:
+                    campaign.emails_opened += 1
 
         campaign_email.open_count += 1
+
+        # Déclencher les suivis de scénario si applicable
+        if campaign_email.sequence_id:
+            try:
+                from scenario_orchestrator import ScenarioOrchestrator
+                orchestrator = ScenarioOrchestrator()
+                orchestrator.handle_event('opened', campaign_email)
+                orchestrator.close()
+                logger.info(f"✅ Événement 'opened' traité pour email {campaign_email.id}")
+            except Exception as e:
+                logger.error(f"❌ Erreur traitement événement scenario: {e}", exc_info=True)
 
 
 def handle_click(message, session):
@@ -1424,11 +1436,23 @@ def handle_click(message, session):
             campaign_email.clicked_at = datetime.utcnow()
 
             # Incrémenter le compteur de la campagne (seulement le premier clic)
-            campaign = session.query(Campaign).get(campaign_email.campaign_id)
-            if campaign:
-                campaign.emails_clicked += 1
+            if campaign_email.campaign_id:
+                campaign = session.query(Campaign).get(campaign_email.campaign_id)
+                if campaign:
+                    campaign.emails_clicked += 1
 
         campaign_email.click_count += 1
+
+        # Déclencher les suivis de scénario si applicable
+        if campaign_email.sequence_id:
+            try:
+                from scenario_orchestrator import ScenarioOrchestrator
+                orchestrator = ScenarioOrchestrator()
+                orchestrator.handle_event('clicked', campaign_email)
+                orchestrator.close()
+                logger.info(f"✅ Événement 'clicked' traité pour email {campaign_email.id}")
+            except Exception as e:
+                logger.error(f"❌ Erreur traitement événement scenario: {e}", exc_info=True)
 
 
 # ============================================================================

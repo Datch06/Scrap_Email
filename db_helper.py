@@ -19,7 +19,7 @@ class DBHelper:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.session.close()
 
-    def add_site(self, domain, source_url=None):
+    def add_site(self, domain, source_url=None, purchased_from=None, is_linkavista_seller=False):
         """Ajouter un nouveau site ou récupérer s'il existe déjà"""
         # Exclure les domaines .gouv.fr
         if domain.endswith('.gouv.fr'):
@@ -32,7 +32,9 @@ class DBHelper:
             site = Site(
                 domain=domain,
                 source_url=source_url,
-                status=SiteStatus.DISCOVERED
+                status=SiteStatus.DISCOVERED,
+                purchased_from=purchased_from,
+                is_linkavista_seller=is_linkavista_seller
             )
             self.session.add(site)
             self.session.commit()
