@@ -1,0 +1,605 @@
+{% extends "base.html" %}
+
+{% block title %}Segments de Contacts - Scrap Email Manager{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h2">
+                <i class="bi bi-funnel-fill text-primary"></i>
+                Segments de Contacts
+            </h1>
+            <p class="text-muted">Créez des segments personnalisés pour cibler précisément vos contacts</p>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createSegmentModal">
+                <i class="bi bi-plus-circle"></i> Nouveau Segment
+            </button>
+        </div>
+    </div>
+
+    <!-- Alertes -->
+    <div id="alert-container"></div>
+
+    <!-- Liste des segments -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-list-ul"></i> Mes Segments</h5>
+                </div>
+                <div class="card-body">
+                    <div id="segments-list">
+                        <div class="text-center py-5">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Chargement...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Créer/Éditer un segment -->
+<div class="modal fade" id="createSegmentModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-funnel-fill"></i> <span id="modal-title-text">Nouveau Segment</span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="form-segment">
+                    <!-- Informations de base -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="segment-name" class="form-label">Nom du segment *</label>
+                            <input type="text" class="form-control" id="segment-name" placeholder="Ex: Contacts Premium Paris" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="segment-description" class="form-label">Description</label>
+                            <input type="text" class="form-control" id="segment-description" placeholder="Description du segment">
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <h6 class="mb-3"><i class="bi bi-filter"></i> Filtres de Ciblage</h6>
+
+                    <!-- Score de validation email -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="score-min" class="form-label">Score de validation minimum</label>
+                            <input type="number" class="form-control" id="score-min" min="0" max="100" value="0">
+                            <div class="form-text">0-100 (0 = tous les scores)</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="score-max" class="form-label">Score de validation maximum</label>
+                            <input type="number" class="form-control" id="score-max" min="0" max="100" value="100">
+                            <div class="form-text">0-100</div>
+                        </div>
+                    </div>
+
+                    <!-- Délivrabilité -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Délivrabilité</label>
+                            <select class="form-select" id="deliverable">
+                                <option value="all">Tous</option>
+                                <option value="true">Délivrables uniquement</option>
+                                <option value="false">Non délivrables uniquement</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Possession d'un SIRET</label>
+                            <select class="form-select" id="has-siret">
+                                <option value="all">Peu importe</option>
+                                <option value="true">Avec SIRET</option>
+                                <option value="false">Sans SIRET</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Domaines à inclure -->
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <label for="domains-include" class="form-label">Domaines à inclure</label>
+                            <textarea class="form-control" id="domains-include" rows="2" placeholder="gmail.com, yahoo.fr (un par ligne ou séparés par des virgules)"></textarea>
+                            <div class="form-text">Laissez vide pour inclure tous les domaines</div>
+                        </div>
+                    </div>
+
+                    <!-- Domaines à exclure -->
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <label for="domains-exclude" class="form-label">Domaines à exclure</label>
+                            <textarea class="form-control" id="domains-exclude" rows="2" placeholder="temp-mail.com, spam-email.com (un par ligne ou séparés par des virgules)"></textarea>
+                            <div class="form-text">Domaines jetables ou indésirables</div>
+                        </div>
+                    </div>
+
+                    <!-- Bouton de prévisualisation -->
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <button type="button" class="btn btn-info" id="btn-preview-count">
+                                <i class="bi bi-search"></i> Prévisualiser le nombre de contacts
+                            </button>
+                            <span id="preview-count-result" class="ms-3"></span>
+                        </div>
+                    </div>
+
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-primary" id="btn-save-segment">
+                    <i class="bi bi-check-circle"></i> Créer le Segment
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Voir les détails d'un segment -->
+<div class="modal fade" id="segmentDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-info-circle"></i> <span id="detail-segment-name"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="segment-details-content">
+                    <!-- Contenu chargé dynamiquement -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                <button type="button" class="btn btn-warning" id="btn-edit-segment">
+                    <i class="bi bi-pencil"></i> Modifier
+                </button>
+                <button type="button" class="btn btn-danger" id="btn-delete-segment">
+                    <i class="bi bi-trash"></i> Supprimer
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Variables globales
+let currentSegmentId = null;
+let editMode = false;
+
+// ============================================================================
+// FONCTIONS UTILITAIRES
+// ============================================================================
+
+function showAlert(type, message) {
+    const container = document.getElementById('alert-container');
+    const alert = `
+        <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    container.innerHTML = alert;
+    setTimeout(() => { container.innerHTML = ''; }, 5000);
+}
+
+// ============================================================================
+// CHARGER LES SEGMENTS
+// ============================================================================
+
+async function loadSegments() {
+    const container = document.getElementById('segments-list');
+
+    try {
+        const response = await fetch('/api/segments');
+        const segments = await response.json();
+
+        if (segments.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-5 text-muted">
+                    <i class="bi bi-funnel" style="font-size: 3rem;"></i>
+                    <p class="mt-3">Aucun segment créé</p>
+                    <p>Créez votre premier segment pour commencer à segmenter vos contacts</p>
+                </div>
+            `;
+            return;
+        }
+
+        let html = '<div class="table-responsive"><table class="table table-hover">';
+        html += '<thead><tr>';
+        html += '<th>Nom</th>';
+        html += '<th>Description</th>';
+        html += '<th>Contacts</th>';
+        html += '<th>Dernière mise à jour</th>';
+        html += '<th>Actions</th>';
+        html += '</tr></thead><tbody>';
+
+        segments.forEach(segment => {
+            const lastUpdate = segment.last_count_update ? new Date(segment.last_count_update).toLocaleDateString('fr-FR') : 'Jamais';
+
+            html += `<tr>`;
+            html += `<td><strong>${segment.name}</strong></td>`;
+            html += `<td><small class="text-muted">${segment.description || '-'}</small></td>`;
+            html += `<td><span class="badge bg-primary">${segment.estimated_count || 0} contacts</span></td>`;
+            html += `<td><small>${lastUpdate}</small></td>`;
+            html += `<td>
+                <button class="btn btn-sm btn-primary" onclick="viewSegment(${segment.id})">
+                    <i class="bi bi-eye"></i> Voir
+                </button>
+            </td>`;
+            html += `</tr>`;
+        });
+
+        html += '</tbody></table></div>';
+        container.innerHTML = html;
+
+    } catch (error) {
+        console.error('Erreur chargement segments:', error);
+        container.innerHTML = `<div class="alert alert-danger">Erreur lors du chargement des segments</div>`;
+    }
+}
+
+// ============================================================================
+// VOIR UN SEGMENT
+// ============================================================================
+
+async function viewSegment(segmentId) {
+    currentSegmentId = segmentId;
+
+    try {
+        const response = await fetch(`/api/segments/${segmentId}`);
+        const segment = await response.json();
+
+        document.getElementById('detail-segment-name').textContent = segment.name;
+
+        let html = `
+            <div class="row mb-3">
+                <div class="col-md-12">
+                    <h6>Description</h6>
+                    <p>${segment.description || 'Aucune description'}</p>
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <h3 class="text-primary">${segment.estimated_count || 0}</h3>
+                            <p class="mb-0">Contacts dans ce segment</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <h6>Filtres appliqués</h6>
+                    <ul class="list-group">
+        `;
+
+        const filters = segment.filters || {};
+
+        if (filters.email_validation_score_min > 0) {
+            html += `<li class="list-group-item">Score validation ≥ ${filters.email_validation_score_min}</li>`;
+        }
+        if (filters.email_validation_score_max < 100) {
+            html += `<li class="list-group-item">Score validation ≤ ${filters.email_validation_score_max}</li>`;
+        }
+        if (filters.email_deliverable !== undefined) {
+            html += `<li class="list-group-item">Délivrabilité: ${filters.email_deliverable ? 'Oui' : 'Non'}</li>`;
+        }
+        if (filters.has_siret !== undefined) {
+            html += `<li class="list-group-item">SIRET: ${filters.has_siret ? 'Requis' : 'Non requis'}</li>`;
+        }
+        if (filters.domains_include && filters.domains_include.length > 0) {
+            html += `<li class="list-group-item">Domaines inclus: ${filters.domains_include.join(', ')}</li>`;
+        }
+        if (filters.domains_exclude && filters.domains_exclude.length > 0) {
+            html += `<li class="list-group-item">Domaines exclus: ${filters.domains_exclude.join(', ')}</li>`;
+        }
+
+        html += `
+                    </ul>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-12">
+                    <h6>Prévisualisation (10 premiers contacts)</h6>
+                    <div id="preview-contacts">
+                        <div class="spinner-border spinner-border-sm" role="status"></div> Chargement...
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.getElementById('segment-details-content').innerHTML = html;
+
+        // Charger la prévisualisation
+        loadPreview(segmentId);
+
+        const modal = new bootstrap.Modal(document.getElementById('segmentDetailsModal'));
+        modal.show();
+
+    } catch (error) {
+        console.error('Erreur chargement segment:', error);
+        showAlert('danger', 'Erreur lors du chargement du segment');
+    }
+}
+
+async function loadPreview(segmentId) {
+    try {
+        const response = await fetch(`/api/segments/${segmentId}/preview`);
+        const data = await response.json();
+
+        let html = '<div class="table-responsive"><table class="table table-sm">';
+        html += '<thead><tr><th>Email</th><th>Domaine</th><th>Score</th><th>Délivrable</th></tr></thead><tbody>';
+
+        data.preview.forEach(contact => {
+            html += `<tr>`;
+            html += `<td>${contact.emails}</td>`;
+            html += `<td>${contact.domain}</td>`;
+            html += `<td><span class="badge bg-${contact.email_validation_score >= 80 ? 'success' : 'warning'}">${contact.email_validation_score}/100</span></td>`;
+            html += `<td>${contact.email_deliverable ? '<i class="bi bi-check-circle text-success"></i>' : '<i class="bi bi-x-circle text-danger"></i>'}</td>`;
+            html += `</tr>`;
+        });
+
+        html += '</tbody></table></div>';
+        document.getElementById('preview-contacts').innerHTML = html;
+
+    } catch (error) {
+        document.getElementById('preview-contacts').innerHTML = '<div class="alert alert-danger">Erreur lors du chargement de la prévisualisation</div>';
+    }
+}
+
+// ============================================================================
+// CRÉER/MODIFIER UN SEGMENT
+// ============================================================================
+
+document.getElementById('btn-save-segment').addEventListener('click', async function() {
+    const btn = this;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Enregistrement...';
+
+    try {
+        // Récupérer les valeurs
+        const name = document.getElementById('segment-name').value.trim();
+        const description = document.getElementById('segment-description').value.trim();
+
+        if (!name) {
+            showAlert('danger', 'Le nom du segment est requis');
+            return;
+        }
+
+        // Construire les filtres
+        const filters = {};
+
+        const scoreMin = parseInt(document.getElementById('score-min').value);
+        const scoreMax = parseInt(document.getElementById('score-max').value);
+        if (scoreMin > 0) filters.email_validation_score_min = scoreMin;
+        if (scoreMax < 100) filters.email_validation_score_max = scoreMax;
+
+        const deliverable = document.getElementById('deliverable').value;
+        if (deliverable !== 'all') {
+            filters.email_deliverable = deliverable === 'true';
+        }
+
+        const hasSiret = document.getElementById('has-siret').value;
+        if (hasSiret !== 'all') {
+            filters.has_siret = hasSiret === 'true';
+        }
+
+        const domainsInclude = document.getElementById('domains-include').value
+            .split(/[,\n]/)
+            .map(d => d.trim())
+            .filter(d => d.length > 0);
+        if (domainsInclude.length > 0) filters.domains_include = domainsInclude;
+
+        const domainsExclude = document.getElementById('domains-exclude').value
+            .split(/[,\n]/)
+            .map(d => d.trim())
+            .filter(d => d.length > 0);
+        if (domainsExclude.length > 0) filters.domains_exclude = domainsExclude;
+
+        const data = { name, description, filters };
+
+        // Créer ou modifier
+        const url = editMode ? `/api/segments/${currentSegmentId}` : '/api/segments';
+        const method = editMode ? 'PUT' : 'POST';
+
+        const response = await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            showAlert('success', `✅ Segment ${editMode ? 'modifié' : 'créé'} avec succès! (${result.estimated_count} contacts)`);
+            bootstrap.Modal.getInstance(document.getElementById('createSegmentModal')).hide();
+            loadSegments();
+        } else {
+            showAlert('danger', `❌ Erreur: ${result.error}`);
+        }
+
+    } catch (error) {
+        showAlert('danger', `❌ Erreur: ${error.message}`);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-check-circle"></i> ' + (editMode ? 'Modifier' : 'Créer') + ' le Segment';
+    }
+});
+
+// ============================================================================
+// PRÉVISUALISER LE NOMBRE
+// ============================================================================
+
+document.getElementById('btn-preview-count').addEventListener('click', async function() {
+    const btn = this;
+    const resultSpan = document.getElementById('preview-count-result');
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Calcul...';
+    resultSpan.innerHTML = '';
+
+    try {
+        // Créer un segment temporaire pour calculer
+        const filters = {};
+        const scoreMin = parseInt(document.getElementById('score-min').value);
+        const scoreMax = parseInt(document.getElementById('score-max').value);
+        if (scoreMin > 0) filters.email_validation_score_min = scoreMin;
+        if (scoreMax < 100) filters.email_validation_score_max = scoreMax;
+
+        const deliverable = document.getElementById('deliverable').value;
+        if (deliverable !== 'all') {
+            filters.email_deliverable = deliverable === 'true';
+        }
+
+        const hasSiret = document.getElementById('has-siret').value;
+        if (hasSiret !== 'all') {
+            filters.has_siret = hasSiret === 'true';
+        }
+
+        const domainsInclude = document.getElementById('domains-include').value
+            .split(/[,\n]/)
+            .map(d => d.trim())
+            .filter(d => d.length > 0);
+        if (domainsInclude.length > 0) filters.domains_include = domainsInclude;
+
+        const domainsExclude = document.getElementById('domains-exclude').value
+            .split(/[,\n]/)
+            .map(d => d.trim())
+            .filter(d => d.length > 0);
+        if (domainsExclude.length > 0) filters.domains_exclude = domainsExclude;
+
+        // Créer temporairement pour obtenir le count
+        const response = await fetch('/api/segments', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                name: '__temp_preview__',
+                description: 'Temporary',
+                filters: filters
+            })
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            resultSpan.innerHTML = `<span class="badge bg-success">${result.estimated_count} contacts trouvés</span>`;
+            // Supprimer le segment temporaire
+            await fetch(`/api/segments/${result.id}`, { method: 'DELETE' });
+        } else {
+            resultSpan.innerHTML = `<span class="badge bg-danger">Erreur</span>`;
+        }
+
+    } catch (error) {
+        resultSpan.innerHTML = `<span class="badge bg-danger">Erreur</span>`;
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-search"></i> Prévisualiser le nombre de contacts';
+    }
+});
+
+// ============================================================================
+// MODIFIER UN SEGMENT
+// ============================================================================
+
+document.getElementById('btn-edit-segment').addEventListener('click', async function() {
+    if (!currentSegmentId) return;
+
+    try {
+        const response = await fetch(`/api/segments/${currentSegmentId}`);
+        const segment = await response.json();
+
+        // Remplir le formulaire
+        document.getElementById('segment-name').value = segment.name;
+        document.getElementById('segment-description').value = segment.description || '';
+
+        const filters = segment.filters || {};
+        document.getElementById('score-min').value = filters.email_validation_score_min || 0;
+        document.getElementById('score-max').value = filters.email_validation_score_max || 100;
+
+        if (filters.email_deliverable !== undefined) {
+            document.getElementById('deliverable').value = filters.email_deliverable.toString();
+        } else {
+            document.getElementById('deliverable').value = 'all';
+        }
+
+        if (filters.has_siret !== undefined) {
+            document.getElementById('has-siret').value = filters.has_siret.toString();
+        } else {
+            document.getElementById('has-siret').value = 'all';
+        }
+
+        document.getElementById('domains-include').value = (filters.domains_include || []).join('\n');
+        document.getElementById('domains-exclude').value = (filters.domains_exclude || []).join('\n');
+
+        // Passer en mode édition
+        editMode = true;
+        document.getElementById('modal-title-text').textContent = 'Modifier le Segment';
+        document.getElementById('btn-save-segment').innerHTML = '<i class="bi bi-check-circle"></i> Modifier le Segment';
+
+        bootstrap.Modal.getInstance(document.getElementById('segmentDetailsModal')).hide();
+
+        const createModal = new bootstrap.Modal(document.getElementById('createSegmentModal'));
+        createModal.show();
+
+    } catch (error) {
+        showAlert('danger', `❌ Erreur: ${error.message}`);
+    }
+});
+
+// ============================================================================
+// SUPPRIMER UN SEGMENT
+// ============================================================================
+
+document.getElementById('btn-delete-segment').addEventListener('click', async function() {
+    if (!currentSegmentId) return;
+
+    if (!confirm('Êtes-vous sûr de vouloir supprimer ce segment ?')) return;
+
+    try {
+        const response = await fetch(`/api/segments/${currentSegmentId}`, {
+            method: 'DELETE'
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            showAlert('success', '✅ Segment supprimé avec succès');
+            bootstrap.Modal.getInstance(document.getElementById('segmentDetailsModal')).hide();
+            loadSegments();
+        } else {
+            showAlert('danger', `❌ Erreur: ${data.error}`);
+        }
+    } catch (error) {
+        showAlert('danger', `❌ Erreur: ${error.message}`);
+    }
+});
+
+// ============================================================================
+// RÉINITIALISER LE FORMULAIRE À LA FERMETURE
+// ============================================================================
+
+document.getElementById('createSegmentModal').addEventListener('hidden.bs.modal', function() {
+    document.getElementById('form-segment').reset();
+    editMode = false;
+    currentSegmentId = null;
+    document.getElementById('modal-title-text').textContent = 'Nouveau Segment';
+    document.getElementById('btn-save-segment').innerHTML = '<i class="bi bi-check-circle"></i> Créer le Segment';
+    document.getElementById('preview-count-result').innerHTML = '';
+});
+
+// Initialisation
+loadSegments();
+
+// Actualiser toutes les 30 secondes
+setInterval(loadSegments, 30000);
+</script>
+{% endblock %}

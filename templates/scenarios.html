@@ -146,6 +146,16 @@
                     <h6 class="border-bottom pb-2 mb-3 mt-4"><i class="bi bi-funnel"></i> Filtres des contacts</h6>
 
                     <div class="row mb-3">
+                        <div class="col-md-12">
+                            <label class="form-label">Segment de contacts (optionnel)</label>
+                            <select class="form-select" id="scenario-segment">
+                                <option value="">Tous les contacts (avec filtres ci-dessous)</option>
+                            </select>
+                            <small class="text-muted">Cibler un segment spécifique de contacts. Si sélectionné, les filtres ci-dessous seront ignorés.</small>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
                         <div class="col-md-6">
                             <label class="form-label">Score de validation minimum</label>
                             <input type="number" class="form-control" id="scenario-min-score" value="80" min="0" max="100">
@@ -277,6 +287,28 @@ async function loadTemplates() {
     }
 }
 
+// Charger les segments au démarrage
+async function loadSegments() {
+    try {
+        const response = await fetch('/api/segments');
+        const segments = await response.json();
+
+        const select = document.getElementById('scenario-segment');
+        // Garder l'option par défaut
+        select.innerHTML = '<option value="">Tous les contacts (avec filtres ci-dessous)</option>';
+
+        // Ajouter chaque segment
+        segments.forEach(segment => {
+            const option = document.createElement('option');
+            option.value = segment.id;
+            option.textContent = `${segment.name} (${segment.estimated_count} contacts)`;
+            select.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Erreur chargement segments:', error);
+    }
+}
+
 // Charger les scénarios
 async function loadScenarios() {
     try {
@@ -364,6 +396,8 @@ document.getElementById('btn-create-scenario').addEventListener('click', async f
             }
         });
 
+        const segmentId = document.getElementById('scenario-segment').value;
+
         const data = {
             name: document.getElementById('scenario-name').value,
             description: document.getElementById('scenario-description').value,
@@ -380,6 +414,11 @@ document.getElementById('btn-create-scenario').addEventListener('click', async f
             stop_on_reply: document.getElementById('scenario-stop-reply').checked,
             stop_on_unsubscribe: document.getElementById('scenario-stop-unsub').checked
         };
+
+        // Ajouter le segment_id si un segment est sélectionné
+        if (segmentId) {
+            data.segment_id = parseInt(segmentId);
+        }
 
         const response = await fetch('/api/scenarios', {
             method: 'POST',
@@ -465,7 +504,7 @@ async function viewScenario(scenarioId) {
                 <li>Cooldown: ${scenario.cooldown_days} jours</li>
                 <li>Fenêtre d'envoi: ${scenario.send_window_start} - ${scenario.send_window_end} (${scenario.timezone})</li>
                 <li>Jours: ${scenario.send_days}</li>
-                <li>Score minimum: ${scenario.min_validation_score}</li>
+                ${scenario.segment_id ? `<li>🎯 Segment: ID ${scenario.segment_id}</li>` : `<li>Score minimum: ${scenario.min_validation_score}</li>`}
             </ul>
 
             <h6 class="mt-3">📋 Étapes (${scenario.steps ? scenario.steps.length : 0})</h6>
@@ -698,6 +737,7 @@ document.getElementById('btn-save-steps').addEventListener('click', async functi
 
 // Initialisation
 loadTemplates();
+loadSegments();
 loadScenarios();
 
 // Actualiser toutes les 30 secondes

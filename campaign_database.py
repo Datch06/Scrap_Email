@@ -8,6 +8,7 @@ from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, B
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 import enum
+import json
 
 Base = declarative_base()
 
@@ -266,6 +267,9 @@ class Scenario(Base):
     # Template d'entrée
     entry_template_id = Column(Integer, ForeignKey('email_templates.id'), nullable=True)
 
+    # Segment de contacts ciblé
+    segment_id = Column(Integer, ForeignKey('contact_segments.id'), nullable=True)
+
     # Contraintes d'envoi
     daily_cap = Column(Integer, default=500)
     cooldown_days = Column(Integer, default=3)  # Jours entre deux emails au même contact
@@ -450,6 +454,53 @@ class ContactSequence(Base):
             'next_action_at': self.next_action_at.isoformat() if self.next_action_at else None,
             'total_emails_sent': self.total_emails_sent,
             'last_email_sent_at': self.last_email_sent_at.isoformat() if self.last_email_sent_at else None
+        }
+
+
+class ContactSegment(Base):
+    """Segment de contacts pour ciblage avancé"""
+    __tablename__ = 'contact_segments'
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(255), nullable=False)
+    description = Column(Text, nullable=True)
+
+    # Critères de filtrage (JSON)
+    filters = Column(Text, nullable=False)  # JSON avec les critères
+    """
+    Exemple de filters JSON:
+    {
+        "email_validation_score_min": 80,
+        "email_validation_score_max": 100,
+        "email_deliverable": true,
+        "domains_include": ["gmail.com", "yahoo.com"],
+        "domains_exclude": ["temp-mail.com"],
+        "cities": ["Paris", "Lyon"],
+        "has_siret": true,
+        "has_phone": false
+    }
+    """
+
+    # Statistiques
+    estimated_count = Column(Integer, default=0)  # Nombre estimé de contacts
+    last_count_update = Column(DateTime, nullable=True)
+
+    # Métadonnées
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    is_active = Column(Boolean, default=True)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'description': self.description,
+            'filters': json.loads(self.filters) if self.filters else {},
+            'estimated_count': self.estimated_count,
+            'last_count_update': self.last_count_update.isoformat() if self.last_count_update else None,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'is_active': self.is_active
         }
 
 

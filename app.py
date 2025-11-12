@@ -14,6 +14,7 @@ import csv
 import logging
 from io import StringIO, BytesIO
 from scenario_routes import register_scenario_routes
+from segment_routes import register_segment_routes
 
 # Logger
 logging.basicConfig(level=logging.INFO)
@@ -27,6 +28,9 @@ init_db()
 
 # Enregistrer les routes des scénarios
 register_scenario_routes(app)
+
+# Enregistrer les routes des segments
+register_segment_routes(app)
 
 
 # ============================================================================
