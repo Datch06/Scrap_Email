@@ -10,6 +10,7 @@ import json
 from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
 import time
+import random
 
 from database import get_session, Site
 from campaign_database import (
@@ -18,7 +19,8 @@ from campaign_database import (
     ContactSequence, SequenceStatus,
     OperationLedger,
     CampaignEmail, EmailStatus,
-    EmailTemplate
+    EmailTemplate,
+    StepTemplateVariant
 )
 from ses_manager import SESManager
 
@@ -293,6 +295,44 @@ class ScenarioOrchestrator:
 
         return result
 
+    def _select_template_for_step(self, step: ScenarioStep) -> tuple[EmailTemplate, Optional[StepTemplateVariant]]:
+        """
+        Sélectionner un template pour une étape, en tenant compte de l'A/B testing
+
+        Returns:
+            tuple: (template, variant) où variant est None si pas d'A/B testing
+        """
+        # Vérifier s'il y a des variantes A/B
+        variants = self.campaign_session.query(StepTemplateVariant).filter_by(
+            step_id=step.id
+        ).all()
+
+        if not variants:
+            # Pas d'A/B testing, utiliser le template par défaut
+            template = self.campaign_session.query(EmailTemplate).get(step.template_id)
+            return (template, None)
+
+        # A/B testing: sélection pondérée
+        total_weight = sum(v.weight for v in variants)
+        if total_weight == 0:
+            # Fallback si poids invalides
+            template = self.campaign_session.query(EmailTemplate).get(step.template_id)
+            return (template, None)
+
+        # Sélection aléatoire basée sur les poids
+        rand = random.randint(1, total_weight)
+        cumulative = 0
+
+        for variant in variants:
+            cumulative += variant.weight
+            if rand <= cumulative:
+                template = self.campaign_session.query(EmailTemplate).get(variant.template_id)
+                return (template, variant)
+
+        # Fallback (ne devrait jamais arriver)
+        template = self.campaign_session.query(EmailTemplate).get(step.template_id)
+        return (template, None)
+
     def process_pending_operations(self, scenario_id: Optional[int] = None) -> Dict[str, Any]:
         """
         Traiter les opérations en attente (emails à envoyer)
@@ -334,13 +374,16 @@ class ScenarioOrchestrator:
                     operation.reason = f'Scenario {scenario.status.value}'
                     continue
 
-                # Récupérer le template
-                template = self.campaign_session.query(EmailTemplate).get(step.template_id)
+                # Récupérer le template (avec support A/B testing)
+                template, variant = self._select_template_for_step(step)
                 if not template:
                     operation.status = 'failed'
-                    operation.reason = f'Template {step.template_id} not found'
+                    operation.reason = f'Template not found for step {step.id}'
                     failed += 1
                     continue
+
+                if variant:
+                    logger.info(f"   🔀 A/B Testing: utilisation de la variante '{variant.variant_name}' (poids: {variant.weight})")
 
                 # Préparer les variables de personnalisation
                 variables = self._prepare_email_variables(contact, scenario, sequence)
@@ -374,6 +417,7 @@ class ScenarioOrchestrator:
                     campaign_email = CampaignEmail(
                         campaign_id=None,  # Pas de campagne classique, c'est un scénario
                         sequence_id=sequence.id if sequence else None,
+                        variant_id=variant.id if variant else None,
                         site_id=contact.id,
                         to_email=contact.emails,
                         to_domain=contact.domain,
@@ -393,7 +437,8 @@ class ScenarioOrchestrator:
                     operation.extra_data = json.dumps({
                         'message_id': message_id,
                         'campaign_email_id': campaign_email.id,
-                        'template_id': step.template_id
+                        'template_id': template.id,
+                        'variant_id': variant.id if variant else None
                     })
 
                     if sequence:
@@ -403,6 +448,10 @@ class ScenarioOrchestrator:
 
                     # Mettre à jour les stats du scénario
                     scenario.total_emails_sent += 1
+
+                    # Mettre à jour les stats de la variante si applicable
+                    if variant:
+                        variant.sent_count += 1
 
                     sent += 1
                     logger.info(f"   ✅ Envoyé avec succès (Message ID: {message_id})")

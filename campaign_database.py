@@ -165,6 +165,7 @@ class CampaignEmail(Base):
     id = Column(Integer, primary_key=True)
     campaign_id = Column(Integer, ForeignKey('campaigns.id'), nullable=True, index=True)  # Nullable for scenario emails
     sequence_id = Column(Integer, ForeignKey('contact_sequences.id'), nullable=True, index=True)  # Link to scenario sequence
+    variant_id = Column(Integer, ForeignKey('step_template_variants.id'), nullable=True, index=True)  # A/B test variant
     site_id = Column(Integer, nullable=False, index=True)  # Référence à la table sites
 
     # Destinataire
@@ -351,6 +352,7 @@ class ScenarioStep(Base):
     # Relations
     scenario = relationship("Scenario", back_populates="steps")
     parent_step = relationship("ScenarioStep", remote_side=[id], backref="child_steps")
+    template_variants = relationship("StepTemplateVariant", back_populates="step", cascade="all, delete-orphan")
 
     def to_dict(self):
         return {
@@ -364,6 +366,46 @@ class ScenarioStep(Base):
             'parent_step_id': self.parent_step_id,
             'template_id': self.template_id,
             'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
+
+class StepTemplateVariant(Base):
+    """Variante de template pour A/B testing"""
+    __tablename__ = 'step_template_variants'
+
+    id = Column(Integer, primary_key=True)
+    step_id = Column(Integer, ForeignKey('scenario_steps.id'), nullable=False, index=True)
+    template_id = Column(Integer, ForeignKey('email_templates.id'), nullable=False)
+
+    # Poids pour la distribution (ex: 50 = 50% des contacts)
+    weight = Column(Integer, default=50, nullable=False)
+
+    # Nom de la variante (ex: "Variante A", "Version formelle")
+    variant_name = Column(String(100), nullable=True)
+
+    # Statistiques
+    sent_count = Column(Integer, default=0)
+    opened_count = Column(Integer, default=0)
+    clicked_count = Column(Integer, default=0)
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Relations
+    step = relationship("ScenarioStep", back_populates="template_variants")
+    template = relationship("EmailTemplate")
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'step_id': self.step_id,
+            'template_id': self.template_id,
+            'weight': self.weight,
+            'variant_name': self.variant_name,
+            'sent_count': self.sent_count,
+            'opened_count': self.opened_count,
+            'clicked_count': self.clicked_count,
+            'open_rate': round((self.opened_count / self.sent_count * 100) if self.sent_count > 0 else 0, 2),
+            'click_rate': round((self.clicked_count / self.sent_count * 100) if self.sent_count > 0 else 0, 2)
         }
 
 

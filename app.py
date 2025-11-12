@@ -1406,6 +1406,15 @@ def handle_open(message, session):
         if campaign_email.sequence_id:
             try:
                 from scenario_orchestrator import ScenarioOrchestrator
+                from campaign_database import StepTemplateVariant
+
+                # Mettre à jour les stats de la variante A/B si applicable
+                if campaign_email.variant_id:
+                    variant = session.query(StepTemplateVariant).get(campaign_email.variant_id)
+                    if variant:
+                        variant.opened_count += 1
+                        logger.info(f"✅ Stats A/B: variante '{variant.variant_name}' - ouverture enregistrée")
+
                 orchestrator = ScenarioOrchestrator()
                 orchestrator.handle_event('opened', campaign_email)
                 orchestrator.close()
@@ -1447,6 +1456,15 @@ def handle_click(message, session):
         if campaign_email.sequence_id:
             try:
                 from scenario_orchestrator import ScenarioOrchestrator
+                from campaign_database import StepTemplateVariant
+
+                # Mettre à jour les stats de la variante A/B si applicable
+                if campaign_email.variant_id:
+                    variant = session.query(StepTemplateVariant).get(campaign_email.variant_id)
+                    if variant:
+                        variant.clicked_count += 1
+                        logger.info(f"✅ Stats A/B: variante '{variant.variant_name}' - clic enregistré")
+
                 orchestrator = ScenarioOrchestrator()
                 orchestrator.handle_event('clicked', campaign_email)
                 orchestrator.close()
