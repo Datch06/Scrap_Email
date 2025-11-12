@@ -301,13 +301,21 @@ def build_segment_query(segment, db_session):
     if 'email_deliverable' in filters:
         query = query.filter(Site.email_deliverable == filters['email_deliverable'])
 
-    # Domaines inclus
+    # Domaines inclus (chercher dans les emails, pas dans le domaine du site)
     if 'domains_include' in filters and filters['domains_include']:
-        query = query.filter(Site.domain.in_(filters['domains_include']))
+        domains = filters['domains_include']
+        if isinstance(domains, list) and len(domains) > 0:
+            # Au moins un domaine doit correspondre
+            from sqlalchemy import or_
+            domain_conditions = [Site.emails.like(f'%{domain}%') for domain in domains]
+            query = query.filter(or_(*domain_conditions))
 
-    # Domaines exclus
+    # Domaines exclus (exclure si l'email contient un de ces domaines)
     if 'domains_exclude' in filters and filters['domains_exclude']:
-        query = query.filter(~Site.domain.in_(filters['domains_exclude']))
+        domains = filters['domains_exclude']
+        if isinstance(domains, list) and len(domains) > 0:
+            for domain in domains:
+                query = query.filter(~Site.emails.like(f'%{domain}%'))
 
     # SIRET
     if 'has_siret' in filters:
