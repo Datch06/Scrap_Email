@@ -278,6 +278,10 @@ class CampaignManager:
             personalized_subject = re.sub(r'<[^>]+>', '', personalized_subject)
             personalized_subject = personalized_subject.strip()
 
+            # Enregistrer les informations d'expéditeur
+            campaign_email.from_name = campaign.from_name
+            campaign_email.from_email = campaign.from_email
+
             # Envoyer via SES
             result = self.ses_manager.send_email(
                 to_email=campaign_email.to_email,
@@ -354,6 +358,12 @@ class CampaignManager:
         }
 
         for i, campaign_email in enumerate(pending_emails, 1):
+            # Vérifier si la campagne a été mise en pause
+            self.campaign_session.refresh(campaign)
+            if campaign.status == CampaignStatus.PAUSED:
+                logger.info(f"⏸️  Campagne '{campaign.name}' mise en pause après {stats['sent']} emails envoyés")
+                break
+
             success = self.send_campaign_email(campaign_email, campaign)
 
             if success:

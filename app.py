@@ -187,6 +187,112 @@ def get_stats():
         session.close()
 
 
+@app.route('/api/scraping-live')
+def get_scraping_live():
+    """Obtenir les statistiques du scraping de backlinks en temps réel"""
+    session = get_session()
+
+    try:
+        # Stats globales LinkAvista
+        total_sellers = session.query(Site).filter_by(is_linkavista_seller=True).count()
+        total_buyers = session.query(Site).filter(Site.purchased_from.isnot(None)).count()
+        buyers_with_email = session.query(Site).filter(
+            Site.purchased_from.isnot(None),
+            Site.emails.isnot(None),
+            Site.emails != 'NO EMAIL FOUND'
+        ).count()
+
+        # Activité récente (dernière heure)
+        one_hour_ago = datetime.utcnow() - timedelta(hours=1)
+        recent_buyers = session.query(Site).filter(
+            Site.purchased_from.isnot(None),
+            Site.created_at >= one_hour_ago
+        ).count()
+
+        recent_emails = session.query(Site).filter(
+            Site.purchased_from.isnot(None),
+            Site.emails.isnot(None),
+            Site.emails != 'NO EMAIL FOUND',
+            Site.email_found_at >= one_hour_ago
+        ).count()
+
+        # Top 10 derniers sites vendeurs traités
+        recent_sellers = session.query(Site).filter(
+            Site.is_linkavista_seller == True
+        ).order_by(Site.updated_at.desc()).limit(10).all()
+
+        sellers_data = []
+        for seller in recent_sellers:
+            # Compter les acheteurs de ce vendeur
+            buyers_count = session.query(Site).filter_by(purchased_from=seller.domain).count()
+            sellers_data.append({
+                'domain': seller.domain,
+                'buyers_found': buyers_count,
+                'updated_at': seller.updated_at.isoformat() if seller.updated_at else None
+            })
+
+        # Derniers acheteurs avec email trouvés
+        latest_buyers = session.query(Site).filter(
+            Site.purchased_from.isnot(None),
+            Site.emails.isnot(None),
+            Site.emails != 'NO EMAIL FOUND'
+        ).order_by(Site.email_found_at.desc()).limit(10).all()
+
+        buyers_data = []
+        for buyer in latest_buyers:
+            buyers_data.append({
+                'domain': buyer.domain,
+                'email': buyer.emails[:60] + '...' if buyer.emails and len(buyer.emails) > 60 else buyer.emails,
+                'purchased_from': buyer.purchased_from,
+                'found_at': buyer.email_found_at.isoformat() if buyer.email_found_at else None
+            })
+
+        return jsonify({
+            'summary': {
+                'total_sellers': total_sellers,
+                'total_buyers': total_buyers,
+                'buyers_with_email': buyers_with_email,
+                'conversion_rate': round((buyers_with_email / total_buyers * 100) if total_buyers > 0 else 0, 1)
+            },
+            'last_hour': {
+                'new_buyers': recent_buyers,
+                'new_emails': recent_emails
+            },
+            'recent_sellers': sellers_data,
+            'latest_buyers': buyers_data
+        })
+
+    except Exception as e:
+        logger.error(f"Erreur lors de la récupération des stats de scraping: {e}")
+        return jsonify({'error': str(e)}), 500
+
+    finally:
+        session.close()
+
+
+@app.route('/api/scraping-state')
+def get_scraping_state():
+    """Obtenir l'état en temps réel des crawlers actifs (pages en cours de crawling)"""
+    from pathlib import Path
+
+    state_file = Path('/var/www/Scrap_Email/scraping_state.json')
+
+    try:
+        if state_file.exists():
+            with open(state_file, 'r') as f:
+                state = json.load(f)
+            return jsonify(state)
+        else:
+            return jsonify({
+                'sellers_in_progress': [],
+                'last_update': None
+            })
+
+    except Exception as e:
+        logger.error(f"Erreur lors de la lecture du state de scraping: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
 # ============================================================================
 # API - SITES
 # ============================================================================
@@ -823,6 +929,212 @@ def get_template(template_id):
         if not template:
             return jsonify({'error': 'Template not found'}), 404
         return jsonify(template.to_dict())
+    finally:
+        session.close()
+
+
+@app.route('/api/templates', methods=['POST'])
+def create_template():
+    """Créer un nouveau template d'email"""
+    from campaign_database import get_campaign_session, EmailTemplate
+    import json as json_lib
+
+    session = get_campaign_session()
+    try:
+        data = request.get_json()
+
+        # Validation
+        if not data.get('name'):
+            return jsonify({'error': 'Le nom du template est requis'}), 400
+        if not data.get('subject'):
+            return jsonify({'error': 'Le sujet est requis'}), 400
+        if not data.get('html_body'):
+            return jsonify({'error': 'Le corps HTML est requis'}), 400
+
+        # Créer le template
+        template = EmailTemplate(
+            name=data['name'],
+            description=data.get('description'),
+            category=data.get('category', 'prospection'),
+            subject=data['subject'],
+            html_body=data['html_body'],
+            text_body=data.get('text_body'),
+            available_variables=json_lib.dumps(data.get('available_variables', ['domain', 'email', 'siret', 'leaders', 'unsubscribe_link'])),
+            is_active=True
+        )
+
+        session.add(template)
+        session.commit()
+
+        logger.info(f"Nouveau template créé: {template.name} (ID: {template.id})")
+
+        return jsonify(template.to_dict()), 201
+
+    except Exception as e:
+        session.rollback()
+        logger.error(f"Erreur création template: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        session.close()
+
+
+@app.route('/api/templates/<int:template_id>/test', methods=['POST'])
+def send_test_template(template_id):
+    """Envoyer des emails de test pour un template"""
+    from campaign_database import get_campaign_session, EmailTemplate
+    from ses_manager import SESManager
+    import re
+
+    session = get_campaign_session()
+    try:
+        data = request.json or {}
+        test_emails = data.get('test_emails', [])
+        test_domain = data.get('test_domain', 'test.example.com')
+
+        if not test_emails:
+            return jsonify({'error': 'Aucune adresse email de test fournie'}), 400
+
+        if not isinstance(test_emails, list):
+            test_emails = [test_emails]
+
+        # Récupérer le template
+        template = session.query(EmailTemplate).get(template_id)
+        if not template:
+            return jsonify({'error': 'Template non trouvé'}), 404
+
+        # Préparer les variables de test
+        test_variables = {
+            'domain': test_domain,
+            'email': 'contact@' + test_domain,
+            'siret': '12345678901234',
+            'leaders': 'Jean Dupont (Gérant)',
+            'unsubscribe_link': f'https://admin.perfect-cocon-seo.fr/unsubscribe?email=test@example.com&token=TEST'
+        }
+
+        # Remplacer les variables dans le sujet et le corps
+        subject = template.subject
+        html_body = template.html_body
+
+        for var, value in test_variables.items():
+            subject = subject.replace('{{' + var + '}}', value)
+            html_body = html_body.replace('{{' + var + '}}', value)
+
+        # Préfixer le sujet avec [TEST]
+        subject = f"[TEST] {subject}"
+
+        # Envoyer les emails
+        ses_manager = SESManager()
+        sent = []
+        failed = []
+
+        for email in test_emails:
+            try:
+                result = ses_manager.send_email(
+                    to_email=email,
+                    subject=subject,
+                    html_body=html_body
+                )
+                if result:
+                    sent.append(email)
+                else:
+                    failed.append({'email': email, 'error': 'Erreur d\'envoi'})
+            except Exception as e:
+                failed.append({'email': email, 'error': str(e)})
+
+        return jsonify({
+            'template_name': template.name,
+            'total_sent': len(sent),
+            'total_failed': len(failed),
+            'sent': sent,
+            'failed': failed
+        })
+
+    except Exception as e:
+        logger.error(f"Erreur test template: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        session.close()
+
+
+@app.route('/api/campaigns/<int:campaign_id>/pause', methods=['POST'])
+def pause_campaign(campaign_id):
+    """Mettre en pause une campagne en cours d'exécution"""
+    from campaign_database import get_campaign_session, Campaign, CampaignStatus
+
+    session = get_campaign_session()
+    try:
+        campaign = session.query(Campaign).get(campaign_id)
+        if not campaign:
+            return jsonify({'error': 'Campagne non trouvée'}), 404
+
+        # Vérifier que la campagne est en cours
+        if campaign.status != CampaignStatus.RUNNING:
+            return jsonify({'error': f'La campagne doit être en cours (status actuel: {campaign.status.value})'}), 400
+
+        # Mettre en pause
+        campaign.status = CampaignStatus.PAUSED
+        session.commit()
+
+        logger.info(f"⏸️  Campagne '{campaign.name}' (ID: {campaign_id}) mise en pause")
+
+        return jsonify({
+            'success': True,
+            'campaign_id': campaign_id,
+            'status': campaign.status.value,
+            'message': f"Campagne '{campaign.name}' mise en pause"
+        })
+
+    except Exception as e:
+        session.rollback()
+        logger.error(f"Erreur lors de la mise en pause de la campagne {campaign_id}: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        session.close()
+
+
+@app.route('/api/campaigns/<int:campaign_id>/resume', methods=['POST'])
+def resume_campaign(campaign_id):
+    """Reprendre une campagne en pause"""
+    from campaign_database import get_campaign_session, Campaign, CampaignStatus
+    from campaign_manager import CampaignManager
+    import threading
+
+    session = get_campaign_session()
+    try:
+        campaign = session.query(Campaign).get(campaign_id)
+        if not campaign:
+            return jsonify({'error': 'Campagne non trouvée'}), 404
+
+        # Vérifier que la campagne est en pause
+        if campaign.status != CampaignStatus.PAUSED:
+            return jsonify({'error': f'La campagne doit être en pause (status actuel: {campaign.status.value})'}), 400
+
+        # Reprendre (remettre en RUNNING)
+        campaign.status = CampaignStatus.RUNNING
+        session.commit()
+
+        logger.info(f"▶️  Campagne '{campaign.name}' (ID: {campaign_id}) reprise")
+
+        # Relancer l'envoi dans un thread séparé
+        campaign_manager = CampaignManager()
+        thread = threading.Thread(
+            target=campaign_manager.run_campaign,
+            args=(campaign_id,),
+            daemon=True
+        )
+        thread.start()
+
+        return jsonify({
+            'success': True,
+            'campaign_id': campaign_id,
+            'status': campaign.status.value,
+            'message': f"Campagne '{campaign.name}' reprise"
+        })
+
+    except Exception as e:
+        session.rollback()
+        logger.error(f"Erreur lors de la reprise de la campagne {campaign_id}: {e}")
+        return jsonify({'error': str(e)}), 500
     finally:
         session.close()
 

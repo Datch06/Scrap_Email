@@ -13,6 +13,9 @@
             <p class="text-muted">Créez et gérez vos campagnes d'envoi d'emails</p>
         </div>
         <div class="col-auto">
+            <button class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#createTemplateModal">
+                <i class="bi bi-file-earmark-plus"></i> Nouveau Template
+            </button>
             <button class="btn btn-info me-2" onclick="openTestModalWithSelect()">
                 <i class="bi bi-envelope-check"></i> Tester une Campagne
             </button>
@@ -38,6 +41,68 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Créer un template -->
+<div class="modal fade" id="createTemplateModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-file-earmark-plus"></i> Nouveau Template d'Email</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="createTemplateForm">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label class="form-label">Nom du template *</label>
+                                <input type="text" class="form-control" id="template-name" required
+                                       placeholder="Ex: Proposition de Backlink Premium">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Catégorie</label>
+                                <select class="form-select" id="template-category">
+                                    <option value="prospection">Prospection</option>
+                                    <option value="suivi">Suivi</option>
+                                    <option value="relance">Relance</option>
+                                    <option value="autre">Autre</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" id="template-description" rows="2"
+                                  placeholder="Description du template (optionnel)"></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Sujet de l'email *</label>
+                        <input type="text" class="form-control" id="template-subject" required
+                               placeholder="Ex: Collaboration SEO avec {{domain}}">
+                        <small class="text-muted">Variables disponibles: {{domain}}, {{email}}, {{siret}}, {{leaders}}</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Corps HTML de l'email *</label>
+                        <textarea class="form-control font-monospace" id="template-html" rows="15" required
+                                  placeholder="Bonjour,&#10;&#10;Je souhaite vous proposer une collaboration...&#10;&#10;Cordialement,&#10;Votre nom&#10;&#10;{{unsubscribe_link}}"></textarea>
+                        <small class="text-muted">Utilisez les variables: {{domain}}, {{email}}, {{siret}}, {{leaders}}, {{unsubscribe_link}}</small>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-success" id="btn-create-template">
+                    <i class="bi bi-check-circle"></i> Créer le Template
+                </button>
             </div>
         </div>
     </div>
@@ -147,6 +212,12 @@
                 <button type="button" class="btn btn-warning" id="btn-prepare-campaign" style="display:none">
                     <i class="bi bi-gear"></i> Préparer la Campagne
                 </button>
+                <button type="button" class="btn btn-warning" id="btn-pause-campaign" style="display:none">
+                    <i class="bi bi-pause-circle"></i> Mettre en Pause
+                </button>
+                <button type="button" class="btn btn-info" id="btn-resume-campaign" style="display:none">
+                    <i class="bi bi-play-circle"></i> Reprendre
+                </button>
                 <button type="button" class="btn btn-success" id="btn-send-campaign" style="display:none">
                     <i class="bi bi-send"></i> Lancer l'Envoi
                 </button>
@@ -161,7 +232,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">
-                    <i class="bi bi-envelope-check"></i> Tester la Campagne
+                    <i class="bi bi-envelope-check"></i> Tester un Email
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
@@ -169,10 +240,32 @@
                 <p>Envoyez un email de test pour vérifier le rendu et le contenu avant l'envoi massif.</p>
                 <p class="text-muted"><small>Le sujet aura le préfixe <strong>[TEST]</strong> et les variables seront remplacées par des données fictives.</small></p>
 
-                <div class="mb-3" id="campaign-selector-container" style="display:none">
+                <!-- Choix: Campagne ou Template -->
+                <div class="mb-3">
+                    <label class="form-label">Source du test *</label>
+                    <div class="btn-group w-100" role="group">
+                        <input type="radio" class="btn-check" name="test-source" id="test-source-campaign" value="campaign" checked>
+                        <label class="btn btn-outline-primary" for="test-source-campaign">
+                            <i class="bi bi-send"></i> Campagne
+                        </label>
+                        <input type="radio" class="btn-check" name="test-source" id="test-source-template" value="template">
+                        <label class="btn btn-outline-success" for="test-source-template">
+                            <i class="bi bi-file-earmark-text"></i> Template
+                        </label>
+                    </div>
+                </div>
+
+                <div class="mb-3" id="campaign-selector-container">
                     <label class="form-label">Campagne à tester *</label>
                     <select class="form-select" id="test-campaign-select">
                         <option value="">Sélectionnez une campagne</option>
+                    </select>
+                </div>
+
+                <div class="mb-3" id="template-selector-container" style="display:none">
+                    <label class="form-label">Template à tester *</label>
+                    <select class="form-select" id="test-template-select">
+                        <option value="">Sélectionnez un template</option>
                     </select>
                 </div>
 
@@ -338,6 +431,50 @@ function getStatusBadge(status) {
     return badges[status] || status;
 }
 
+// Créer un template
+document.getElementById('btn-create-template').addEventListener('click', async function() {
+    const btn = this;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Création...';
+
+    try {
+        const data = {
+            name: document.getElementById('template-name').value,
+            description: document.getElementById('template-description').value,
+            category: document.getElementById('template-category').value,
+            subject: document.getElementById('template-subject').value,
+            html_body: document.getElementById('template-html').value
+        };
+
+        const response = await fetch('/api/templates', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+
+        if (response.ok) {
+            const template = await response.json();
+            const modal = bootstrap.Modal.getInstance(document.getElementById('createTemplateModal'));
+            modal.hide();
+
+            document.getElementById('createTemplateForm').reset();
+
+            alert('✅ Template créé avec succès!');
+
+            // Recharger les templates pour le select
+            loadTemplates();
+        } else {
+            const error = await response.json();
+            alert('❌ Erreur: ' + error.error);
+        }
+    } catch (error) {
+        alert('❌ Erreur: ' + error.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-check-circle"></i> Créer le Template';
+    }
+});
+
 // Créer une campagne
 document.getElementById('btn-create-campaign').addEventListener('click', async function() {
     const btn = this;
@@ -479,16 +616,24 @@ async function viewCampaign(campaignId) {
         // Afficher les boutons appropriés
         const btnPrepare = document.getElementById('btn-prepare-campaign');
         const btnSend = document.getElementById('btn-send-campaign');
+        const btnPause = document.getElementById('btn-pause-campaign');
+        const btnResume = document.getElementById('btn-resume-campaign');
 
+        // Cacher tous les boutons d'action par défaut
+        btnPrepare.style.display = 'none';
+        btnSend.style.display = 'none';
+        btnPause.style.display = 'none';
+        btnResume.style.display = 'none';
+
+        // Afficher selon le statut
         if (campaign.status === 'draft') {
             btnPrepare.style.display = 'inline-block';
-            btnSend.style.display = 'none';
-        } else if (campaign.status === 'scheduled' || campaign.status === 'paused') {
-            btnPrepare.style.display = 'none';
+        } else if (campaign.status === 'scheduled') {
             btnSend.style.display = 'inline-block';
-        } else {
-            btnPrepare.style.display = 'none';
-            btnSend.style.display = 'none';
+        } else if (campaign.status === 'running') {
+            btnPause.style.display = 'inline-block';
+        } else if (campaign.status === 'paused') {
+            btnResume.style.display = 'inline-block';
         }
 
         const modal = new bootstrap.Modal(document.getElementById('campaignDetailsModal'));
@@ -573,10 +718,103 @@ document.getElementById('btn-send-campaign').addEventListener('click', async fun
     }
 });
 
+// Mettre en pause une campagne
+document.getElementById('btn-pause-campaign').addEventListener('click', async function() {
+    if (!currentCampaignId) return;
+
+    if (!confirm('Mettre en pause cette campagne? L\'envoi des emails sera interrompu immédiatement.')) return;
+
+    const btn = this;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Pause...';
+
+    try {
+        const response = await fetch(`/api/campaigns/${currentCampaignId}/pause`, {
+            method: 'POST'
+        });
+
+        if (response.ok) {
+            const result = await response.json();
+            alert('⏸️ ' + result.message);
+
+            // Rafraîchir la vue
+            viewCampaign(currentCampaignId);
+            loadCampaigns();
+        } else {
+            const error = await response.json();
+            alert('❌ Erreur: ' + error.error);
+        }
+    } catch (error) {
+        alert('❌ Erreur: ' + error.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-pause-circle"></i> Mettre en Pause';
+    }
+});
+
+// Reprendre une campagne en pause
+document.getElementById('btn-resume-campaign').addEventListener('click', async function() {
+    if (!currentCampaignId) return;
+
+    if (!confirm('Reprendre cette campagne? L\'envoi des emails va continuer.')) return;
+
+    const btn = this;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Reprise...';
+
+    try {
+        const response = await fetch(`/api/campaigns/${currentCampaignId}/resume`, {
+            method: 'POST'
+        });
+
+        if (response.ok) {
+            const result = await response.json();
+            alert('▶️ ' + result.message);
+
+            // Rafraîchir la vue et actualiser automatiquement
+            viewCampaign(currentCampaignId);
+            loadCampaigns();
+
+            // Actualiser toutes les 5 secondes pendant la reprise
+            const interval = setInterval(() => {
+                viewCampaign(currentCampaignId);
+                loadCampaigns();
+            }, 5000);
+
+            // Arrêter après 2 minutes
+            setTimeout(() => clearInterval(interval), 120000);
+        } else {
+            const error = await response.json();
+            alert('❌ Erreur: ' + error.error);
+        }
+    } catch (error) {
+        alert('❌ Erreur: ' + error.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-play-circle"></i> Reprendre';
+    }
+});
+
 // Tester une campagne
 let currentTestCampaignId = null;
 let currentTestCampaignName = null;
 let allCampaigns = [];
+
+// Basculer entre campagne et template
+document.querySelectorAll('input[name="test-source"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+        const campaignContainer = document.getElementById('campaign-selector-container');
+        const templateContainer = document.getElementById('template-selector-container');
+
+        if (this.value === 'campaign') {
+            campaignContainer.style.display = 'block';
+            templateContainer.style.display = 'none';
+        } else {
+            campaignContainer.style.display = 'none';
+            templateContainer.style.display = 'block';
+        }
+    });
+});
 
 // Ouvrir le modal avec sélecteur de campagne
 async function openTestModalWithSelect() {
@@ -591,23 +829,30 @@ async function openTestModalWithSelect() {
         }
     }
 
-    if (allCampaigns.length === 0) {
-        alert('⚠️ Aucune campagne disponible. Créez d\'abord une campagne avant de la tester.');
-        return;
-    }
-
-    // Remplir le sélecteur
-    const select = document.getElementById('test-campaign-select');
-    select.innerHTML = '<option value="">Sélectionnez une campagne</option>';
+    // Remplir le sélecteur de campagnes
+    const campaignSelect = document.getElementById('test-campaign-select');
+    campaignSelect.innerHTML = '<option value="">Sélectionnez une campagne</option>';
     allCampaigns.forEach(campaign => {
         const option = document.createElement('option');
         option.value = campaign.id;
         option.textContent = `${campaign.name} (${campaign.status})`;
-        select.appendChild(option);
+        campaignSelect.appendChild(option);
     });
 
-    // Afficher le sélecteur, réinitialiser le formulaire
+    // Remplir le sélecteur de templates
+    const templateSelect = document.getElementById('test-template-select');
+    templateSelect.innerHTML = '<option value="">Sélectionnez un template</option>';
+    templates.forEach(template => {
+        const option = document.createElement('option');
+        option.value = template.id;
+        option.textContent = `${template.name} (${template.category})`;
+        templateSelect.appendChild(option);
+    });
+
+    // Réinitialiser le formulaire
+    document.getElementById('test-source-campaign').checked = true;
     document.getElementById('campaign-selector-container').style.display = 'block';
+    document.getElementById('template-selector-container').style.display = 'none';
     document.getElementById('test-emails').value = '';
     document.getElementById('test-domain').value = 'site-test-exemple.fr';
     document.getElementById('test-result').style.display = 'none';
@@ -635,20 +880,43 @@ function testCampaign(campaignId, campaignName) {
 }
 
 document.getElementById('btn-send-test').addEventListener('click', async function() {
-    // Si le sélecteur est visible, récupérer l'ID depuis le select
-    const selectorContainer = document.getElementById('campaign-selector-container');
-    if (selectorContainer.style.display !== 'none') {
-        const selectValue = document.getElementById('test-campaign-select').value;
-        if (!selectValue) {
-            alert('⚠️ Veuillez sélectionner une campagne à tester');
+    // Déterminer la source (campagne ou template)
+    const testSource = document.querySelector('input[name="test-source"]:checked').value;
+    let testId = null;
+    let apiUrl = null;
+    let sourceName = '';
+
+    if (testSource === 'campaign') {
+        // Si le sélecteur est visible, récupérer l'ID depuis le select
+        const selectorContainer = document.getElementById('campaign-selector-container');
+        if (selectorContainer.style.display !== 'none') {
+            const selectValue = document.getElementById('test-campaign-select').value;
+            if (!selectValue) {
+                alert('⚠️ Veuillez sélectionner une campagne à tester');
+                return;
+            }
+            testId = parseInt(selectValue);
+        } else {
+            testId = currentTestCampaignId;
+        }
+
+        if (!testId) {
+            alert('⚠️ Aucune campagne sélectionnée');
             return;
         }
-        currentTestCampaignId = parseInt(selectValue);
-    }
 
-    if (!currentTestCampaignId) {
-        alert('⚠️ Aucune campagne sélectionnée');
-        return;
+        apiUrl = `/api/campaigns/${testId}/test`;
+        sourceName = 'campagne';
+    } else {
+        // Template
+        const selectValue = document.getElementById('test-template-select').value;
+        if (!selectValue) {
+            alert('⚠️ Veuillez sélectionner un template à tester');
+            return;
+        }
+        testId = parseInt(selectValue);
+        apiUrl = `/api/templates/${testId}/test`;
+        sourceName = 'template';
     }
 
     const emailsText = document.getElementById('test-emails').value.trim();
@@ -675,7 +943,7 @@ document.getElementById('btn-send-test').addEventListener('click', async functio
     btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Envoi...';
 
     try {
-        const response = await fetch(`/api/campaigns/${currentTestCampaignId}/test`, {
+        const response = await fetch(apiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -690,7 +958,7 @@ document.getElementById('btn-send-test').addEventListener('click', async functio
             // Afficher les résultats
             let html = '<div class="alert alert-success">';
             html += `<h6><i class="bi bi-check-circle"></i> Test envoyé avec succès!</h6>`;
-            html += `<p><strong>Campagne:</strong> ${result.campaign_name}</p>`;
+            html += `<p><strong>${sourceName === 'template' ? 'Template' : 'Campagne'}:</strong> ${result.campaign_name || result.template_name}</p>`;
             html += `<p><strong>Envoyés:</strong> ${result.total_sent} / ${testEmails.length}</p>`;
 
             if (result.sent.length > 0) {
