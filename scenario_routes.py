@@ -266,9 +266,21 @@ def register_scenario_routes(app):
 
             logger.info(f"Scénario {scenario_id} démarré")
 
-            # TODO: Lancer l'orchestrateur
-            # orchestrator = ScenarioOrchestrator()
-            # orchestrator.start_scenario(scenario_id)
+            # Lancer l'orchestrateur dans un thread séparé
+            import threading
+            from scenario_orchestrator import ScenarioOrchestrator
+
+            def run_orchestrator():
+                try:
+                    orchestrator = ScenarioOrchestrator()
+                    result = orchestrator.start_scenario(scenario_id)
+                    logger.info(f"Orchestrateur terminé: {result['metrics']}")
+                    orchestrator.close()
+                except Exception as e:
+                    logger.error(f"Erreur orchestrateur: {e}", exc_info=True)
+
+            thread = threading.Thread(target=run_orchestrator, daemon=True)
+            thread.start()
 
             return jsonify({
                 'success': True,
