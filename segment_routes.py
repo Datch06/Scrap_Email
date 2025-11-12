@@ -8,7 +8,7 @@ from campaign_database import get_campaign_session, ContactSegment
 from database import get_session, Site
 import logging
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 
 logger = logging.getLogger(__name__)
 
@@ -118,6 +118,15 @@ def register_segment_routes(app):
 
             data = request.get_json()
 
+            # Mode rafraîchissement simple du compteur
+            if data.get('_refresh_count'):
+                count = calculate_segment_count(segment_id)
+                segment.estimated_count = count
+                segment.last_count_update = datetime.utcnow()
+                session.commit()
+                logger.info(f"Segment {segment_id} compteur rafraîchi: {count} contacts")
+                return jsonify(segment.to_dict())
+
             # Mettre à jour les champs
             if 'name' in data:
                 segment.name = data['name']
@@ -164,6 +173,48 @@ def register_segment_routes(app):
         except Exception as e:
             session.rollback()
             logger.error(f"Erreur delete_segment: {e}")
+            return jsonify({'error': str(e)}), 500
+        finally:
+            session.close()
+
+
+    @app.route('/api/segments/refresh-stale', methods=['POST'])
+    def refresh_stale_segments():
+        """Rafraîchir les segments périmés (> 24h)"""
+        session = get_campaign_session()
+        try:
+            # Segments actifs non mis à jour depuis 24h
+            stale_threshold = datetime.utcnow() - timedelta(hours=24)
+
+            segments = session.query(ContactSegment).filter(
+                ContactSegment.is_active == True,
+                (ContactSegment.last_count_update < stale_threshold) |
+                (ContactSegment.last_count_update.is_(None))
+            ).all()
+
+            updated = []
+            for segment in segments:
+                count = calculate_segment_count(segment.id)
+                segment.estimated_count = count
+                segment.last_count_update = datetime.utcnow()
+                updated.append({
+                    'id': segment.id,
+                    'name': segment.name,
+                    'count': count
+                })
+
+            session.commit()
+            logger.info(f"Rafraîchi {len(updated)} segments périmés")
+
+            return jsonify({
+                'success': True,
+                'updated_count': len(updated),
+                'segments': updated
+            })
+
+        except Exception as e:
+            session.rollback()
+            logger.error(f"Erreur refresh_stale_segments: {e}")
             return jsonify({'error': str(e)}), 500
         finally:
             session.close()

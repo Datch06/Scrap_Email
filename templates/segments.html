@@ -233,6 +233,9 @@ async function loadSegments() {
                 <button class="btn btn-sm btn-primary" onclick="viewSegment(${segment.id})">
                     <i class="bi bi-eye"></i> Voir
                 </button>
+                <button class="btn btn-sm btn-success" onclick="refreshSegmentCount(${segment.id})" title="Recalculer le nombre de contacts">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </button>
             </td>`;
             html += `</tr>`;
         });
@@ -243,6 +246,53 @@ async function loadSegments() {
     } catch (error) {
         console.error('Erreur chargement segments:', error);
         container.innerHTML = `<div class="alert alert-danger">Erreur lors du chargement des segments</div>`;
+    }
+}
+
+// ============================================================================
+// RAFRAÎCHIR LE COMPTEUR D'UN SEGMENT
+// ============================================================================
+
+async function refreshSegmentCount(segmentId) {
+    try {
+        // Afficher un indicateur de chargement sur le bouton
+        const btn = event.target.closest('button');
+        const originalHTML = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+        // Appeler l'API pour recalculer
+        const response = await fetch(`/api/segments/${segmentId}/count`);
+        const data = await response.json();
+
+        if (response.ok) {
+            // Mettre à jour le segment avec le nouveau compteur
+            const updateResponse = await fetch(`/api/segments/${segmentId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    _refresh_count: true,
+                    new_count: data.count
+                })
+            });
+
+            if (updateResponse.ok) {
+                // Recharger la liste des segments
+                await loadSegments();
+
+                // Afficher un message de succès
+                alert(`✅ Segment mis à jour: ${data.count} contacts trouvés`);
+            }
+        } else {
+            alert('❌ Erreur lors du rafraîchissement');
+        }
+
+        btn.disabled = false;
+        btn.innerHTML = originalHTML;
+
+    } catch (error) {
+        console.error('Erreur refresh segment:', error);
+        alert('❌ Erreur: ' + error.message);
     }
 }
 
@@ -597,7 +647,26 @@ document.getElementById('createSegmentModal').addEventListener('hidden.bs.modal'
 });
 
 // Initialisation
-loadSegments();
+async function initPage() {
+    // Rafraîchir automatiquement les segments périmés (> 24h) en arrière-plan
+    try {
+        const response = await fetch('/api/segments/refresh-stale', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await response.json();
+        if (data.updated_count > 0) {
+            console.log(`✅ ${data.updated_count} segment(s) rafraîchi(s) automatiquement`);
+        }
+    } catch (error) {
+        console.error('Erreur auto-refresh:', error);
+    }
+
+    // Charger les segments
+    await loadSegments();
+}
+
+initPage();
 
 // Actualiser toutes les 30 secondes
 setInterval(loadSegments, 30000);
