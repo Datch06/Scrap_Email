@@ -702,5 +702,108 @@ loadScenarios();
 
 // Actualiser toutes les 30 secondes
 setInterval(loadScenarios, 30000);
+
+// ============================================================================
+// CONTRÔLE DU SCÉNARIO (Démarrer, Pause, Reprendre)
+// ============================================================================
+
+// Bouton démarrer
+document.getElementById('btn-start-scenario').addEventListener('click', async function() {
+    if (!currentScenarioId) return;
+
+    if (!confirm('Voulez-vous démarrer ce scénario ?')) return;
+
+    const btn = this;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Démarrage...';
+
+    try {
+        const response = await fetch(`/api/scenarios/${currentScenarioId}/start`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            showAlert('success', `✅ ${data.message}`);
+            bootstrap.Modal.getInstance(document.getElementById('scenarioDetailsModal')).hide();
+            loadScenarios();
+        } else {
+            showAlert('danger', `❌ Erreur: ${data.error || 'Impossible de démarrer le scénario'}`);
+        }
+    } catch (error) {
+        showAlert('danger', `❌ Erreur: ${error.message}`);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-play-circle"></i> Démarrer';
+    }
+});
+
+// Bouton mettre en pause
+document.getElementById('btn-pause-scenario').addEventListener('click', async function() {
+    if (!currentScenarioId) return;
+
+    if (!confirm('Voulez-vous mettre en pause ce scénario ?')) return;
+
+    const btn = this;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Pause...';
+
+    try {
+        const response = await fetch(`/api/scenarios/${currentScenarioId}/pause`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            showAlert('success', `⏸️ ${data.message}`);
+            bootstrap.Modal.getInstance(document.getElementById('scenarioDetailsModal')).hide();
+            loadScenarios();
+        } else {
+            showAlert('danger', `❌ Erreur: ${data.error || 'Impossible de mettre en pause'}`);
+        }
+    } catch (error) {
+        showAlert('danger', `❌ Erreur: ${error.message}`);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-pause-circle"></i> Mettre en Pause';
+    }
+});
+
+// Bouton reprendre
+document.getElementById('btn-resume-scenario').addEventListener('click', async function() {
+    if (!currentScenarioId) return;
+
+    if (!confirm('Voulez-vous reprendre ce scénario ?')) return;
+
+    const btn = this;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Reprise...';
+
+    try {
+        const response = await fetch(`/api/scenarios/${currentScenarioId}/resume`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            showAlert('success', `▶️ ${data.message}`);
+            bootstrap.Modal.getInstance(document.getElementById('scenarioDetailsModal')).hide();
+            loadScenarios();
+        } else {
+            showAlert('danger', `❌ Erreur: ${data.error || 'Impossible de reprendre'}`);
+        }
+    } catch (error) {
+        showAlert('danger', `❌ Erreur: ${error.message}`);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-play-circle"></i> Reprendre';
+    }
+});
 </script>
 {% endblock %}
