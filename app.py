@@ -13,6 +13,7 @@ import json
 import csv
 import logging
 from io import StringIO, BytesIO
+from scenario_routes import register_scenario_routes
 
 # Logger
 logging.basicConfig(level=logging.INFO)
@@ -23,6 +24,9 @@ CORS(app)
 
 # Initialiser la base de données au démarrage
 init_db()
+
+# Enregistrer les routes des scénarios
+register_scenario_routes(app)
 
 
 # ============================================================================

@@ -1,0 +1,706 @@
+{% extends "base.html" %}
+
+{% block title %}Scénarios d'Automatisation - Scrap Email Manager{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h2">
+                <i class="bi bi-diagram-3-fill text-primary"></i>
+                Scénarios d'Automatisation
+            </h1>
+            <p class="text-muted">Créez des séquences d'emails automatiques basées sur le comportement des destinataires</p>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createScenarioModal">
+                <i class="bi bi-plus-circle"></i> Nouveau Scénario
+            </button>
+        </div>
+    </div>
+
+    <!-- Liste des scénarios -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-list-ul"></i> Mes Scénarios</h5>
+                </div>
+                <div class="card-body">
+                    <div id="scenarios-list">
+                        <div class="text-center py-5">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Chargement...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Créer un scénario -->
+<div class="modal fade" id="createScenarioModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-plus-circle"></i> Nouveau Scénario</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="createScenarioForm">
+                    <!-- Informations générales -->
+                    <h6 class="border-bottom pb-2 mb-3"><i class="bi bi-info-circle"></i> Informations générales</h6>
+
+                    <div class="row mb-3">
+                        <div class="col-md-8">
+                            <label class="form-label">Nom du scénario *</label>
+                            <input type="text" class="form-control" id="scenario-name" required
+                                   placeholder="Ex: Relance automatique 3 jours">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Statut</label>
+                            <select class="form-select" id="scenario-status">
+                                <option value="draft">Brouillon</option>
+                                <option value="active">Actif</option>
+                                <option value="paused">En pause</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" id="scenario-description" rows="2"
+                                  placeholder="Description du scénario (optionnel)"></textarea>
+                    </div>
+
+                    <!-- Contraintes d'envoi -->
+                    <h6 class="border-bottom pb-2 mb-3 mt-4"><i class="bi bi-clock-history"></i> Contraintes d'envoi</h6>
+
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Quota journalier</label>
+                            <input type="number" class="form-control" id="scenario-daily-cap" value="500" min="1">
+                            <small class="text-muted">Nombre max d'emails/jour</small>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Cooldown (jours)</label>
+                            <input type="number" class="form-control" id="scenario-cooldown" value="3" min="0">
+                            <small class="text-muted">Délai entre 2 emails au même contact</small>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Fuseau horaire</label>
+                            <select class="form-select" id="scenario-timezone">
+                                <option value="Europe/Paris" selected>Europe/Paris</option>
+                                <option value="Europe/London">Europe/London</option>
+                                <option value="America/New_York">America/New_York</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Fenêtre d'envoi</label>
+                            <div class="input-group">
+                                <input type="time" class="form-control" id="scenario-window-start" value="09:00">
+                                <span class="input-group-text">à</span>
+                                <input type="time" class="form-control" id="scenario-window-end" value="17:30">
+                            </div>
+                            <small class="text-muted">Horaires d'envoi autorisés</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Jours d'envoi</label>
+                            <div class="form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="day-mon" value="mon" checked>
+                                <label class="form-check-label" for="day-mon">Lun</label>
+                            </div>
+                            <div class="form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="day-tue" value="tue" checked>
+                                <label class="form-check-label" for="day-tue">Mar</label>
+                            </div>
+                            <div class="form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="day-wed" value="wed" checked>
+                                <label class="form-check-label" for="day-wed">Mer</label>
+                            </div>
+                            <div class="form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="day-thu" value="thu" checked>
+                                <label class="form-check-label" for="day-thu">Jeu</label>
+                            </div>
+                            <div class="form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="day-fri" value="fri" checked>
+                                <label class="form-check-label" for="day-fri">Ven</label>
+                            </div>
+                            <div class="form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="day-sat" value="sat">
+                                <label class="form-check-label" for="day-sat">Sam</label>
+                            </div>
+                            <div class="form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="day-sun" value="sun">
+                                <label class="form-check-label" for="day-sun">Dim</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Filtres -->
+                    <h6 class="border-bottom pb-2 mb-3 mt-4"><i class="bi bi-funnel"></i> Filtres des contacts</h6>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Score de validation minimum</label>
+                            <input type="number" class="form-control" id="scenario-min-score" value="80" min="0" max="100">
+                            <small class="text-muted">Score minimum pour inclure un contact (0-100)</small>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check mt-4">
+                                <input class="form-check-input" type="checkbox" id="scenario-only-deliverable" checked>
+                                <label class="form-check-label" for="scenario-only-deliverable">
+                                    Uniquement les contacts délivrables
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Compliance -->
+                    <h6 class="border-bottom pb-2 mb-3 mt-4"><i class="bi bi-shield-check"></i> Conformité & Arrêts</h6>
+
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="scenario-include-unsub" checked>
+                                <label class="form-check-label" for="scenario-include-unsub">
+                                    Inclure lien de désinscription
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="scenario-stop-reply" checked>
+                                <label class="form-check-label" for="scenario-stop-reply">
+                                    Arrêter si réponse
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="scenario-stop-unsub" checked>
+                                <label class="form-check-label" for="scenario-stop-unsub">
+                                    Arrêter si désinscription
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-primary" id="btn-create-scenario">
+                    <i class="bi bi-check-circle"></i> Créer le Scénario
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Voir les détails d'un scénario -->
+<div class="modal fade" id="scenarioDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="scenario-details-title"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="scenario-details-body">
+                <!-- Contenu dynamique -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                <button type="button" class="btn btn-success" id="btn-edit-steps" style="display:none">
+                    <i class="bi bi-diagram-3"></i> Modifier les Étapes
+                </button>
+                <button type="button" class="btn btn-primary" id="btn-start-scenario" style="display:none">
+                    <i class="bi bi-play-circle"></i> Démarrer
+                </button>
+                <button type="button" class="btn btn-warning" id="btn-pause-scenario" style="display:none">
+                    <i class="bi bi-pause-circle"></i> Mettre en Pause
+                </button>
+                <button type="button" class="btn btn-info" id="btn-resume-scenario" style="display:none">
+                    <i class="bi bi-play-circle"></i> Reprendre
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Modifier les étapes du scénario -->
+<div class="modal fade" id="editStepsModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-diagram-3"></i> Étapes du Scénario</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted">Configurez la séquence d'emails automatiques pour ce scénario.</p>
+
+                <!-- Liste des étapes -->
+                <div id="steps-container">
+                    <!-- Étapes dynamiques -->
+                </div>
+
+                <button type="button" class="btn btn-outline-primary btn-sm mt-3" id="btn-add-step">
+                    <i class="bi bi-plus-circle"></i> Ajouter une Étape
+                </button>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                <button type="button" class="btn btn-success" id="btn-save-steps">
+                    <i class="bi bi-check-circle"></i> Enregistrer les Étapes
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentScenarioId = null;
+let allTemplates = [];
+let scenarioSteps = [];
+
+// Charger les templates au démarrage
+async function loadTemplates() {
+    try {
+        const response = await fetch('/api/templates');
+        allTemplates = await response.json();
+    } catch (error) {
+        console.error('Erreur chargement templates:', error);
+    }
+}
+
+// Charger les scénarios
+async function loadScenarios() {
+    try {
+        const response = await fetch('/api/scenarios');
+        const scenarios = await response.json();
+
+        const container = document.getElementById('scenarios-list');
+
+        if (scenarios.length === 0) {
+            container.innerHTML = `
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i>
+                    Aucun scénario créé. Cliquez sur "Nouveau Scénario" pour commencer.
+                </div>
+            `;
+            return;
+        }
+
+        let html = '<table class="table table-hover">';
+        html += '<thead><tr>';
+        html += '<th>Nom</th>';
+        html += '<th>Statut</th>';
+        html += '<th>Contacts</th>';
+        html += '<th>Emails envoyés</th>';
+        html += '<th>Séquences actives</th>';
+        html += '<th>Actions</th>';
+        html += '</tr></thead><tbody>';
+
+        scenarios.forEach(scenario => {
+            const statusBadge = getScenarioStatusBadge(scenario.status);
+
+            html += `<tr>`;
+            html += `<td>
+                <strong>${scenario.name}</strong>
+                ${scenario.description ? '<br><small class="text-muted">' + scenario.description + '</small>' : ''}
+            </td>`;
+            html += `<td>${statusBadge}</td>`;
+            html += `<td>${scenario.total_contacts_entered || 0}</td>`;
+            html += `<td>${scenario.total_emails_sent || 0}</td>`;
+            html += `<td>${scenario.active_sequences || 0}</td>`;
+            html += `<td>
+                <button class="btn btn-sm btn-primary" onclick="viewScenario(${scenario.id})">
+                    <i class="bi bi-eye"></i> Voir
+                </button>
+            </td>`;
+            html += `</tr>`;
+        });
+
+        html += '</tbody></table>';
+        container.innerHTML = html;
+
+    } catch (error) {
+        console.error('Erreur:', error);
+        document.getElementById('scenarios-list').innerHTML = `
+            <div class="alert alert-danger">
+                Erreur lors du chargement des scénarios: ${error.message}
+            </div>
+        `;
+    }
+}
+
+function getScenarioStatusBadge(status) {
+    const badges = {
+        'draft': '<span class="badge bg-secondary">Brouillon</span>',
+        'active': '<span class="badge bg-success">Actif</span>',
+        'paused': '<span class="badge bg-warning">En pause</span>',
+        'completed': '<span class="badge bg-info">Terminé</span>',
+        'archived': '<span class="badge bg-dark">Archivé</span>'
+    };
+    return badges[status] || status;
+}
+
+// Créer un scénario
+document.getElementById('btn-create-scenario').addEventListener('click', async function() {
+    const btn = this;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Création...';
+
+    try {
+        // Récupérer les jours sélectionnés
+        const sendDays = [];
+        ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'].forEach(day => {
+            if (document.getElementById(`day-${day}`).checked) {
+                sendDays.push(day);
+            }
+        });
+
+        const data = {
+            name: document.getElementById('scenario-name').value,
+            description: document.getElementById('scenario-description').value,
+            status: document.getElementById('scenario-status').value,
+            daily_cap: parseInt(document.getElementById('scenario-daily-cap').value),
+            cooldown_days: parseInt(document.getElementById('scenario-cooldown').value),
+            send_window_start: document.getElementById('scenario-window-start').value,
+            send_window_end: document.getElementById('scenario-window-end').value,
+            send_days: sendDays.join(','),
+            timezone: document.getElementById('scenario-timezone').value,
+            min_validation_score: parseInt(document.getElementById('scenario-min-score').value),
+            only_deliverable: document.getElementById('scenario-only-deliverable').checked,
+            include_unsubscribe: document.getElementById('scenario-include-unsub').checked,
+            stop_on_reply: document.getElementById('scenario-stop-reply').checked,
+            stop_on_unsubscribe: document.getElementById('scenario-stop-unsub').checked
+        };
+
+        const response = await fetch('/api/scenarios', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+
+        if (response.ok) {
+            const scenario = await response.json();
+            const modal = bootstrap.Modal.getInstance(document.getElementById('createScenarioModal'));
+            modal.hide();
+
+            document.getElementById('createScenarioForm').reset();
+
+            alert('✅ Scénario créé avec succès! Configurez maintenant les étapes.');
+
+            loadScenarios();
+
+            // Ouvrir le modal d'édition des étapes
+            currentScenarioId = scenario.id;
+            openEditStepsModal(scenario.id);
+        } else {
+            const error = await response.json();
+            alert('❌ Erreur: ' + error.error);
+        }
+    } catch (error) {
+        alert('❌ Erreur: ' + error.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-check-circle"></i> Créer le Scénario';
+    }
+});
+
+// Voir les détails d'un scénario
+async function viewScenario(scenarioId) {
+    currentScenarioId = scenarioId;
+
+    try {
+        const response = await fetch(`/api/scenarios/${scenarioId}`);
+        const scenario = await response.json();
+
+        document.getElementById('scenario-details-title').textContent = scenario.name;
+
+        let html = `
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h3>${scenario.total_contacts_entered || 0}</h3>
+                            <small class="text-muted">Contacts entrés</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h3>${scenario.total_emails_sent || 0}</h3>
+                            <small class="text-muted">Emails envoyés</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h3>${scenario.active_sequences || 0}</h3>
+                            <small class="text-muted">Séquences actives</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h3>${scenario.completed_sequences || 0}</h3>
+                            <small class="text-muted">Séquences terminées</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <h6>⚙️ Configuration</h6>
+            <ul>
+                <li>Quota journalier: ${scenario.daily_cap} emails/jour</li>
+                <li>Cooldown: ${scenario.cooldown_days} jours</li>
+                <li>Fenêtre d'envoi: ${scenario.send_window_start} - ${scenario.send_window_end} (${scenario.timezone})</li>
+                <li>Jours: ${scenario.send_days}</li>
+                <li>Score minimum: ${scenario.min_validation_score}</li>
+            </ul>
+
+            <h6 class="mt-3">📋 Étapes (${scenario.steps ? scenario.steps.length : 0})</h6>
+            ${scenario.steps && scenario.steps.length > 0 ? renderStepsList(scenario.steps) : '<p class="text-muted">Aucune étape configurée</p>'}
+        `;
+
+        document.getElementById('scenario-details-body').innerHTML = html;
+
+        // Afficher les boutons appropriés
+        const btnEdit = document.getElementById('btn-edit-steps');
+        const btnStart = document.getElementById('btn-start-scenario');
+        const btnPause = document.getElementById('btn-pause-scenario');
+        const btnResume = document.getElementById('btn-resume-scenario');
+
+        btnEdit.style.display = 'inline-block';
+        btnStart.style.display = 'none';
+        btnPause.style.display = 'none';
+        btnResume.style.display = 'none';
+
+        if (scenario.status === 'draft') {
+            btnStart.style.display = 'inline-block';
+        } else if (scenario.status === 'active') {
+            btnPause.style.display = 'inline-block';
+        } else if (scenario.status === 'paused') {
+            btnResume.style.display = 'inline-block';
+        }
+
+        const modal = new bootstrap.Modal(document.getElementById('scenarioDetailsModal'));
+        modal.show();
+
+    } catch (error) {
+        alert('Erreur: ' + error.message);
+    }
+}
+
+function renderStepsList(steps) {
+    let html = '<ol>';
+    steps.forEach(step => {
+        html += `<li><strong>${step.step_name || 'Étape'}</strong> - `;
+        html += `Trigger: ${step.trigger_type}`;
+        if (step.delay_days > 0 || step.delay_hours > 0) {
+            html += ` (après ${step.delay_days}j ${step.delay_hours}h)`;
+        }
+        html += '</li>';
+    });
+    html += '</ol>';
+    return html;
+}
+
+// Ouvrir le modal d'édition des étapes
+async function openEditStepsModal(scenarioId) {
+    currentScenarioId = scenarioId;
+
+    // Charger les étapes existantes
+    try {
+        const response = await fetch(`/api/scenarios/${scenarioId}`);
+        const scenario = await response.json();
+        scenarioSteps = scenario.steps || [];
+    } catch (error) {
+        console.error('Erreur chargement scénario:', error);
+        scenarioSteps = [];
+    }
+
+    renderSteps();
+
+    const modal = new bootstrap.Modal(document.getElementById('editStepsModal'));
+    modal.show();
+}
+
+// Bouton éditer les étapes
+document.getElementById('btn-edit-steps').addEventListener('click', function() {
+    if (currentScenarioId) {
+        openEditStepsModal(currentScenarioId);
+    }
+});
+
+// Rendu des étapes
+function renderSteps() {
+    const container = document.getElementById('steps-container');
+
+    if (scenarioSteps.length === 0) {
+        container.innerHTML = '<p class="text-muted">Aucune étape. Cliquez sur "Ajouter une Étape".</p>';
+        return;
+    }
+
+    let html = '';
+    scenarioSteps.forEach((step, index) => {
+        html += renderStepCard(step, index);
+    });
+
+    container.innerHTML = html;
+}
+
+function renderStepCard(step, index) {
+    const templateOptions = allTemplates.map(t =>
+        `<option value="${t.id}" ${step.template_id === t.id ? 'selected' : ''}>${t.name}</option>`
+    ).join('');
+
+    return `
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-auto">
+                        <h5 class="mb-0">Étape ${index + 1}</h5>
+                    </div>
+                    <div class="col">
+                        <input type="text" class="form-control form-control-sm"
+                               placeholder="Nom de l'étape"
+                               value="${step.step_name || ''}"
+                               onchange="scenarioSteps[${index}].step_name = this.value">
+                    </div>
+                    <div class="col-auto">
+                        <button class="btn btn-sm btn-danger" onclick="removeStep(${index})">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="row mt-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Déclencheur</label>
+                        <select class="form-select form-select-sm" onchange="scenarioSteps[${index}].trigger_type = this.value">
+                            <option value="entry" ${step.trigger_type === 'entry' ? 'selected' : ''}>Point d'entrée</option>
+                            <option value="delay" ${step.trigger_type === 'delay' ? 'selected' : ''}>Délai fixe</option>
+                            <option value="opened" ${step.trigger_type === 'opened' ? 'selected' : ''}>Si email ouvert</option>
+                            <option value="not_opened" ${step.trigger_type === 'not_opened' ? 'selected' : ''}>Si email NON ouvert</option>
+                            <option value="clicked" ${step.trigger_type === 'clicked' ? 'selected' : ''}>Si lien cliqué</option>
+                            <option value="not_clicked" ${step.trigger_type === 'not_clicked' ? 'selected' : ''}>Si lien NON cliqué</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Délai (jours)</label>
+                        <input type="number" class="form-control form-control-sm" min="0"
+                               value="${step.delay_days || 0}"
+                               onchange="scenarioSteps[${index}].delay_days = parseInt(this.value)">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Heures</label>
+                        <input type="number" class="form-control form-control-sm" min="0" max="23"
+                               value="${step.delay_hours || 0}"
+                               onchange="scenarioSteps[${index}].delay_hours = parseInt(this.value)">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Étape parente</label>
+                        <select class="form-select form-select-sm" onchange="scenarioSteps[${index}].parent_step_id = this.value ? parseInt(this.value) : null">
+                            <option value="">Aucune</option>
+                            ${scenarioSteps.filter((s, i) => i < index).map(s =>
+                                `<option value="${s.id || ''}" ${step.parent_step_id === s.id ? 'selected' : ''}>Étape ${scenarioSteps.indexOf(s) + 1}</option>`
+                            ).join('')}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row mt-2">
+                    <div class="col-md-12">
+                        <label class="form-label">Template d'email</label>
+                        <select class="form-select form-select-sm" onchange="scenarioSteps[${index}].template_id = parseInt(this.value)" required>
+                            <option value="">Sélectionnez un template</option>
+                            ${templateOptions}
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Ajouter une étape
+document.getElementById('btn-add-step').addEventListener('click', function() {
+    scenarioSteps.push({
+        step_order: scenarioSteps.length + 1,
+        step_name: '',
+        trigger_type: 'entry',
+        delay_days: 0,
+        delay_hours: 0,
+        parent_step_id: null,
+        template_id: null
+    });
+    renderSteps();
+});
+
+// Supprimer une étape
+function removeStep(index) {
+    if (confirm('Supprimer cette étape ?')) {
+        scenarioSteps.splice(index, 1);
+        // Réorganiser les step_order
+        scenarioSteps.forEach((step, i) => {
+            step.step_order = i + 1;
+        });
+        renderSteps();
+    }
+}
+
+// Sauvegarder les étapes
+document.getElementById('btn-save-steps').addEventListener('click', async function() {
+    if (!currentScenarioId) return;
+
+    const btn = this;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Enregistrement...';
+
+    try {
+        const response = await fetch(`/api/scenarios/${currentScenarioId}/steps`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ steps: scenarioSteps })
+        });
+
+        if (response.ok) {
+            alert('✅ Étapes enregistrées avec succès!');
+            const modal = bootstrap.Modal.getInstance(document.getElementById('editStepsModal'));
+            modal.hide();
+
+            if (document.getElementById('scenarioDetailsModal').classList.contains('show')) {
+                viewScenario(currentScenarioId);
+            }
+
+            loadScenarios();
+        } else {
+            const error = await response.json();
+            alert('❌ Erreur: ' + error.error);
+        }
+    } catch (error) {
+        alert('❌ Erreur: ' + error.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-check-circle"></i> Enregistrer les Étapes';
+    }
+});
+
+// Initialisation
+loadTemplates();
+loadScenarios();
+
+// Actualiser toutes les 30 secondes
+setInterval(loadScenarios, 30000);
+</script>
+{% endblock %}
