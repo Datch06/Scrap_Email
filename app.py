@@ -158,6 +158,35 @@ def get_stats():
         # Stats Blacklist
         sites_blacklisted = session.query(Site).filter(Site.blacklisted == True).count()
 
+        # Stats Sites Vendeurs (LinkAvista)
+        total_sellers = session.query(Site).filter_by(is_linkavista_seller=True).count()
+        total_buyers = session.query(Site).filter(Site.purchased_from.isnot(None)).count()
+
+        # Stats Campagnes - Désinscrits
+        campaign_session = get_campaign_session()
+        total_unsubscribed = 0
+        try:
+            total_unsubscribed = campaign_session.query(Unsubscribe).count()
+        except Exception as e:
+            logger.error(f"Erreur récupération désinscrits: {e}")
+        finally:
+            campaign_session.close()
+
+        # Stats Scraping Backlinks
+        backlinks_scraped = session.query(Site).filter(Site.backlinks_crawled == True).count()
+        backlinks_not_scraped = session.query(Site).filter(
+            (Site.backlinks_crawled == False) | (Site.backlinks_crawled.is_(None))
+        ).count()
+        # Sites vendeurs scrappés
+        sellers_scraped = session.query(Site).filter(
+            Site.is_linkavista_seller == True,
+            Site.backlinks_crawled == True
+        ).count()
+        sellers_not_scraped = session.query(Site).filter(
+            Site.is_linkavista_seller == True,
+            (Site.backlinks_crawled == False) | (Site.backlinks_crawled.is_(None))
+        ).count()
+
         return jsonify({
             'total_sites': total_sites,
             'status_counts': status_counts,
@@ -189,6 +218,19 @@ def get_stats():
             # Stats Blacklist
             'sites_blacklisted': sites_blacklisted,
             'blacklist_rate': round((sites_blacklisted / total_sites * 100) if total_sites > 0 else 0, 1),
+            # Stats Sites Vendeurs
+            'total_sellers': total_sellers,
+            'total_buyers': total_buyers,
+            # Stats Désinscrits
+            'total_unsubscribed': total_unsubscribed,
+            # Stats Scraping Backlinks
+            'backlinks_scraped': backlinks_scraped,
+            'backlinks_not_scraped': backlinks_not_scraped,
+            'backlinks_total': backlinks_scraped + backlinks_not_scraped,
+            'backlinks_progress': round((backlinks_scraped / (backlinks_scraped + backlinks_not_scraped) * 100) if (backlinks_scraped + backlinks_not_scraped) > 0 else 0, 1),
+            'sellers_scraped': sellers_scraped,
+            'sellers_not_scraped': sellers_not_scraped,
+            'sellers_scraping_progress': round((sellers_scraped / total_sellers * 100) if total_sellers > 0 else 0, 1),
         })
 
     finally:
@@ -299,6 +341,85 @@ def get_scraping_state():
     except Exception as e:
         logger.error(f"Erreur lors de la lecture du state de scraping: {e}")
         return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/stats/daily')
+def get_daily_stats():
+    """Obtenir les statistiques quotidiennes (30 derniers jours)"""
+    session = get_session()
+
+    try:
+        # Calculer la date d'il y a 30 jours
+        thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+
+        # Statistiques par jour pour les 30 derniers jours
+        daily_data = []
+
+        for i in range(30, -1, -1):  # De 30 jours avant à aujourd'hui
+            date = datetime.utcnow() - timedelta(days=i)
+            date_start = date.replace(hour=0, minute=0, second=0, microsecond=0)
+            date_end = date_start + timedelta(days=1)
+
+            # Sites crawlés ce jour-là
+            sites_crawled = session.query(Site).filter(
+                Site.created_at >= date_start,
+                Site.created_at < date_end
+            ).count()
+
+            # Sites acheteurs de liens (LinkAvista) ce jour-là
+            buyers_found = session.query(Site).filter(
+                Site.purchased_from.isnot(None),
+                Site.created_at >= date_start,
+                Site.created_at < date_end
+            ).count()
+
+            # Emails trouvés ce jour-là
+            emails_found = session.query(Site).filter(
+                Site.email_found_at >= date_start,
+                Site.email_found_at < date_end,
+                Site.emails.isnot(None),
+                Site.emails != '',
+                Site.emails != 'NO EMAIL FOUND'
+            ).count()
+
+            daily_data.append({
+                'date': date_start.strftime('%Y-%m-%d'),
+                'sites_crawled': sites_crawled,
+                'buyers_found': buyers_found,
+                'emails_found': emails_found
+            })
+
+        # Statistiques globales des 30 derniers jours
+        total_sites = session.query(Site).filter(Site.created_at >= thirty_days_ago).count()
+        total_buyers = session.query(Site).filter(
+            Site.purchased_from.isnot(None),
+            Site.created_at >= thirty_days_ago
+        ).count()
+        total_emails = session.query(Site).filter(
+            Site.email_found_at >= thirty_days_ago,
+            Site.emails.isnot(None),
+            Site.emails != '',
+            Site.emails != 'NO EMAIL FOUND'
+        ).count()
+
+        return jsonify({
+            'daily': daily_data,
+            'summary_30_days': {
+                'total_sites_crawled': total_sites,
+                'total_buyers_found': total_buyers,
+                'total_emails_found': total_emails,
+                'avg_sites_per_day': round(total_sites / 30, 1),
+                'avg_buyers_per_day': round(total_buyers / 30, 1),
+                'avg_emails_per_day': round(total_emails / 30, 1)
+            }
+        })
+
+    except Exception as e:
+        logger.error(f"Erreur lors de la récupération des stats quotidiennes: {e}")
+        return jsonify({'error': str(e)}), 500
+
+    finally:
+        session.close()
 
 
 # ============================================================================
@@ -797,6 +918,67 @@ def get_validation_stats():
         session.close()
 
 
+@app.route('/api/validation/status')
+def get_validation_script_status():
+    """Vérifier si le script find_any_valid_email.py tourne"""
+    import subprocess
+    import os
+    from datetime import datetime, timedelta
+
+    try:
+        # Vérifier si le processus tourne
+        result = subprocess.run(
+            ['ps', 'aux'],
+            capture_output=True,
+            text=True
+        )
+
+        is_running = 'find_any_valid_email.py' in result.stdout
+
+        # Récupérer les derniers emails trouvés (dernières 24h)
+        session = get_session()
+        try:
+            yesterday = datetime.utcnow() - timedelta(hours=24)
+
+            # Derniers emails trouvés par le script
+            recent_emails = session.query(Site).filter(
+                Site.email_source.in_(['any_valid_email', 'generic_validated']),
+                Site.email_found_at >= yesterday
+            ).order_by(Site.email_found_at.desc()).limit(10).all()
+
+            recent_list = []
+            for site in recent_emails:
+                recent_list.append({
+                    'domain': site.domain,
+                    'email': site.emails,
+                    'source': site.email_source,
+                    'found_at': site.email_found_at.isoformat() if site.email_found_at else None,
+                    'deliverable': site.email_deliverable
+                })
+
+            # Compter les emails trouvés dans les dernières 24h
+            count_24h = session.query(Site).filter(
+                Site.email_source.in_(['any_valid_email', 'generic_validated']),
+                Site.email_found_at >= yesterday
+            ).count()
+
+            return jsonify({
+                'is_running': is_running,
+                'recent_emails': recent_list,
+                'found_last_24h': count_24h
+            })
+        finally:
+            session.close()
+
+    except Exception as e:
+        return jsonify({
+            'is_running': False,
+            'error': str(e),
+            'recent_emails': [],
+            'found_last_24h': 0
+        })
+
+
 # ============================================================================
 # API - CAMPAGNES D'EMAILS
 # ============================================================================
@@ -817,6 +999,7 @@ def get_campaigns():
 def create_campaign():
     """Créer une nouvelle campagne"""
     from campaign_manager import CampaignManager
+    from campaign_database import get_campaign_session, Campaign
     try:
         data = request.json
         manager = CampaignManager()
@@ -831,6 +1014,27 @@ def create_campaign():
             only_deliverable=data.get('only_deliverable', True),
             max_emails_per_day=data.get('max_emails_per_day', 200)
         )
+
+        # Ajouter le segment_id si fourni et préparer automatiquement
+        if 'segment_id' in data and data.get('segment_id'):
+            # Utiliser la session du manager pour mettre à jour le segment_id
+            campaign_from_manager = manager.campaign_session.query(Campaign).get(campaign.id)
+            if campaign_from_manager:
+                campaign_from_manager.segment_id = int(data.get('segment_id'))
+                manager.campaign_session.commit()
+
+                # Préparer automatiquement la campagne
+                try:
+                    prepare_result = manager.prepare_campaign(campaign.id)
+                    logger.info(f"Campagne {campaign.id} préparée automatiquement: {prepare_result['total_recipients']} destinataires")
+                except Exception as e:
+                    logger.error(f"Erreur lors de la préparation automatique: {e}")
+
+                # Rafraîchir pour obtenir les dernières données
+                manager.campaign_session.expire(campaign_from_manager)
+                manager.campaign_session.refresh(campaign_from_manager)
+                result = campaign_from_manager.to_dict()
+                return jsonify(result), 201
 
         return jsonify(campaign.to_dict()), 201
     except Exception as e:
@@ -864,29 +1068,29 @@ def prepare_campaign(campaign_id):
 @app.route('/api/campaigns/<int:campaign_id>/send', methods=['POST'])
 def send_campaign(campaign_id):
     """Envoyer une campagne"""
-    import threading
     from campaign_manager import CampaignManager
 
     data = request.json or {}
     limit = data.get('limit', None)
 
-    def run_campaign_async():
-        try:
-            manager = CampaignManager()
-            manager.run_campaign(campaign_id, limit=limit)
-        except Exception as e:
-            logger.error(f"Erreur campagne: {e}")
+    try:
+        manager = CampaignManager()
+        stats = manager.run_campaign(campaign_id, limit=limit)
 
-    # Lancer en arrière-plan
-    thread = threading.Thread(target=run_campaign_async)
-    thread.daemon = True
-    thread.start()
-
-    return jsonify({
-        'success': True,
-        'message': f'Campagne {campaign_id} lancée en arrière-plan',
-        'limit': limit
-    })
+        return jsonify({
+            'success': True,
+            'sent': stats['sent'],
+            'failed': stats['failed'],
+            'remaining': stats['remaining'],
+            'duration': stats['duration']
+        })
+    except Exception as e:
+        logger.error(f"Erreur campagne: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'sent': 0
+        }), 500
 
 
 @app.route('/api/campaigns/<int:campaign_id>/test', methods=['POST'])
@@ -1147,6 +1351,44 @@ def resume_campaign(campaign_id):
         session.close()
 
 
+@app.route('/api/campaigns/<int:campaign_id>', methods=['DELETE'])
+def delete_campaign(campaign_id):
+    """Supprimer une campagne"""
+    from campaign_database import get_campaign_session, Campaign, CampaignEmail
+
+    session = get_campaign_session()
+    try:
+        campaign = session.query(Campaign).get(campaign_id)
+        if not campaign:
+            return jsonify({'error': 'Campagne non trouvée'}), 404
+
+        campaign_name = campaign.name
+
+        # Supprimer tous les emails de la campagne
+        session.query(CampaignEmail).filter(
+            CampaignEmail.campaign_id == campaign_id
+        ).delete()
+
+        # Supprimer la campagne
+        session.delete(campaign)
+        session.commit()
+
+        logger.info(f"🗑️  Campagne '{campaign_name}' (ID: {campaign_id}) supprimée")
+
+        return jsonify({
+            'success': True,
+            'campaign_id': campaign_id,
+            'message': f"Campagne '{campaign_name}' supprimée avec succès"
+        })
+
+    except Exception as e:
+        session.rollback()
+        logger.error(f"Erreur lors de la suppression de la campagne {campaign_id}: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        session.close()
+
+
 # ============================================================================
 # ROUTES - UNSUBSCRIBE
 # ============================================================================
@@ -1204,6 +1446,141 @@ def unsubscribe():
 
 
 # ============================================================================
+# ROUTES - TRACKING (OPEN & CLICK)
+# ============================================================================
+
+@app.route('/track/open/<int:email_id>')
+def track_open(email_id):
+    """
+    Tracking pixel pour les ouvertures d'emails
+    Retourne une image GIF transparente 1x1 pixel
+    """
+    from campaign_database import CampaignEmail, Campaign, EmailStatus
+
+    campaign_session = get_campaign_session()
+
+    try:
+        # Trouver l'email
+        campaign_email = campaign_session.query(CampaignEmail).filter(
+            CampaignEmail.id == email_id
+        ).first()
+
+        if campaign_email:
+            # Mettre à jour le statut si c'est la première ouverture
+            if campaign_email.status == EmailStatus.DELIVERED:
+                campaign_email.status = EmailStatus.OPENED
+
+            # Enregistrer l'ouverture
+            if not campaign_email.opened_at:
+                campaign_email.opened_at = datetime.utcnow()
+
+                # Incrémenter le compteur de la campagne (première ouverture uniquement)
+                if campaign_email.campaign_id:
+                    campaign = campaign_session.query(Campaign).get(campaign_email.campaign_id)
+                    if campaign:
+                        campaign.emails_opened += 1
+                        logger.info(f"📧 Open tracked: Campaign '{campaign.name}', Email ID {email_id}")
+
+            # Incrémenter le compteur d'ouvertures de l'email
+            campaign_email.open_count += 1
+
+            # Trigger scenario events if applicable
+            if campaign_email.sequence_id:
+                try:
+                    from scenario_orchestrator import ScenarioOrchestrator
+                    orchestrator = ScenarioOrchestrator()
+                    orchestrator.handle_event('opened', campaign_email)
+                    orchestrator.close()
+                except Exception as e:
+                    logger.error(f"❌ Erreur scenario event: {e}")
+
+            campaign_session.commit()
+
+    except Exception as e:
+        campaign_session.rollback()
+        logger.error(f"❌ Erreur tracking open: {e}")
+    finally:
+        campaign_session.close()
+
+    # Retourner une image GIF transparente 1x1 pixel
+    from flask import Response
+    import base64
+
+    # GIF transparent 1x1 pixel
+    gif_data = base64.b64decode('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7')
+
+    response = Response(gif_data, mimetype='image/gif')
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+
+    return response
+
+
+@app.route('/track/click/<int:email_id>')
+def track_click(email_id):
+    """
+    Tracking des clics sur les liens
+    Redirige vers l'URL originale après avoir enregistré le clic
+    """
+    from campaign_database import CampaignEmail, Campaign, EmailStatus
+
+    # Récupérer l'URL de destination
+    url = request.args.get('url', '')
+
+    if not url:
+        return "URL manquante", 400
+
+    campaign_session = get_campaign_session()
+
+    try:
+        # Trouver l'email
+        campaign_email = campaign_session.query(CampaignEmail).filter(
+            CampaignEmail.id == email_id
+        ).first()
+
+        if campaign_email:
+            # Mettre à jour le statut
+            if campaign_email.status in [EmailStatus.DELIVERED, EmailStatus.OPENED]:
+                campaign_email.status = EmailStatus.CLICKED
+
+            # Enregistrer le clic
+            if not campaign_email.clicked_at:
+                campaign_email.clicked_at = datetime.utcnow()
+
+                # Incrémenter le compteur de la campagne (premier clic uniquement)
+                if campaign_email.campaign_id:
+                    campaign = campaign_session.query(Campaign).get(campaign_email.campaign_id)
+                    if campaign:
+                        campaign.emails_clicked += 1
+                        logger.info(f"🖱️  Click tracked: Campaign '{campaign.name}', Email ID {email_id}, URL: {url}")
+
+            # Incrémenter le compteur de clics de l'email
+            campaign_email.click_count += 1
+
+            # Trigger scenario events if applicable
+            if campaign_email.sequence_id:
+                try:
+                    from scenario_orchestrator import ScenarioOrchestrator
+                    orchestrator = ScenarioOrchestrator()
+                    orchestrator.handle_event('clicked', campaign_email)
+                    orchestrator.close()
+                except Exception as e:
+                    logger.error(f"❌ Erreur scenario event: {e}")
+
+            campaign_session.commit()
+
+    except Exception as e:
+        campaign_session.rollback()
+        logger.error(f"❌ Erreur tracking click: {e}")
+    finally:
+        campaign_session.close()
+
+    # Rediriger vers l'URL originale
+    return redirect(url)
+
+
+# ============================================================================
 # ROUTES - AWS SES WEBHOOKS (SNS)
 # ============================================================================
 
@@ -1248,6 +1625,9 @@ def ses_webhook():
             message = json.loads(data.get('Message', '{}'))
             notification_type = message.get('notificationType')
 
+            # Log pour debug
+            logger.info(f"📬 Webhook: Type={notification_type}, Message ID={message.get('mail', {}).get('messageId', 'N/A')}")
+
             campaign_session = get_campaign_session()
 
             try:
@@ -1281,7 +1661,7 @@ def ses_webhook():
 
 def handle_bounce(message, session):
     """Gérer un bounce"""
-    from campaign_database import CampaignEmail, Campaign, EmailStatus
+    from campaign_database import CampaignEmail, Campaign, EmailStatus, EmailBlacklist
 
     bounce = message.get('bounce', {})
     mail = message.get('mail', {})
@@ -1300,8 +1680,35 @@ def handle_bounce(message, session):
     if campaign_email:
         campaign_email.status = EmailStatus.BOUNCED
         campaign_email.bounced_at = datetime.utcnow()
-        campaign_email.bounce_type = 'hard' if bounce_type == 'Permanent' else 'soft'
-        campaign_email.error_message = bounce.get('bouncedRecipients', [{}])[0].get('diagnosticCode', '')
+        bounce_type_value = 'hard' if bounce_type == 'Permanent' else 'soft'
+        campaign_email.bounce_type = bounce_type_value
+        bounce_reason = bounce.get('bouncedRecipients', [{}])[0].get('diagnosticCode', '')
+        campaign_email.bounce_reason = bounce_reason
+        campaign_email.error_message = bounce_reason
+
+        # Ajouter l'email à la blacklist (hard et soft)
+        blacklist_entry = session.query(EmailBlacklist).filter(
+            EmailBlacklist.email == campaign_email.to_email
+        ).first()
+
+        if blacklist_entry:
+            # Mettre à jour l'entrée existante
+            blacklist_entry.bounce_count += 1
+            blacklist_entry.last_bounced_at = datetime.utcnow()
+            blacklist_entry.bounce_type = bounce_type_value
+            blacklist_entry.bounce_reason = bounce_reason
+            blacklist_entry.campaign_id = campaign_email.campaign_id
+            logger.info(f"  🔄 Blacklist mise à jour pour {campaign_email.to_email} (count: {blacklist_entry.bounce_count})")
+        else:
+            # Créer une nouvelle entrée
+            blacklist_entry = EmailBlacklist(
+                email=campaign_email.to_email,
+                bounce_type=bounce_type_value,
+                bounce_reason=bounce_reason,
+                campaign_id=campaign_email.campaign_id
+            )
+            session.add(blacklist_entry)
+            logger.info(f"  🚫 Email {campaign_email.to_email} ajouté à la blacklist ({bounce_type_value})")
 
         # Incrémenter le compteur de la campagne
         campaign = session.query(Campaign).get(campaign_email.campaign_id)

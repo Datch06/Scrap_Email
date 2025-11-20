@@ -57,6 +57,8 @@ EXCLUDED_PATTERNS = {
     'amazon.com', 'amazon.es', 'amazon.fr', 'amzn.to',
     'uecdn.es', 'cloudflare.com', 'akamai.net',
     '.gouv.fr',  # Sites gouvernementaux français
+    'cnil.fr',   # CNIL - Commission nationale de l'informatique et des libertés
+    'diplomatie.gouv.fr',  # Ministère des affaires étrangères
 }
 
 DEFAULT_USER_AGENT = (
@@ -261,6 +263,10 @@ class BacklinksCrawler:
             except:
                 pass
 
+            # Compter les liens trouvés
+            links_found = len(parser.links)
+            internal_links_added = 0
+
             for link in parser.links:
                 normalized = normalize_url(url, link)
                 if not normalized:
@@ -272,6 +278,7 @@ class BacklinksCrawler:
                 if link_domain == seller_domain:
                     if normalized not in visited:
                         to_visit.append(normalized)
+                        internal_links_added += 1
 
                 # Si c'est un domaine .fr externe, c'est un acheteur potentiel
                 elif is_valid_fr_domain(link_domain):
@@ -296,8 +303,18 @@ class BacklinksCrawler:
         3. Cherche leurs emails
         4. Stocke dans la base
         """
-        seller_domain = extract_domain(seller_site.source_url or f"https://{seller_site.domain}")
-        seller_url = seller_site.source_url or f"https://{seller_site.domain}"
+        # Utiliser source_url seulement si c'est une vraie URL (commence par http)
+        if seller_site.source_url and seller_site.source_url.startswith('http'):
+            seller_url = seller_site.source_url
+        else:
+            seller_url = f"https://{seller_site.domain}"
+
+        seller_domain = extract_domain(seller_url)
+
+        # Skip si le domaine est invalide
+        if not seller_domain:
+            print(f"  ⚠️  Domaine invalide ignoré: {seller_site.domain} (url={seller_url})")
+            return
 
         try:
             # Marquer le site comme vendeur LinkAvista
@@ -352,11 +369,34 @@ class BacklinksCrawler:
 
                 print(f"    ✅ {emails_found}/{len(new_buyers)} emails trouvés")
 
+            # Marquer le site vendeur comme crawlé
+            db.session.query(Site).filter_by(id=seller_site.id).update({
+                'backlinks_crawled': True,
+                'backlinks_crawled_at': datetime.utcnow()
+            })
+            db.session.commit()
+
             self.stats['sellers_processed'] += 1
+
+            # Retirer de l'état (déjà fait dans crawl_seller_site)
+            # remove_seller_from_state(seller_domain)
 
         except Exception as e:
             print(f"    ❌ Erreur: {e}")
             self.stats['errors'] += 1
+
+            # Même en cas d'erreur, marquer comme crawlé pour ne pas le retraiter
+            try:
+                db.session.query(Site).filter_by(id=seller_site.id).update({
+                    'backlinks_crawled': True,
+                    'backlinks_crawled_at': datetime.utcnow()
+                })
+
+                # Retirer de l'état en cas d'erreur
+                remove_seller_from_state(seller_domain)
+                db.session.commit()
+            except:
+                pass
 
     async def run(self, limit=None):
         """
@@ -385,10 +425,10 @@ class BacklinksCrawler:
         start_time = time.time()
 
         with DBHelper() as db:
-            # Charger tous les sites (ce sont les vendeurs LinkAvista)
+            # Charger UNIQUEMENT les sites NON crawlés et non blacklistés
             query = db.session.query(Site).filter(
-                Site.domain.like('%.fr'),
-                Site.blacklisted == False
+                Site.blacklisted == False,
+                Site.backlinks_crawled == False  # Uniquement les sites pas encore crawlés
             )
 
             if limit:
@@ -407,74 +447,68 @@ class BacklinksCrawler:
             )
 
             async with aiohttp.ClientSession(connector=connector) as session:
-                # Traiter par batches
-                for i in range(0, total_sellers, BATCH_SIZE):
-                    batch = seller_sites[i:i+BATCH_SIZE]
-                    batch_num = (i // BATCH_SIZE) + 1
-                    total_batches = (total_sellers + BATCH_SIZE - 1) // BATCH_SIZE
+                # NOUVELLE LOGIQUE: Queue dynamique globale pour ne jamais attendre
+                # On lance MAX_SELLERS_PARALLEL vendeurs, et dès qu'un termine, on lance le suivant
+                # PLUS DE BATCHES - on traite TOUS les vendeurs en continu
+                print(f"\n🔄 Traitement avec queue dynamique globale ({MAX_SELLERS_PARALLEL} vendeurs max en parallèle)")
+                print(f"   Dès qu'un vendeur se termine, le suivant démarre immédiatement")
+                print("-" * 80)
 
-                    print(f"📦 Batch {batch_num}/{total_batches} ({len(batch)} vendeurs)")
-                    print("-" * 80)
+                # Créer une queue avec TOUS les vendeurs
+                seller_queue = list(seller_sites)
+                running_tasks = {}  # {task: seller_domain}
 
-                    # NOUVELLE LOGIQUE: Queue dynamique pour ne jamais attendre
-                    # On lance MAX_SELLERS_PARALLEL vendeurs, et dès qu'un termine, on lance le suivant
-                    print(f"\n🔄 Traitement avec queue dynamique ({MAX_SELLERS_PARALLEL} vendeurs max en parallèle)")
+                # Lancer les premiers vendeurs
+                while len(running_tasks) < MAX_SELLERS_PARALLEL and seller_queue:
+                    seller_site = seller_queue.pop(0)
+                    print(f"  ▶️  {seller_site.domain}")
+                    task = asyncio.create_task(self.process_seller(session, db, seller_site))
+                    running_tasks[task] = seller_site.domain
 
-                    # Créer une queue avec tous les vendeurs du batch
-                    seller_queue = list(batch)
-                    running_tasks = {}  # {task: seller_domain}
+                # Tant qu'il y a des tâches en cours
+                while running_tasks:
+                    # Attendre qu'au moins une tâche se termine
+                    done, pending = await asyncio.wait(
+                        running_tasks.keys(),
+                        return_when=asyncio.FIRST_COMPLETED
+                    )
 
-                    # Lancer les premiers vendeurs
+                    # Nettoyer les tâches terminées
+                    for task in done:
+                        seller_domain = running_tasks.pop(task)
+                        try:
+                            await task  # Récupérer le résultat ou l'exception
+                            print(f"  ✓ {seller_domain} terminé")
+                        except Exception as e:
+                            print(f"  ✗ {seller_domain} erreur: {e}")
+
+                    # Lancer de nouveaux vendeurs pour remplir les slots libres
                     while len(running_tasks) < MAX_SELLERS_PARALLEL and seller_queue:
                         seller_site = seller_queue.pop(0)
-                        print(f"  ▶️  {seller_site.domain}")
+                        print(f"  ▶️  {seller_site.domain} (slot libéré)")
                         task = asyncio.create_task(self.process_seller(session, db, seller_site))
                         running_tasks[task] = seller_site.domain
 
-                    # Tant qu'il y a des tâches en cours
-                    while running_tasks:
-                        # Attendre qu'au moins une tâche se termine
-                        done, pending = await asyncio.wait(
-                            running_tasks.keys(),
-                            return_when=asyncio.FIRST_COMPLETED
-                        )
+                    await asyncio.sleep(PAUSE_BETWEEN_SELLERS)
 
-                        # Nettoyer les tâches terminées
-                        for task in done:
-                            seller_domain = running_tasks.pop(task)
-                            try:
-                                await task  # Récupérer le résultat ou l'exception
-                                print(f"  ✓ {seller_domain} terminé")
-                            except Exception as e:
-                                print(f"  ✗ {seller_domain} erreur: {e}")
+            # Commit final après tous les vendeurs
+            db.session.commit()
 
-                        # Lancer de nouveaux vendeurs pour remplir les slots libres
-                        while len(running_tasks) < MAX_SELLERS_PARALLEL and seller_queue:
-                            seller_site = seller_queue.pop(0)
-                            print(f"  ▶️  {seller_site.domain} (slot libéré)")
-                            task = asyncio.create_task(self.process_seller(session, db, seller_site))
-                            running_tasks[task] = seller_site.domain
+            # Stats finales
+            elapsed = time.time() - start_time
+            speed = self.stats['sellers_processed'] / elapsed if elapsed > 0 else 0
 
-                        await asyncio.sleep(PAUSE_BETWEEN_SELLERS)
-
-                    # Commit après chaque batch
-                    db.session.commit()
-
-                    # Stats intermédiaires
-                    elapsed = time.time() - start_time
-                    speed = self.stats['sellers_processed'] / elapsed if elapsed > 0 else 0
-
-                    print()
-                    print("=" * 80)
-                    print(f"📈 Stats batch {batch_num}:")
-                    print(f"  - Vendeurs traités: {self.stats['sellers_processed']}/{total_sellers}")
-                    print(f"  - Acheteurs trouvés: {self.stats['buyers_found']}")
-                    print(f"  - Emails trouvés: {self.stats['emails_found']}")
-                    print(f"  - Erreurs: {self.stats['errors']}")
-                    print(f"  - Vitesse: {speed:.2f} vendeurs/sec")
-                    print(f"  - Temps écoulé: {elapsed/60:.1f} min")
-                    print("=" * 80)
-                    print()
+            print()
+            print("=" * 80)
+            print(f"📈 Stats finales:")
+            print(f"  - Vendeurs traités: {self.stats['sellers_processed']}/{total_sellers}")
+            print(f"  - Acheteurs trouvés: {self.stats['buyers_found']}")
+            print(f"  - Emails trouvés: {self.stats['emails_found']}")
+            print(f"  - Erreurs: {self.stats['errors']}")
+            print(f"  - Vitesse: {speed:.2f} vendeurs/sec")
+            print(f"  - Temps écoulé: {elapsed/60:.1f} min")
+            print("=" * 80)
+            print()
 
         # Stats finales
         elapsed = time.time() - start_time

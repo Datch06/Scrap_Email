@@ -87,7 +87,7 @@
 
 <!-- Statistiques secondaires -->
 <div class="row mb-4">
-    <div class="col-md-6">
+    <div class="col-md-3">
         <div class="card">
             <div class="card-body">
                 <h5 class="card-title"><i class="bi bi-check-circle"></i> Sites Complets</h5>
@@ -100,7 +100,7 @@
         </div>
     </div>
 
-    <div class="col-md-6">
+    <div class="col-md-3">
         <div class="card border-success">
             <div class="card-body">
                 <h5 class="card-title"><i class="bi bi-shield-check text-success"></i> Emails Validés</h5>
@@ -109,6 +109,72 @@
                     <span id="emails-deliverable">-</span> délivrables
                     <a href="/validation" class="btn btn-sm btn-outline-success float-end">Voir →</a>
                 </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card border-warning">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-person-x text-warning"></i> Désinscrits</h5>
+                <h3 id="total-unsubscribed" class="text-warning">-</h3>
+                <p class="text-muted mb-0">
+                    Newsletter
+                    <a href="/campaigns" class="btn btn-sm btn-outline-warning float-end">Gérer →</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card border-info">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-link-45deg text-info"></i> Backlinks</h5>
+                <h3 id="total-sellers" class="text-info">-</h3>
+                <p class="text-muted mb-0">
+                    <span id="total-buyers">-</span> acheteurs
+                    <a href="/scraping-live" class="btn btn-sm btn-outline-info float-end">Voir →</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistiques quotidiennes (30 derniers jours) -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="bi bi-graph-up"></i> Activité des 30 Derniers Jours</h5>
+            </div>
+            <div class="card-body">
+                <!-- Résumé 30 jours -->
+                <div class="row mb-3 text-center">
+                    <div class="col-md-4">
+                        <div class="p-3 bg-light rounded">
+                            <h6 class="text-muted mb-2">Total Sites Crawlés</h6>
+                            <h3 class="text-primary mb-0" id="summary-sites-crawled">-</h3>
+                            <small class="text-muted"><span id="avg-sites-day">-</span>/jour en moyenne</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 bg-light rounded">
+                            <h6 class="text-muted mb-2">Acheteurs de Liens</h6>
+                            <h3 class="text-success mb-0" id="summary-buyers-found">-</h3>
+                            <small class="text-muted"><span id="avg-buyers-day">-</span>/jour en moyenne</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 bg-light rounded">
+                            <h6 class="text-muted mb-2">Emails Trouvés</h6>
+                            <h3 class="text-info mb-0" id="summary-emails-found">-</h3>
+                            <small class="text-muted"><span id="avg-emails-day">-</span>/jour en moyenne</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Graphique -->
+                <canvas id="dailyStatsChart" style="max-height: 300px;"></canvas>
             </div>
         </div>
     </div>
@@ -160,6 +226,72 @@
                     <a href="/sites?has_leaders=false" class="btn btn-outline-warning">
                         <i class="bi bi-person"></i> Chercher dirigeants
                     </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Progression Scraping Backlinks -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-success">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-graph-up-arrow"></i> Progression Scraping Backlinks - Sites Vendeurs de Liens
+                </h5>
+            </div>
+            <div class="card-body">
+                <!-- Statistiques en colonnes -->
+                <div class="row text-center mb-4">
+                    <div class="col-md-3">
+                        <div class="p-3 bg-light rounded">
+                            <h6 class="text-muted mb-2">Total Vendeurs</h6>
+                            <h3 class="text-primary mb-0" id="sellers-total">76,738</h3>
+                            <small class="text-muted">Sites à scrapper</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-3 bg-light rounded">
+                            <h6 class="text-muted mb-2">Scrappés</h6>
+                            <h3 class="text-success mb-0" id="sellers-scraped">-</h3>
+                            <small class="text-muted">Backlinks analysés</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-3 bg-light rounded">
+                            <h6 class="text-muted mb-2">Restants</h6>
+                            <h3 class="text-warning mb-0" id="sellers-not-scraped">-</h3>
+                            <small class="text-muted">À traiter</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-3 bg-light rounded">
+                            <h6 class="text-muted mb-2">Progression</h6>
+                            <h3 class="text-info mb-0" id="sellers-progress-percent">0%</h3>
+                            <small class="text-muted">Complété</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Barre de progression large -->
+                <div class="mb-2">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted"><strong>Progression globale</strong></span>
+                        <span class="text-muted"><span id="sellers-scraped-text">-</span> / <span id="sellers-total-text">76,738</span> sites</span>
+                    </div>
+                    <div class="progress" style="height: 35px;">
+                        <div id="sellers-progress-bar" class="progress-bar progress-bar-striped progress-bar-animated bg-success"
+                             role="progressbar" style="width: 0%">
+                            <span id="sellers-progress-text" class="fw-bold">0%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Note d'information -->
+                <div class="alert alert-info mt-3 mb-0">
+                    <i class="bi bi-info-circle"></i> <strong>Scraping en cours :</strong>
+                    Les backlinks des sites vendeurs sont analysés pour identifier les acheteurs de liens et leurs emails.
                 </div>
             </div>
         </div>
@@ -260,7 +392,110 @@
 
 {% block extra_js %}
 <script>
-let statusChart, completionChart;
+let statusChart, completionChart, dailyStatsChart;
+
+// Charger les statistiques quotidiennes
+async function loadDailyStats() {
+    try {
+        const response = await fetch('/api/stats/daily');
+        const data = await response.json();
+
+        // Mettre à jour le résumé 30 jours
+        document.getElementById('summary-sites-crawled').textContent = data.summary_30_days.total_sites_crawled.toLocaleString();
+        document.getElementById('summary-buyers-found').textContent = data.summary_30_days.total_buyers_found.toLocaleString();
+        document.getElementById('summary-emails-found').textContent = data.summary_30_days.total_emails_found.toLocaleString();
+        document.getElementById('avg-sites-day').textContent = data.summary_30_days.avg_sites_per_day;
+        document.getElementById('avg-buyers-day').textContent = data.summary_30_days.avg_buyers_per_day;
+        document.getElementById('avg-emails-day').textContent = data.summary_30_days.avg_emails_per_day;
+
+        // Créer le graphique
+        updateDailyStatsChart(data.daily);
+
+    } catch (error) {
+        console.error('Erreur lors du chargement des stats quotidiennes:', error);
+    }
+}
+
+// Graphique des statistiques quotidiennes
+function updateDailyStatsChart(dailyData) {
+    const ctx = document.getElementById('dailyStatsChart');
+
+    if (dailyStatsChart) {
+        dailyStatsChart.destroy();
+    }
+
+    // Extraire les données
+    const labels = dailyData.map(d => {
+        const date = new Date(d.date);
+        return date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
+    });
+    const sitesCrawled = dailyData.map(d => d.sites_crawled);
+    const buyersFound = dailyData.map(d => d.buyers_found);
+    const emailsFound = dailyData.map(d => d.emails_found);
+
+    dailyStatsChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Sites Crawlés',
+                    data: sitesCrawled,
+                    borderColor: '#0d6efd',
+                    backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                    tension: 0.3,
+                    fill: true
+                },
+                {
+                    label: 'Acheteurs de Liens',
+                    data: buyersFound,
+                    borderColor: '#198754',
+                    backgroundColor: 'rgba(25, 135, 84, 0.1)',
+                    tension: 0.3,
+                    fill: true
+                },
+                {
+                    label: 'Emails Trouvés',
+                    data: emailsFound,
+                    borderColor: '#0dcaf0',
+                    backgroundColor: 'rgba(13, 202, 240, 0.1)',
+                    tension: 0.3,
+                    fill: true
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            interaction: {
+                mode: 'index',
+                intersect: false
+            },
+            plugins: {
+                legend: {
+                    position: 'top'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ': ' + context.parsed.y.toLocaleString();
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return value.toLocaleString();
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
 
 // Charger les statistiques
 async function loadStats() {
@@ -281,6 +516,25 @@ async function loadStats() {
         // Stats validation
         document.getElementById('emails-validated').textContent = (stats.emails_validated || 0).toLocaleString();
         document.getElementById('emails-deliverable').textContent = (stats.emails_deliverable || 0).toLocaleString();
+
+        // Stats désinscrits
+        document.getElementById('total-unsubscribed').textContent = (stats.total_unsubscribed || 0).toLocaleString();
+
+        // Stats backlinks (vendeurs et acheteurs)
+        document.getElementById('total-sellers').textContent = (stats.total_sellers || 0).toLocaleString();
+        document.getElementById('total-buyers').textContent = (stats.total_buyers || 0).toLocaleString();
+
+        // Stats progression scraping backlinks - Sites Vendeurs uniquement
+        if (stats.sellers_scraped !== undefined) {
+            document.getElementById('sellers-scraped').textContent = stats.sellers_scraped.toLocaleString();
+            document.getElementById('sellers-not-scraped').textContent = stats.sellers_not_scraped.toLocaleString();
+            document.getElementById('sellers-progress-bar').style.width = `${stats.sellers_scraping_progress}%`;
+            document.getElementById('sellers-progress-text').textContent = `${stats.sellers_scraping_progress}%`;
+            document.getElementById('sellers-progress-percent').textContent = `${stats.sellers_scraping_progress}%`;
+            document.getElementById('sellers-scraped-text').textContent = stats.sellers_scraped.toLocaleString();
+            document.getElementById('sellers-total').textContent = stats.total_sellers.toLocaleString();
+            document.getElementById('sellers-total-text').textContent = stats.total_sellers.toLocaleString();
+        }
 
         // Barre de progression
         document.getElementById('completion-progress').style.width = `${stats.completion_rate}%`;
@@ -438,13 +692,29 @@ async function loadActiveCrawlers() {
         const crawlersCount = document.getElementById('active-crawlers-count');
         const crawlersList = document.getElementById('active-crawlers-list');
 
-        if (data.sellers_in_progress && data.sellers_in_progress.length > 0) {
-            // Afficher la section
-            crawlersSection.style.display = 'block';
+        // Toujours afficher la section
+        crawlersSection.style.display = 'block';
+
+        // Calculer l'âge de la dernière mise à jour
+        const lastUpdate = data.last_update ? new Date(data.last_update) : null;
+        const now = new Date();
+        const ageMinutes = lastUpdate ? Math.floor((now - lastUpdate) / 60000) : null;
+
+        // Considérer comme inactif si plus de 5 minutes sans mise à jour
+        const isActive = lastUpdate && ageMinutes < 5;
+
+        if (data.sellers_in_progress && data.sellers_in_progress.length > 0 && isActive) {
+            // Crawlers actifs
+            crawlersSection.className = 'alert alert-success mb-3';
             crawlersCount.textContent = data.sellers_in_progress.length;
 
             // Générer l'HTML pour chaque crawler actif
-            crawlersList.innerHTML = data.sellers_in_progress.map(seller => {
+            crawlersList.innerHTML = `
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span><i class="bi bi-gear-fill"></i> <strong>Statut:</strong> <span class="badge bg-success">ACTIF</span></span>
+                    <small class="text-muted">Dernière mise à jour: ${lastUpdate ? lastUpdate.toLocaleString('fr-FR') : 'N/A'}</small>
+                </div>
+            ` + data.sellers_in_progress.map(seller => {
                 // Tronquer l'URL si trop longue
                 const shortUrl = seller.current_url && seller.current_url.length > 80
                     ? seller.current_url.substring(0, 80) + '...'
@@ -473,18 +743,72 @@ async function loadActiveCrawlers() {
                 `;
             }).join('');
         } else {
-            // Masquer la section si aucun crawler actif
-            crawlersSection.style.display = 'none';
+            // Aucun crawler actif - afficher les données historiques
+            crawlersSection.className = 'alert alert-warning mb-3';
+            crawlersCount.textContent = '0';
+
+            const lastUpdateText = lastUpdate
+                ? `${lastUpdate.toLocaleString('fr-FR')} (il y a ${ageMinutes} minutes)`
+                : 'Jamais';
+
+            crawlersList.innerHTML = `
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span><i class="bi bi-pause-circle"></i> <strong>Statut:</strong> <span class="badge bg-warning">INACTIF</span></span>
+                        <small class="text-muted">Dernière activité: ${lastUpdateText}</small>
+                    </div>
+                    <div class="text-muted small">
+                        <i class="bi bi-info-circle"></i> Aucun crawler n'est actuellement en cours d'exécution.
+                    </div>
+                </div>
+                ${data.sellers_in_progress && data.sellers_in_progress.length > 0 ? `
+                    <div class="border-top pt-2 mt-2">
+                        <h6 class="small"><i class="bi bi-clock-history"></i> Derniers crawlers exécutés:</h6>
+                        ${data.sellers_in_progress.map(seller => `
+                            <div class="mb-2 p-2 border rounded bg-light">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <strong class="text-muted"><i class="bi bi-globe2"></i> ${seller.domain}</strong>
+                                        <div class="mt-1">
+                                            <span class="badge bg-secondary me-2">${seller.pages_crawled || 0} pages crawlées</span>
+                                            <span class="badge bg-secondary">${seller.buyers_found || 0} acheteurs trouvés</span>
+                                        </div>
+                                    </div>
+                                    <div class="text-end">
+                                        <small class="text-muted">
+                                            ${seller.last_update ? new Date(seller.last_update).toLocaleString('fr-FR') : 'N/A'}
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                ` : ''}
+                <div class="border-top pt-2 mt-3">
+                    <h6 class="small mb-2"><i class="bi bi-play-circle"></i> Pour démarrer le scraping:</h6>
+                    <div class="small text-muted">
+                        <code class="bg-dark text-white p-1 rounded">python3 /var/www/Scrap_Email/find_emails.py</code>
+                        <div class="mt-1">ou</div>
+                        <code class="bg-dark text-white p-1 rounded">python3 /var/www/Scrap_Email/rescrape_sellers.py</code>
+                    </div>
+                </div>
+            `;
         }
 
     } catch (error) {
         console.error('Erreur lors du chargement des crawlers actifs:', error);
+        const crawlersSection = document.getElementById('crawlers-section');
+        const crawlersList = document.getElementById('active-crawlers-list');
+        crawlersSection.style.display = 'block';
+        crawlersSection.className = 'alert alert-danger mb-3';
+        crawlersList.innerHTML = '<div class="text-center"><i class="bi bi-exclamation-triangle"></i> Erreur lors du chargement du statut des crawlers</div>';
     }
 }
 
 // Rafraîchir les stats
 function refreshStats() {
     loadStats();
+    loadDailyStats();
     loadLiveScrapingStats();
     loadActiveCrawlers();
 }
@@ -492,6 +816,7 @@ function refreshStats() {
 // Charger au démarrage
 document.addEventListener('DOMContentLoaded', () => {
     loadStats();
+    loadDailyStats();
     loadLiveScrapingStats();
     loadActiveCrawlers();
 });
@@ -504,5 +829,8 @@ setInterval(loadLiveScrapingStats, 10000);
 
 // Auto-refresh toutes les 30 secondes pour les stats globales
 setInterval(loadStats, 30000);
+
+// Auto-refresh toutes les 60 secondes pour les stats quotidiennes
+setInterval(loadDailyStats, 60000);
 </script>
 {% endblock %}
