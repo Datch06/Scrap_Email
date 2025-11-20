@@ -119,13 +119,32 @@
             <div class="modal-body">
                 <form id="createCampaignForm">
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-3">
                             <div class="mb-3">
                                 <label class="form-label">Nom de la campagne *</label>
                                 <input type="text" class="form-control" id="campaign-name" required>
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label class="form-label">Type de campagne *</label>
+                                <select class="form-select" id="campaign-type" required>
+                                    <option value="normal">Normale</option>
+                                    <option value="continuous">Continue</option>
+                                </select>
+                                <small class="text-muted">Continue = envoie automatiquement aux nouveaux contacts</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label class="form-label">Segment</label>
+                                <select class="form-select" id="campaign-segment">
+                                    <option value="">Tous les contacts</option>
+                                </select>
+                                <small class="text-muted">Cibler un segment spécifique</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
                             <div class="mb-3">
                                 <label class="form-label">Template</label>
                                 <select class="form-select" id="campaign-template">
@@ -334,13 +353,39 @@ async function loadTemplates() {
     }
 }
 
+// Charger les segments
+async function loadSegments() {
+    try {
+        const response = await fetch('/api/segments');
+        const segments = await response.json();
+
+        const select = document.getElementById('campaign-segment');
+        segments.forEach(segment => {
+            const option = document.createElement('option');
+            option.value = segment.id;
+            option.textContent = `${segment.name} (${segment.estimated_count || 0} contacts)`;
+            select.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Erreur chargement segments:', error);
+    }
+}
+
 // Charger les campagnes
 async function loadCampaigns() {
     try {
         const response = await fetch('/api/campaigns');
-        const campaigns = await response.json();
+        const data = await response.json();
 
         const listDiv = document.getElementById('campaigns-list');
+
+        // Vérifier si data est un tableau ou un objet avec une erreur
+        if (!response.ok || data.error) {
+            listDiv.innerHTML = `<div class="alert alert-danger">Erreur: ${data.error || 'Impossible de charger les campagnes'}</div>`;
+            return;
+        }
+
+        const campaigns = Array.isArray(data) ? data : [];
 
         if (campaigns.length === 0) {
             listDiv.innerHTML = `
@@ -360,6 +405,7 @@ async function loadCampaigns() {
             <thead>
                 <tr>
                     <th>Nom</th>
+                    <th>Type</th>
                     <th>Statut</th>
                     <th>Destinataires</th>
                     <th>Envoyés</th>
@@ -368,6 +414,7 @@ async function loadCampaigns() {
                     <th>Cliqués</th>
                     <th>Bounces</th>
                     <th>Plaintes</th>
+                    <th>Désinscrits</th>
                     <th>Créée le</th>
                     <th>Actions</th>
                 </tr>
@@ -377,7 +424,10 @@ async function loadCampaigns() {
 
         campaigns.forEach(campaign => {
             const statusBadge = getStatusBadge(campaign.status);
+            const typeBadge = getCampaignTypeBadge(campaign.is_continuous);
             const createdDate = new Date(campaign.created_at).toLocaleDateString('fr-FR');
+
+            const unsubscribedCount = campaign.emails_unsubscribed || 0;
 
             html += `
                 <tr>
@@ -385,6 +435,7 @@ async function loadCampaigns() {
                         <strong>${campaign.name}</strong>
                         ${campaign.description ? '<br><small class="text-muted">' + campaign.description + '</small>' : ''}
                     </td>
+                    <td>${typeBadge}</td>
                     <td>${statusBadge}</td>
                     <td>${campaign.total_recipients}</td>
                     <td>${campaign.emails_sent}</td>
@@ -393,6 +444,7 @@ async function loadCampaigns() {
                     <td>${campaign.emails_clicked} <small class="text-muted">(${campaign.click_rate}%)</small></td>
                     <td><span class="${(campaign.emails_bounced || 0) > 0 ? 'text-danger' : ''}">${campaign.emails_bounced || 0}</span> <small class="text-muted">(${campaign.bounce_rate}%)</small></td>
                     <td><span class="${(campaign.emails_complained || 0) > 0 ? 'text-warning' : ''}">${campaign.emails_complained || 0}</span></td>
+                    <td><span class="${unsubscribedCount > 0 ? 'text-warning' : ''}">${unsubscribedCount}</span></td>
                     <td>${createdDate}</td>
                     <td>
                         <button class="btn btn-sm btn-primary" onclick="viewCampaign(${campaign.id})">
@@ -400,6 +452,9 @@ async function loadCampaigns() {
                         </button>
                         <button class="btn btn-sm btn-info" onclick="testCampaign(${campaign.id}, '${campaign.name}')">
                             <i class="bi bi-envelope-check"></i> Tester
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteCampaign(${campaign.id}, '${campaign.name}')">
+                            <i class="bi bi-trash"></i> Supprimer
                         </button>
                     </td>
                 </tr>
@@ -429,6 +484,14 @@ function getStatusBadge(status) {
         'cancelled': '<span class="badge bg-danger">Annulée</span>'
     };
     return badges[status] || status;
+}
+
+function getCampaignTypeBadge(isContinuous) {
+    if (isContinuous) {
+        return '<span class="badge bg-primary" title="Envoie automatiquement aux nouveaux contacts du segment"><i class="bi bi-arrow-repeat"></i> Continue</span>';
+    } else {
+        return '<span class="badge bg-secondary" title="Envoie uniquement aux contacts du segment au moment de la préparation">Normale</span>';
+    }
 }
 
 // Créer un template
@@ -482,6 +545,9 @@ document.getElementById('btn-create-campaign').addEventListener('click', async f
     btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Création...';
 
     try {
+        const segmentId = document.getElementById('campaign-segment').value;
+        const campaignType = document.getElementById('campaign-type').value;
+
         const data = {
             name: document.getElementById('campaign-name').value,
             description: document.getElementById('campaign-description').value,
@@ -490,8 +556,14 @@ document.getElementById('btn-create-campaign').addEventListener('click', async f
             min_validation_score: parseInt(document.getElementById('campaign-min-score').value),
             only_deliverable: document.getElementById('campaign-deliverable').checked,
             max_emails_per_day: parseInt(document.getElementById('campaign-max-per-day').value),
-            delay_between_emails: parseInt(document.getElementById('campaign-delay').value)
+            delay_between_emails: parseInt(document.getElementById('campaign-delay').value),
+            is_continuous: campaignType === 'continuous'
         };
+
+        // Ajouter le segment_id si un segment est sélectionné
+        if (segmentId) {
+            data.segment_id = parseInt(segmentId);
+        }
 
         const response = await fetch('/api/campaigns', {
             method: 'POST',
@@ -879,6 +951,32 @@ function testCampaign(campaignId, campaignName) {
     modal.show();
 }
 
+// Supprimer une campagne
+async function deleteCampaign(campaignId, campaignName) {
+    if (!confirm(`Êtes-vous sûr de vouloir supprimer la campagne "${campaignName}" ?\n\nCette action est irréversible et supprimera également tous les emails associés.`)) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/campaigns/${campaignId}`, {
+            method: 'DELETE'
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            alert(`✅ ${result.message}`);
+            // Recharger la liste des campagnes
+            loadCampaigns();
+        } else {
+            alert(`❌ Erreur: ${result.error}`);
+        }
+    } catch (error) {
+        console.error('Erreur lors de la suppression:', error);
+        alert(`❌ Erreur lors de la suppression: ${error.message}`);
+    }
+}
+
 document.getElementById('btn-send-test').addEventListener('click', async function() {
     // Déterminer la source (campagne ou template)
     const testSource = document.querySelector('input[name="test-source"]:checked').value;
@@ -1017,6 +1115,7 @@ document.getElementById('btn-send-test').addEventListener('click', async functio
 
 // Initialisation
 loadTemplates();
+loadSegments();
 loadCampaigns();
 
 // Actualiser toutes les 30 secondes

@@ -14,11 +14,13 @@ from campaign_database import (
     CampaignEmail,
     EmailTemplate,
     Unsubscribe,
+    EmailBlacklist,
     CampaignStatus,
     EmailStatus
 )
 from database import get_session, Site
 from ses_manager import SESManager
+from email_tracking import add_email_tracking
 import re
 
 logging.basicConfig(level=logging.INFO)
@@ -90,19 +92,24 @@ class CampaignManager:
         Returns:
             Liste des sites éligibles
         """
-        query = self.site_session.query(Site).filter(
-            Site.emails.isnot(None),
-            Site.emails != '',
-            Site.emails != 'NO EMAIL FOUND',
-            Site.email_validated == True,
-            Site.email_validation_score >= campaign.min_validation_score,
-            Site.is_active == True  # Exclure les sites désactivés
-        )
+        # Si la campagne a un segment, utiliser les filtres du segment
+        if campaign.segment_id:
+            from campaign_database import ContactSegment
+            import json
 
-        if campaign.only_deliverable:
-            query = query.filter(Site.email_deliverable == True)
+            segment = self.campaign_session.query(ContactSegment).get(campaign.segment_id)
+            if segment:
+                # Utiliser la fonction de construction de requête du segment
+                from segment_routes import build_segment_query
+                query = build_segment_query(segment, self.site_session)
+            else:
+                logger.warning(f"Segment {campaign.segment_id} introuvable, utilisation des filtres génériques")
+                query = self._build_generic_query(campaign)
+        else:
+            # Pas de segment, utiliser les filtres génériques de la campagne
+            query = self._build_generic_query(campaign)
 
-        # Récupérer les emails à exclure (déjà envoyés + désinscrits)
+        # Récupérer les emails à exclure (déjà envoyés + désinscrits + blacklistés)
         sent_emails = self.campaign_session.query(CampaignEmail.to_email).filter(
             CampaignEmail.campaign_id == campaign.id
         ).all()
@@ -112,8 +119,12 @@ class CampaignManager:
         unsubscribed = self.campaign_session.query(Unsubscribe.email).all()
         unsubscribed_emails = [e[0] for e in unsubscribed]
 
+        # Récupérer les emails blacklistés (bounce hard ou soft)
+        blacklisted = self.campaign_session.query(EmailBlacklist.email).all()
+        blacklisted_emails = [e[0] for e in blacklisted]
+
         # Combiner les exclusions
-        excluded_emails = set(sent_emails + unsubscribed_emails)
+        excluded_emails = set(sent_emails + unsubscribed_emails + blacklisted_emails)
 
         if excluded_emails:
             # Filtrer les sites dont l'email principal est exclu
@@ -125,6 +136,22 @@ class CampaignManager:
             return eligible_sites
 
         return query.all()
+
+    def _build_generic_query(self, campaign: Campaign):
+        """Construire une requête générique sans segment"""
+        query = self.site_session.query(Site).filter(
+            Site.emails.isnot(None),
+            Site.emails != '',
+            Site.emails != 'NO EMAIL FOUND',
+            Site.email_validated == True,
+            Site.email_validation_score >= campaign.min_validation_score,
+            Site.is_active == True
+        )
+
+        if campaign.only_deliverable:
+            query = query.filter(Site.email_deliverable == True)
+
+        return query
 
     def prepare_campaign(self, campaign_id: int) -> Dict:
         """
@@ -143,31 +170,63 @@ class CampaignManager:
         # Récupérer les destinataires
         recipients = self.get_recipients(campaign)
 
-        # Créer les entrées CampaignEmail
-        for site in recipients:
-            # Extraire le premier email
-            primary_email = site.emails.split(',')[0].split(';')[0].strip()
+        # Vérifier si c'est un segment manuel
+        is_manual_segment = False
+        manual_emails = []
+        if campaign.segment_id:
+            from campaign_database import ContactSegment
+            import json
+            segment = self.campaign_session.query(ContactSegment).get(campaign.segment_id)
+            if segment:
+                filters = json.loads(segment.filters)
+                if 'manual_emails' in filters and filters['manual_emails']:
+                    is_manual_segment = True
+                    manual_emails = filters['manual_emails']
 
-            campaign_email = CampaignEmail(
-                campaign_id=campaign.id,
-                site_id=site.id,
-                to_email=primary_email,
-                to_domain=site.domain,
-                status=EmailStatus.PENDING
-            )
-            self.campaign_session.add(campaign_email)
+        # Créer les entrées CampaignEmail
+        total_emails = 0
+        for site in recipients:
+            if is_manual_segment:
+                # Pour les segments manuels, extraire TOUS les emails qui sont dans la liste manuelle
+                if site.emails:
+                    site_emails = site.emails.split(';')
+                    for email in site_emails:
+                        email = email.strip()
+                        # Vérifier si cet email est dans la liste manuelle
+                        if email in manual_emails:
+                            campaign_email = CampaignEmail(
+                                campaign_id=campaign.id,
+                                site_id=site.id,
+                                to_email=email,
+                                to_domain=site.domain,
+                                status=EmailStatus.PENDING
+                            )
+                            self.campaign_session.add(campaign_email)
+                            total_emails += 1
+            else:
+                # Pour les segments automatiques, extraire uniquement le premier email
+                primary_email = site.emails.split(',')[0].split(';')[0].strip()
+                campaign_email = CampaignEmail(
+                    campaign_id=campaign.id,
+                    site_id=site.id,
+                    to_email=primary_email,
+                    to_domain=site.domain,
+                    status=EmailStatus.PENDING
+                )
+                self.campaign_session.add(campaign_email)
+                total_emails += 1
 
         # Mettre à jour la campagne
-        campaign.total_recipients = len(recipients)
+        campaign.total_recipients = total_emails
         campaign.status = CampaignStatus.SCHEDULED
         self.campaign_session.commit()
 
-        logger.info(f"✅ Campagne {campaign.name} préparée: {len(recipients)} destinataires")
+        logger.info(f"✅ Campagne {campaign.name} préparée: {total_emails} destinataires")
 
         return {
             'campaign_id': campaign.id,
             'campaign_name': campaign.name,
-            'total_recipients': len(recipients),
+            'total_recipients': total_emails,
             'status': 'scheduled'
         }
 
@@ -282,6 +341,19 @@ class CampaignManager:
             campaign_email.from_name = campaign.from_name
             campaign_email.from_email = campaign.from_email
 
+            # Ajouter le tracking (pixel + liens)
+            # IMPORTANT: On doit d'abord sauvegarder l'email pour avoir un ID
+            if not campaign_email.id:
+                self.campaign_session.add(campaign_email)
+                self.campaign_session.flush()  # Génère l'ID sans commit
+
+            personalized_html = add_email_tracking(
+                personalized_html,
+                campaign_email.id,
+                track_opens=True,
+                track_clicks=True
+            )
+
             # Envoyer via SES
             result = self.ses_manager.send_email(
                 to_email=campaign_email.to_email,
@@ -328,13 +400,14 @@ class CampaignManager:
             raise ValueError(f"Campagne {campaign_id} introuvable")
 
         # Vérifier le statut
-        if campaign.status not in [CampaignStatus.SCHEDULED, CampaignStatus.PAUSED]:
+        if campaign.status not in [CampaignStatus.SCHEDULED, CampaignStatus.PAUSED, CampaignStatus.RUNNING]:
             raise ValueError(f"Campagne en statut {campaign.status.value}, impossible de lancer")
 
-        # Mettre à jour le statut
-        campaign.status = CampaignStatus.RUNNING
-        campaign.started_at = datetime.utcnow()
-        self.campaign_session.commit()
+        # Mettre à jour le statut (seulement si pas déjà RUNNING)
+        if campaign.status != CampaignStatus.RUNNING:
+            campaign.status = CampaignStatus.RUNNING
+            campaign.started_at = datetime.utcnow()
+            self.campaign_session.commit()
 
         # Récupérer les emails en attente
         query = self.campaign_session.query(CampaignEmail).filter(
@@ -388,10 +461,9 @@ class CampaignManager:
         if remaining == 0:
             campaign.status = CampaignStatus.COMPLETED
             campaign.completed_at = datetime.utcnow()
-        else:
-            campaign.status = CampaignStatus.PAUSED
-
-        self.campaign_session.commit()
+            self.campaign_session.commit()
+        # Sinon, on laisse le statut tel quel (RUNNING reste RUNNING)
+        # La campagne sera lancée à nouveau par campaign_sender.py
 
         stats['end_time'] = datetime.utcnow()
         stats['duration'] = (stats['end_time'] - stats['start_time']).total_seconds()

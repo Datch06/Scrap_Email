@@ -61,6 +61,7 @@ def register_scenario_routes(app):
                 name=data['name'],
                 description=data.get('description'),
                 status=ScenarioStatus(data.get('status', 'draft')),
+                segment_id=data.get('segment_id'),
                 entry_template_id=data.get('entry_template_id'),
                 daily_cap=data.get('daily_cap', 500),
                 cooldown_days=data.get('cooldown_days', 3),

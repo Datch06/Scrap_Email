@@ -59,9 +59,13 @@ class Campaign(Base):
     reply_to = Column(String(255), nullable=True)
 
     # Filtres de destinataires
+    segment_id = Column(Integer, ForeignKey('contact_segments.id'), nullable=True, index=True)  # Segment ciblé
     min_validation_score = Column(Integer, default=80)  # Score minimum pour l'envoi
     only_deliverable = Column(Boolean, default=True)  # Uniquement emails délivrables
     exclude_domains = Column(Text, nullable=True)  # Domaines à exclure (séparés par virgules)
+
+    # Type de campagne
+    is_continuous = Column(Boolean, default=False)  # Campagne continue qui envoie automatiquement aux nouveaux contacts
 
     # Planification
     scheduled_at = Column(DateTime, nullable=True)
@@ -81,6 +85,7 @@ class Campaign(Base):
     emails_bounced = Column(Integer, default=0)
     emails_complained = Column(Integer, default=0)
     emails_failed = Column(Integer, default=0)
+    emails_unsubscribed = Column(Integer, default=0)
 
     # Métadonnées
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -101,8 +106,10 @@ class Campaign(Base):
             'from_email': self.from_email,
             'from_name': self.from_name,
             'reply_to': self.reply_to,
+            'segment_id': self.segment_id,
             'min_validation_score': self.min_validation_score,
             'only_deliverable': self.only_deliverable,
+            'is_continuous': self.is_continuous,
             'scheduled_at': self.scheduled_at.isoformat() if self.scheduled_at else None,
             'started_at': self.started_at.isoformat() if self.started_at else None,
             'completed_at': self.completed_at.isoformat() if self.completed_at else None,
@@ -115,12 +122,14 @@ class Campaign(Base):
             'emails_bounced': self.emails_bounced,
             'emails_complained': self.emails_complained,
             'emails_failed': self.emails_failed,
+            'emails_unsubscribed': self.emails_unsubscribed,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
             # Stats calculées
             'open_rate': round((self.emails_opened / self.emails_sent * 100) if self.emails_sent > 0 else 0, 2),
             'click_rate': round((self.emails_clicked / self.emails_sent * 100) if self.emails_sent > 0 else 0, 2),
             'bounce_rate': round((self.emails_bounced / self.emails_sent * 100) if self.emails_sent > 0 else 0, 2),
+            'unsubscribed_rate': round((self.emails_unsubscribed / self.emails_sent * 100) if self.emails_sent > 0 else 0, 2),
         }
 
 
@@ -197,6 +206,7 @@ class CampaignEmail(Base):
     # Erreurs
     error_message = Column(Text, nullable=True)
     bounce_type = Column(String(50), nullable=True)  # "hard" ou "soft"
+    bounce_reason = Column(Text, nullable=True)  # Raison détaillée du bounce
 
     # Métadonnées
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -224,6 +234,9 @@ class CampaignEmail(Base):
             'open_count': self.open_count,
             'click_count': self.click_count,
             'error_message': self.error_message,
+            'bounce_type': self.bounce_type,
+            'bounce_reason': self.bounce_reason,
+            'bounced_at': self.bounced_at.isoformat() if self.bounced_at else None,
         }
 
 
@@ -308,6 +321,7 @@ class Scenario(Base):
             'name': self.name,
             'description': self.description,
             'status': self.status.value if self.status else None,
+            'segment_id': self.segment_id,
             'entry_template_id': self.entry_template_id,
             'daily_cap': self.daily_cap,
             'cooldown_days': self.cooldown_days,
@@ -563,8 +577,24 @@ class Unsubscribe(Base):
     campaign_id = Column(Integer, nullable=True)  # Campagne à l'origine du désabonnement
 
 
+class EmailBlacklist(Base):
+    """Liste noire des emails qui ont bounce (hard ou soft)"""
+    __tablename__ = 'email_blacklist'
+
+    id = Column(Integer, primary_key=True)
+    email = Column(String(255), nullable=False, unique=True, index=True)
+    bounce_type = Column(String(50), nullable=False)  # "hard" ou "soft"
+    bounce_reason = Column(Text, nullable=True)  # Raison détaillée du bounce
+    first_bounced_at = Column(DateTime, default=datetime.utcnow)
+    last_bounced_at = Column(DateTime, default=datetime.utcnow)
+    bounce_count = Column(Integer, default=1)  # Nombre de fois que cet email a bounce
+    campaign_id = Column(Integer, nullable=True)  # Dernière campagne où l'email a bounce
+
+
 # Configuration de la base de données
-DATABASE_URL = 'sqlite:///campaigns.db'
+import os
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATABASE_URL = f'sqlite:///{BASE_DIR}/campaigns.db'
 
 def init_campaign_db():
     """Initialiser la base de données des campagnes"""
