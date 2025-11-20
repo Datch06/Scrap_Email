@@ -116,6 +116,65 @@
         </div>
     </div>
 
+    <!-- Script de recherche d'emails (find_any_valid_email.py) -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i class="bi bi-robot"></i>
+                        Script de Recherche d'Emails Intelligente
+                        <span class="badge bg-success float-end" id="script-status-badge">VÉRIFICATION...</span>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">
+                        Le script <code>find_any_valid_email.py</code> recherche et valide automatiquement des emails pour les sites sans contact.
+                    </p>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="p-3 bg-light rounded text-center">
+                                <h6 class="text-muted mb-2">Statut</h6>
+                                <h4 id="script-status-text">Vérification...</h4>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-3 bg-light rounded text-center">
+                                <h6 class="text-muted mb-2">Trouvés (24h)</h6>
+                                <h4 id="emails-found-24h">-</h4>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-3 bg-light rounded text-center">
+                                <h6 class="text-muted mb-2">Dernière activité</h6>
+                                <h4 id="script-last-activity">-</h4>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Derniers emails trouvés -->
+                    <div class="mt-3" id="recent-emails-section" style="display: none;">
+                        <h6>🎯 Derniers emails trouvés</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Domaine</th>
+                                        <th>Email</th>
+                                        <th>Source</th>
+                                        <th>Statut</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recent-emails-tbody">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Actions de validation -->
     <div class="row mb-4">
         <div class="col">
@@ -123,7 +182,7 @@
                 <div class="card-header bg-primary text-white">
                     <h5 class="mb-0">
                         <i class="bi bi-play-circle"></i>
-                        Lancer une validation
+                        Lancer une validation manuelle
                     </h5>
                 </div>
                 <div class="card-body">
@@ -422,10 +481,86 @@ document.getElementById('btn-export-valid').addEventListener('click', function()
     window.location.href = '/api/export/csv';
 });
 
+// Charger le statut du script
+async function loadScriptStatus() {
+    try {
+        const response = await fetch('/api/validation/status');
+        const data = await response.json();
+
+        // Mettre à jour le badge de statut
+        const badge = document.getElementById('script-status-badge');
+        const statusText = document.getElementById('script-status-text');
+        const found24h = document.getElementById('emails-found-24h');
+        const lastActivity = document.getElementById('script-last-activity');
+
+        if (data.is_running) {
+            badge.textContent = 'EN COURS';
+            badge.className = 'badge bg-success float-end';
+            statusText.textContent = '🟢 Actif';
+            statusText.className = 'text-success';
+        } else {
+            badge.textContent = 'INACTIF';
+            badge.className = 'badge bg-secondary float-end';
+            statusText.textContent = '⚫ Arrêté';
+            statusText.className = 'text-secondary';
+        }
+
+        // Emails trouvés dans les 24h
+        found24h.textContent = data.found_last_24h || 0;
+
+        // Derniers emails
+        if (data.recent_emails && data.recent_emails.length > 0) {
+            document.getElementById('recent-emails-section').style.display = 'block';
+            const tbody = document.getElementById('recent-emails-tbody');
+            tbody.innerHTML = '';
+
+            data.recent_emails.forEach(email => {
+                const row = document.createElement('tr');
+                const timeAgo = email.found_at ? timeSince(new Date(email.found_at)) : '-';
+                const sourceLabel = email.source === 'generic_validated' ? '🔧 Générique' : '📧 Site';
+                const statusIcon = email.deliverable ? '✅' : '⚠️';
+
+                row.innerHTML = `
+                    <td>${email.domain}</td>
+                    <td><code>${email.email}</code></td>
+                    <td>${sourceLabel}</td>
+                    <td>${statusIcon}</td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            lastActivity.textContent = timeSince(new Date(data.recent_emails[0].found_at));
+        } else {
+            lastActivity.textContent = 'Aucune';
+        }
+
+    } catch (error) {
+        console.error('Erreur chargement statut script:', error);
+    }
+}
+
+// Fonction helper pour afficher "il y a X minutes"
+function timeSince(date) {
+    const seconds = Math.floor((new Date() - date) / 1000);
+    let interval = seconds / 31536000;
+    if (interval > 1) return Math.floor(interval) + ' an(s)';
+    interval = seconds / 2592000;
+    if (interval > 1) return Math.floor(interval) + ' mois';
+    interval = seconds / 86400;
+    if (interval > 1) return Math.floor(interval) + ' j';
+    interval = seconds / 3600;
+    if (interval > 1) return Math.floor(interval) + ' h';
+    interval = seconds / 60;
+    if (interval > 1) return Math.floor(interval) + ' min';
+    return Math.floor(seconds) + ' sec';
+}
+
 // Charger les stats au chargement de la page
 loadStats();
+loadScriptStatus();
 
 // Actualiser automatiquement toutes les 30 secondes
 setInterval(loadStats, 30000);
+setInterval(loadScriptStatus, 10000); // Toutes les 10 secondes pour le statut du script
 </script>
 {% endblock %}

@@ -4,7 +4,7 @@ Base de données pour le suivi des sites et leur état de traitement
 """
 
 from datetime import datetime
-from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, Boolean, Enum, Float
+from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, Boolean, Enum, Float, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import enum
@@ -80,6 +80,10 @@ class Site(Base):
     # Tracking LinkAvista
     is_linkavista_seller = Column(Boolean, default=False, index=True)  # Site est un vendeur de backlinks de LinkAvista
     purchased_from = Column(String(255), nullable=True)  # Site vendeur d'où ce site a acheté un backlink
+
+    # Tracking du crawling de backlinks
+    backlinks_crawled = Column(Boolean, default=False, index=True)  # Site a déjà été crawlé pour chercher des backlinks
+    backlinks_crawled_at = Column(DateTime, nullable=True)  # Date du dernier crawling de backlinks
 
     # Métadonnées
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -163,17 +167,42 @@ class ScrapingJob(Base):
 
 
 # Configuration de la base de données
-DATABASE_URL = 'sqlite:///scrap_email.db'
+import os
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATABASE_URL = f'sqlite:///{BASE_DIR}/scrap_email.db'
+
+# Engine global partagé avec configuration optimisée pour la concurrence
+_engine = None
+
+def get_engine():
+    """Obtenir ou créer l'engine SQLite avec configuration optimisée"""
+    global _engine
+    if _engine is None:
+        _engine = create_engine(
+            DATABASE_URL,
+            connect_args={
+                'timeout': 30,  # Timeout de 30 secondes pour les verrous
+                'check_same_thread': False,  # Permet l'utilisation multi-thread
+            },
+            pool_pre_ping=True,  # Vérifie la connexion avant utilisation
+            pool_recycle=3600,  # Recycle les connexions après 1h
+        )
+        # Activer le mode WAL pour améliorer la concurrence
+        with _engine.connect() as conn:
+            conn.execute(text("PRAGMA journal_mode=WAL"))
+            conn.execute(text("PRAGMA busy_timeout=30000"))  # 30 secondes
+            conn.commit()
+    return _engine
 
 def init_db():
     """Initialiser la base de données"""
-    engine = create_engine(DATABASE_URL)
+    engine = get_engine()
     Base.metadata.create_all(engine)
     return engine
 
 def get_session():
     """Obtenir une session de base de données"""
-    engine = create_engine(DATABASE_URL)
+    engine = get_engine()
     Session = sessionmaker(bind=engine)
     return Session()
 

@@ -67,9 +67,33 @@
 
                     <hr class="my-4">
 
-                    <h6 class="mb-3"><i class="bi bi-filter"></i> Filtres de Ciblage</h6>
+                    <!-- Type de segment -->
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <label class="form-label">Type de segment</label>
+                            <select class="form-select" id="segment-type" onchange="toggleSegmentType()">
+                                <option value="filters">Filtres automatiques</option>
+                                <option value="manual">Liste d'emails manuelle</option>
+                            </select>
+                        </div>
+                    </div>
 
-                    <!-- Score de validation email -->
+                    <!-- Zone Liste Manuelle (masquée par défaut) -->
+                    <div id="manual-emails-section" style="display: none;">
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <label for="manual-emails" class="form-label">Liste d'emails *</label>
+                                <textarea class="form-control" id="manual-emails" rows="8" placeholder="contact@example.com&#10;user@domain.fr&#10;admin@site.com&#10;&#10;(Un email par ligne)"></textarea>
+                                <div class="form-text">Entrez un email par ligne. Vous pouvez coller une liste depuis Excel ou un fichier texte.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Zone Filtres Automatiques (affichée par défaut) -->
+                    <div id="filters-section">
+                        <h6 class="mb-3"><i class="bi bi-filter"></i> Filtres de Ciblage</h6>
+
+                        <!-- Score de validation email -->
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label for="score-min" class="form-label">Score de validation minimum</label>
@@ -130,6 +154,7 @@
                             <span id="preview-count-result" class="ms-3"></span>
                         </div>
                     </div>
+                    </div><!-- Fin filters-section -->
 
                 </form>
             </div>
@@ -177,6 +202,21 @@ let editMode = false;
 // ============================================================================
 // FONCTIONS UTILITAIRES
 // ============================================================================
+
+// Basculer entre filtres automatiques et liste manuelle
+function toggleSegmentType() {
+    const segmentType = document.getElementById('segment-type').value;
+    const manualSection = document.getElementById('manual-emails-section');
+    const filtersSection = document.getElementById('filters-section');
+
+    if (segmentType === 'manual') {
+        manualSection.style.display = 'block';
+        filtersSection.style.display = 'none';
+    } else {
+        manualSection.style.display = 'none';
+        filtersSection.style.display = 'block';
+    }
+}
 
 function showAlert(type, message) {
     const container = document.getElementById('alert-container');
@@ -235,6 +275,9 @@ async function loadSegments() {
                 </button>
                 <button class="btn btn-sm btn-success" onclick="refreshSegmentCount(${segment.id})" title="Recalculer le nombre de contacts">
                     <i class="bi bi-arrow-clockwise"></i>
+                </button>
+                <button class="btn btn-sm btn-danger" onclick="deleteSegment(${segment.id}, '${segment.name.replace(/'/g, "\\'")}')" title="Supprimer ce segment">
+                    <i class="bi bi-trash"></i>
                 </button>
             </td>`;
             html += `</tr>`;
@@ -297,11 +340,41 @@ async function refreshSegmentCount(segmentId) {
 }
 
 // ============================================================================
+// SUPPRIMER UN SEGMENT
+// ============================================================================
+
+async function deleteSegment(segmentId, segmentName) {
+    // Demander confirmation
+    if (!confirm(`Êtes-vous sûr de vouloir supprimer le segment "${segmentName}" ?\n\nCette action est irréversible.`)) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/segments/${segmentId}`, {
+            method: 'DELETE'
+        });
+
+        if (response.ok) {
+            showAlert('success', `✅ Segment "${segmentName}" supprimé avec succès`);
+            // Recharger la liste des segments
+            await loadSegments();
+        } else {
+            const data = await response.json();
+            showAlert('danger', `❌ Erreur: ${data.error || 'Impossible de supprimer le segment'}`);
+        }
+    } catch (error) {
+        console.error('Erreur suppression segment:', error);
+        showAlert('danger', '❌ Erreur lors de la suppression: ' + error.message);
+    }
+}
+
+// ============================================================================
 // VOIR UN SEGMENT
 // ============================================================================
 
 async function viewSegment(segmentId) {
     currentSegmentId = segmentId;
+    historyLoaded = false; // Reset history loading flag
 
     try {
         const response = await fetch(`/api/segments/${segmentId}`);
@@ -310,29 +383,50 @@ async function viewSegment(segmentId) {
         document.getElementById('detail-segment-name').textContent = segment.name;
 
         let html = `
-            <div class="row mb-3">
-                <div class="col-md-12">
-                    <h6>Description</h6>
-                    <p>${segment.description || 'Aucune description'}</p>
-                </div>
-            </div>
+            <!-- Tabs Navigation -->
+            <ul class="nav nav-tabs mb-3" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="details-tab" data-bs-toggle="tab" data-bs-target="#details-content" type="button" role="tab">
+                        <i class="bi bi-info-circle"></i> Détails
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history-content" type="button" role="tab" onclick="loadSegmentHistory(${segmentId})">
+                        <i class="bi bi-clock-history"></i> Historique des Campagnes
+                    </button>
+                </li>
+            </ul>
 
-            <div class="row mb-3">
-                <div class="col-md-4">
-                    <div class="card bg-light">
-                        <div class="card-body text-center">
-                            <h3 class="text-primary">${segment.estimated_count || 0}</h3>
-                            <p class="mb-0">Contacts dans ce segment</p>
+            <!-- Tabs Content -->
+            <div class="tab-content">
+                <!-- Details Tab -->
+                <div class="tab-pane fade show active" id="details-content" role="tabpanel">
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <h6>Description</h6>
+                            <p>${segment.description || 'Aucune description'}</p>
                         </div>
                     </div>
-                </div>
-                <div class="col-md-8">
-                    <h6>Filtres appliqués</h6>
-                    <ul class="list-group">
+
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h3 class="text-primary">${segment.estimated_count || 0}</h3>
+                                    <p class="mb-0">Contacts dans ce segment</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <h6>Filtres appliqués</h6>
+                            <ul class="list-group">
         `;
 
         const filters = segment.filters || {};
 
+        if (filters.manual_emails && filters.manual_emails.length > 0) {
+            html += `<li class="list-group-item"><strong>Liste manuelle:</strong> ${filters.manual_emails.length} emails</li>`;
+        }
         if (filters.email_validation_score_min > 0) {
             html += `<li class="list-group-item">Score validation ≥ ${filters.email_validation_score_min}</li>`;
         }
@@ -353,16 +447,27 @@ async function viewSegment(segmentId) {
         }
 
         html += `
-                    </ul>
-                </div>
-            </div>
-
-            <div class="row">
-                <div class="col-12">
-                    <h6>Prévisualisation (10 premiers contacts)</h6>
-                    <div id="preview-contacts">
-                        <div class="spinner-border spinner-border-sm" role="status"></div> Chargement...
+                            </ul>
+                        </div>
                     </div>
+
+                    <div class="row">
+                        <div class="col-12">
+                            <h6>Prévisualisation (10 premiers contacts)</h6>
+                            <div id="preview-contacts">
+                                <div class="spinner-border spinner-border-sm" role="status"></div> Chargement...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- History Tab -->
+                <div class="tab-pane fade" id="history-content" role="tabpanel">
+                    <div id="history-loading" class="text-center py-4">
+                        <div class="spinner-border" role="status"></div>
+                        <p class="mt-2">Chargement de l'historique...</p>
+                    </div>
+                    <div id="history-data" style="display: none;"></div>
                 </div>
             </div>
         `;
@@ -407,6 +512,113 @@ async function loadPreview(segmentId) {
 }
 
 // ============================================================================
+// CHARGER L'HISTORIQUE DES CAMPAGNES
+// ============================================================================
+
+let historyLoaded = false;
+
+async function loadSegmentHistory(segmentId) {
+    // Charger seulement une fois
+    if (historyLoaded) return;
+    historyLoaded = true;
+
+    const loadingDiv = document.getElementById('history-loading');
+    const dataDiv = document.getElementById('history-data');
+
+    try {
+        const response = await fetch(`/api/segments/${segmentId}/campaigns`);
+        const data = await response.json();
+
+        let html = '';
+
+        if (data.total_campaigns === 0) {
+            html = `
+                <div class="text-center py-5 text-muted">
+                    <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+                    <p class="mt-3">Aucune campagne envoyée pour ce segment</p>
+                </div>
+            `;
+        } else {
+            html = `
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> <strong>${data.total_campaigns}</strong> campagne(s) envoyée(s) à ce segment
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Campagne</th>
+                                <th>Sujet</th>
+                                <th>Statut</th>
+                                <th>Destinataires</th>
+                                <th>Envoyés</th>
+                                <th>Taux d'ouverture</th>
+                                <th>Taux de clic</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            data.campaigns.forEach(campaign => {
+                const statusBadge = {
+                    'draft': 'secondary',
+                    'scheduled': 'info',
+                    'running': 'primary',
+                    'paused': 'warning',
+                    'completed': 'success',
+                    'cancelled': 'danger'
+                }[campaign.status] || 'secondary';
+
+                const createdDate = campaign.created_at ? new Date(campaign.created_at).toLocaleDateString('fr-FR', {
+                    year: 'numeric', month: 'short', day: 'numeric'
+                }) : '-';
+
+                html += `
+                    <tr>
+                        <td><strong>${campaign.name}</strong></td>
+                        <td><small class="text-muted">${campaign.subject}</small></td>
+                        <td><span class="badge bg-${statusBadge}">${campaign.status}</span></td>
+                        <td>${campaign.total_recipients}</td>
+                        <td>${campaign.emails_sent}</td>
+                        <td>
+                            ${campaign.open_rate > 0 ?
+                                `<span class="badge bg-${campaign.open_rate >= 20 ? 'success' : 'warning'}">${campaign.open_rate}%</span>` :
+                                '<span class="text-muted">-</span>'
+                            }
+                        </td>
+                        <td>
+                            ${campaign.click_rate > 0 ?
+                                `<span class="badge bg-${campaign.click_rate >= 5 ? 'success' : 'info'}">${campaign.click_rate}%</span>` :
+                                '<span class="text-muted">-</span>'
+                            }
+                        </td>
+                        <td><small>${createdDate}</small></td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        dataDiv.innerHTML = html;
+        loadingDiv.style.display = 'none';
+        dataDiv.style.display = 'block';
+
+    } catch (error) {
+        console.error('Erreur chargement historique:', error);
+        loadingDiv.style.display = 'none';
+        dataDiv.innerHTML = '<div class="alert alert-danger">Erreur lors du chargement de l\'historique</div>';
+        dataDiv.style.display = 'block';
+    }
+}
+
+// ============================================================================
 // CRÉER/MODIFIER UN SEGMENT
 // ============================================================================
 
@@ -419,6 +631,7 @@ document.getElementById('btn-save-segment').addEventListener('click', async func
         // Récupérer les valeurs
         const name = document.getElementById('segment-name').value.trim();
         const description = document.getElementById('segment-description').value.trim();
+        const segmentType = document.getElementById('segment-type').value;
 
         if (!name) {
             showAlert('danger', 'Le nom du segment est requis');
@@ -428,32 +641,55 @@ document.getElementById('btn-save-segment').addEventListener('click', async func
         // Construire les filtres
         const filters = {};
 
-        const scoreMin = parseInt(document.getElementById('score-min').value);
-        const scoreMax = parseInt(document.getElementById('score-max').value);
-        if (scoreMin > 0) filters.email_validation_score_min = scoreMin;
-        if (scoreMax < 100) filters.email_validation_score_max = scoreMax;
+        if (segmentType === 'manual') {
+            // Mode liste manuelle d'emails
+            const manualEmailsText = document.getElementById('manual-emails').value.trim();
+            if (!manualEmailsText) {
+                showAlert('danger', 'Veuillez entrer au moins un email');
+                return;
+            }
 
-        const deliverable = document.getElementById('deliverable').value;
-        if (deliverable !== 'all') {
-            filters.email_deliverable = deliverable === 'true';
+            const manualEmails = manualEmailsText
+                .split('\n')
+                .map(e => e.trim())
+                .filter(e => e.length > 0 && e.includes('@'));
+
+            if (manualEmails.length === 0) {
+                showAlert('danger', 'Aucun email valide trouvé dans la liste');
+                return;
+            }
+
+            filters.manual_emails = manualEmails;
+
+        } else {
+            // Mode filtres automatiques
+            const scoreMin = parseInt(document.getElementById('score-min').value);
+            const scoreMax = parseInt(document.getElementById('score-max').value);
+            if (scoreMin > 0) filters.email_validation_score_min = scoreMin;
+            if (scoreMax < 100) filters.email_validation_score_max = scoreMax;
+
+            const deliverable = document.getElementById('deliverable').value;
+            if (deliverable !== 'all') {
+                filters.email_deliverable = deliverable === 'true';
+            }
+
+            const hasSiret = document.getElementById('has-siret').value;
+            if (hasSiret !== 'all') {
+                filters.has_siret = hasSiret === 'true';
+            }
+
+            const domainsInclude = document.getElementById('domains-include').value
+                .split(/[,\n]/)
+                .map(d => d.trim())
+                .filter(d => d.length > 0);
+            if (domainsInclude.length > 0) filters.domains_include = domainsInclude;
+
+            const domainsExclude = document.getElementById('domains-exclude').value
+                .split(/[,\n]/)
+                .map(d => d.trim())
+                .filter(d => d.length > 0);
+            if (domainsExclude.length > 0) filters.domains_exclude = domainsExclude;
         }
-
-        const hasSiret = document.getElementById('has-siret').value;
-        if (hasSiret !== 'all') {
-            filters.has_siret = hasSiret === 'true';
-        }
-
-        const domainsInclude = document.getElementById('domains-include').value
-            .split(/[,\n]/)
-            .map(d => d.trim())
-            .filter(d => d.length > 0);
-        if (domainsInclude.length > 0) filters.domains_include = domainsInclude;
-
-        const domainsExclude = document.getElementById('domains-exclude').value
-            .split(/[,\n]/)
-            .map(d => d.trim())
-            .filter(d => d.length > 0);
-        if (domainsExclude.length > 0) filters.domains_exclude = domainsExclude;
 
         const data = { name, description, filters };
 

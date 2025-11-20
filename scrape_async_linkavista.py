@@ -178,53 +178,59 @@ class AsyncLinkAvistaScraper:
 
         await asyncio.gather(*tasks, return_exceptions=True)
 
-    async def extract_all_domains(self, max_pages: int = 100) -> Set[str]:
-        """Extraire tous les domaines avec tous les filtres de manière asynchrone"""
-        print("\n📥 PHASE 1: Extraction ASYNCHRONE de tous les domaines")
+    async def extract_all_domains(self, max_pages: int = None) -> Set[str]:
+        """Extraire tous les domaines avec tous les filtres de manière asynchrone - SANS LIMITE"""
+        print("\n📥 PHASE 1: Extraction ASYNCHRONE de tous les domaines (SANS LIMITE)")
         print("="*80)
 
         all_domains = set()
 
-        # Configuration des filtres
+        # Configuration des filtres - on scrape jusqu'à ce qu'il n'y ait plus de résultats
         filters = [
-            ("Normal", "normal", max_pages),
-            ("Sensitive", "sensitive", max_pages),
-            ("Google News", "gnews", 20),
+            ("Normal", "normal"),
+            ("Sensitive", "sensitive"),
+            ("Google News", "gnews"),
         ]
 
-        for filter_name, filter_type, max_p in filters:
+        for filter_name, filter_type in filters:
             print(f"\n🔍 Filtre: {filter_name}")
             print("-"*80)
 
             initial_count = len(all_domains)
+            page = 1
+            consecutive_empty = 0
 
-            # Créer les tâches pour toutes les pages du filtre
-            tasks = []
-            for page in range(1, max_p + 1):
-                tasks.append(self.extract_urls_from_page(page, filter_type))
+            # Continuer jusqu'à avoir 3 pages vides consécutives
+            while consecutive_empty < 3:
+                urls = await self.extract_urls_from_page(page, filter_type)
 
-            # Exécuter toutes les pages en parallèle
-            print(f"⚡ Extraction de {max_p} pages en parallèle...")
-            results = await asyncio.gather(*tasks, return_exceptions=True)
-
-            # Traiter les résultats
-            for page_num, urls in enumerate(results, 1):
                 if isinstance(urls, Exception) or not urls:
+                    consecutive_empty += 1
+                    print(f"📄 Page {page:4} → Vide ({consecutive_empty}/3)")
+                    page += 1
                     continue
 
                 new_urls = [u for u in urls if u not in all_domains]
                 all_domains.update(urls)
-                print(f"📄 Page {page_num:3}/{max_p} → {len(urls):3} sites (+{len(new_urls):3} nouveaux) | Total: {len(all_domains):,}")
+
+                if len(new_urls) == 0:
+                    consecutive_empty += 1
+                    print(f"📄 Page {page:4} → {len(urls):3} sites (0 nouveaux) | Total: {len(all_domains):,} ({consecutive_empty}/3)")
+                else:
+                    consecutive_empty = 0
+                    print(f"📄 Page {page:4} → {len(urls):3} sites (+{len(new_urls):3} nouveaux) | Total: {len(all_domains):,}")
+
+                page += 1
 
             filter_added = len(all_domains) - initial_count
-            print(f"✅ {filter_name}: +{filter_added:,} domaines supplémentaires")
+            print(f"✅ {filter_name}: +{filter_added:,} domaines supplémentaires (arrêt à la page {page-1})")
 
         print(f"\n🎯 TOTAL FINAL: {len(all_domains):,} domaines uniques extraits")
         return all_domains
 
-    async def scrape_async(self, max_pages: int = 100, batch_size: int = 50):
+    async def scrape_async(self, batch_size: int = 50):
         """
-        Scraper asynchrone complet
+        Scraper asynchrone complet - SANS LIMITE de pages
 
         Args:
             max_pages: Nombre maximum de pages à scraper par filtre
@@ -244,8 +250,8 @@ class AsyncLinkAvistaScraper:
             return
 
         try:
-            # PHASE 1: Extraire tous les domaines
-            all_domains = await self.extract_all_domains(max_pages)
+            # PHASE 1: Extraire tous les domaines (sans limite)
+            all_domains = await self.extract_all_domains()
 
             extraction_time = time.time() - start_time
             print(f"\n⏱️  Temps d'extraction: {extraction_time:.1f}s ({len(all_domains)/extraction_time:.1f} domaines/sec)")
@@ -321,7 +327,6 @@ async def main():
     PASSWORD = "B-BJoqV7"
     MAX_CONCURRENT = 50  # Nombre de requêtes simultanées
     BATCH_SIZE = 100     # Taille des lots pour le traitement
-    MAX_PAGES = 100      # Pages à scraper par filtre
 
     scraper = AsyncLinkAvistaScraper(
         email=EMAIL,
@@ -330,7 +335,6 @@ async def main():
     )
 
     await scraper.scrape_async(
-        max_pages=MAX_PAGES,
         batch_size=BATCH_SIZE
     )
 

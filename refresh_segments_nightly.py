@@ -30,6 +30,18 @@ def build_segment_query(segment, db_session):
         Site.emails != 'NO EMAIL FOUND'
     )
 
+    # Filtre: liste manuelle d'emails
+    if 'manual_emails' in filters and filters['manual_emails']:
+        from sqlalchemy import or_
+        manual_emails = filters['manual_emails']
+        if isinstance(manual_emails, list) and len(manual_emails) > 0:
+            email_conditions = []
+            for email in manual_emails:
+                email_conditions.append(Site.emails.like(f'%{email}%'))
+            query = query.filter(or_(*email_conditions))
+            # Pour les segments manuels, on retourne directement
+            return query
+
     # Filtre: score minimum
     if 'email_validation_score_min' in filters:
         query = query.filter(Site.email_validation_score >= filters['email_validation_score_min'])
@@ -62,12 +74,13 @@ def build_segment_query(segment, db_session):
 
     # Filtre: domaines à inclure
     if 'domains_include' in filters and filters['domains_include']:
+        from sqlalchemy import or_
         domains = filters['domains_include']
         if isinstance(domains, list) and len(domains) > 0:
-            conditions = []
+            domain_conditions = []
             for domain in domains:
-                conditions.append(Site.emails.like(f'%{domain}%'))
-            query = query.filter(db_session.query(Site).filter(*conditions).exists())
+                domain_conditions.append(Site.emails.like(f'%{domain}%'))
+            query = query.filter(or_(*domain_conditions))
 
     # Filtre: domaines à exclure
     if 'domains_exclude' in filters and filters['domains_exclude']:
@@ -85,6 +98,14 @@ def calculate_segment_count(segment_id, campaign_session, db_session):
     if not segment:
         return 0
 
+    filters = json.loads(segment.filters)
+
+    # Pour les segments manuels, compter les emails individuels
+    if 'manual_emails' in filters and filters['manual_emails']:
+        manual_emails = filters['manual_emails']
+        return len(manual_emails)
+
+    # Pour les autres segments, compter les sites
     query = build_segment_query(segment, db_session)
     return query.count()
 
