@@ -25,6 +25,7 @@ scraping_state.json
 
 # Fichiers de données exportés
 *.txt
+!blacklist.txt
 linkavista_all_domains*.txt
 domains_on_both_platforms*.txt
 

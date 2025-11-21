@@ -343,6 +343,137 @@ def get_scraping_state():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/cancel-crawl', methods=['POST'])
+def cancel_crawl():
+    """
+    Annuler le crawl d'un site en cours, le blacklister et démarrer un nouveau site
+
+    Stratégie rapide:
+    1. Retirer immédiatement du JSON (rapide, pas de lock)
+    2. Mettre à jour la DB en arrière-plan avec thread
+    """
+    from pathlib import Path
+    import threading
+
+    data = request.get_json()
+    domain = data.get('domain')
+
+    if not domain:
+        return jsonify({'error': 'Domaine manquant'}), 400
+
+    # 1. PRIORITÉ: Retirer immédiatement du fichier JSON (pas de lock DB)
+    state_file = Path('/var/www/Scrap_Email/scraping_state.json')
+
+    try:
+        if state_file.exists():
+            with open(state_file, 'r') as f:
+                state = json.load(f)
+
+            # Filtrer le site annulé
+            original_count = len(state.get('sellers_in_progress', []))
+            state['sellers_in_progress'] = [
+                s for s in state.get('sellers_in_progress', [])
+                if s.get('domain') != domain
+            ]
+            new_count = len(state['sellers_in_progress'])
+            state['last_update'] = datetime.utcnow().isoformat()
+
+            # Sauvegarder immédiatement
+            with open(state_file, 'w') as f:
+                json.dump(state, f, indent=2)
+
+            if original_count == new_count:
+                return jsonify({'error': f'Site {domain} non trouvé dans les crawlers actifs'}), 404
+
+            logger.info(f"✓ Site {domain} retiré du scraping_state.json immédiatement")
+
+    except Exception as e:
+        logger.error(f"Erreur lors de la mise à jour du JSON: {e}")
+        return jsonify({'error': f'Impossible de modifier le fichier d\'état: {str(e)}'}), 500
+
+    # 1.5. Ajouter au fichier blacklist.txt (PERSISTANT, pas de lock DB)
+    blacklist_file = Path('/var/www/Scrap_Email/blacklist.txt')
+    try:
+        # Lire la blacklist existante
+        existing_domains = set()
+        if blacklist_file.exists():
+            with open(blacklist_file, 'r') as f:
+                existing_domains = set(line.strip() for line in f if line.strip())
+
+        # Ajouter le nouveau domaine si pas déjà présent
+        if domain not in existing_domains:
+            with open(blacklist_file, 'a') as f:
+                f.write(f"{domain}\n")
+            logger.info(f"🚫 Site {domain} ajouté à blacklist.txt (persistant)")
+        else:
+            logger.info(f"✓ Site {domain} déjà dans blacklist.txt")
+    except Exception as e:
+        logger.error(f"Erreur lors de la mise à jour de blacklist.txt: {e}")
+        # Ne pas bloquer le processus pour cette erreur
+
+    # 2. Mise à jour DB en arrière-plan (thread séparé pour ne pas bloquer)
+    def update_db_async():
+        """Mettre à jour la DB de manière asynchrone"""
+        import time
+        import random
+
+        max_retries = 10
+        for attempt in range(max_retries):
+            session = get_session()
+            try:
+                site = session.query(Site).filter_by(domain=domain).first()
+                if site:
+                    site.blacklisted = True
+                    site.backlinks_crawled = True
+                    site.backlinks_crawled_at = datetime.utcnow()
+                    site.updated_at = datetime.utcnow()
+                    session.commit()
+                    logger.info(f"🚫 Site {domain} blacklisté dans la DB (async)")
+                session.close()
+                break  # Succès
+            except Exception as e:
+                session.rollback()
+                session.close()
+                if 'database is locked' in str(e) and attempt < max_retries - 1:
+                    time.sleep(random.uniform(0.5, 2.0))  # Attente plus longue en arrière-plan
+                    continue
+                else:
+                    logger.error(f"Erreur DB async pour {domain}: {e}")
+                    break
+
+    # Lancer la mise à jour DB dans un thread séparé
+    db_thread = threading.Thread(target=update_db_async, daemon=True)
+    db_thread.start()
+
+    # 3. Trouver le prochain site (lecture rapide, pas de lock)
+    try:
+        # Lire la blacklist à jour (y compris le domaine qu'on vient d'ajouter)
+        blacklist_file = Path('/var/www/Scrap_Email/blacklist.txt')
+        current_blacklist = set()
+        if blacklist_file.exists():
+            with open(blacklist_file, 'r') as f:
+                current_blacklist = {line.strip() for line in f if line.strip()}
+
+        session = get_session()
+        next_site = session.query(Site).filter(
+            Site.is_linkavista_seller == True,
+            Site.backlinks_crawled == False,
+            Site.blacklisted == False,
+            ~Site.domain.in_(current_blacklist)  # Exclure les domaines du fichier blacklist
+        ).first()
+        next_domain = next_site.domain if next_site else None
+        session.close()
+    except:
+        next_domain = "Un nouveau site sera chargé automatiquement"
+
+    return jsonify({
+        'success': True,
+        'message': f'Site {domain} retiré du crawl immédiatement. Blacklistage DB en cours...',
+        'blacklisted_domain': domain,
+        'new_site': next_domain
+    })
+
+
 @app.route('/api/stats/daily')
 def get_daily_stats():
     """Obtenir les statistiques quotidiennes (30 derniers jours)"""

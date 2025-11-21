@@ -55,11 +55,42 @@ SOCIAL_DOMAINS = {
 EXCLUDED_PATTERNS = {
     'google.com', 'apple.com', 'microsoft.com', 'mozilla.org',
     'amazon.com', 'amazon.es', 'amazon.fr', 'amzn.to',
-    'uecdn.es', 'cloudflare.com', 'akamai.net',
-    '.gouv.fr',  # Sites gouvernementaux français
-    'cnil.fr',   # CNIL - Commission nationale de l'informatique et des libertés
-    'diplomatie.gouv.fr',  # Ministère des affaires étrangères
+    'uecdn.es', 'cloudflare.com', 'akamai.net'
 }
+
+# Domaines à JAMAIS scraper (vendeurs ou acheteurs) - base hardcodée
+BLACKLISTED_DOMAINS = {
+    'cnil.fr',
+    'gouv.fr',
+    'diplomatie.gouv.fr',
+    'education.gouv.fr',
+    'economie.gouv.fr',
+    'interieur.gouv.fr',
+    'service-public.fr',
+    'legifrance.gouv.fr',
+    'senat.fr',
+    'assemblee-nationale.fr'
+}
+
+def load_blacklist_file():
+    """
+    Charger les domaines du fichier blacklist.txt et les fusionner avec BLACKLISTED_DOMAINS
+    Retourne l'ensemble complet des domaines à blacklister
+    """
+    blacklist_file = Path(__file__).parent / 'blacklist.txt'
+    combined_blacklist = set(BLACKLISTED_DOMAINS)
+
+    if blacklist_file.exists():
+        try:
+            with open(blacklist_file, 'r') as f:
+                file_domains = {line.strip() for line in f if line.strip()}
+                combined_blacklist.update(file_domains)
+                if file_domains:
+                    print(f"🚫 {len(file_domains)} domaines chargés depuis blacklist.txt")
+        except Exception as e:
+            print(f"⚠️  Erreur lors de la lecture de blacklist.txt: {e}")
+
+    return combined_blacklist
 
 DEFAULT_USER_AGENT = (
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) '
@@ -88,10 +119,32 @@ def extract_domain(url):
     return domain if domain else None
 
 
+def is_blacklisted_domain(domain):
+    """Vérifier si un domaine est blacklisté"""
+    if not domain:
+        return True
+
+    # Vérifier les domaines exacts
+    if domain in BLACKLISTED_DOMAINS:
+        return True
+
+    # Vérifier si le domaine se termine par un domaine blacklisté (ex: *.gouv.fr)
+    for blacklisted in BLACKLISTED_DOMAINS:
+        if domain.endswith('.' + blacklisted) or domain == blacklisted:
+            return True
+
+    return False
+
+
 def is_valid_fr_domain(domain):
     """Vérifier si c'est un domaine .fr valide"""
     if not domain or not domain.endswith('.fr'):
         return False
+
+    # Vérifier si blacklisté
+    if is_blacklisted_domain(domain):
+        return False
+
     for excluded in EXCLUDED_PATTERNS:
         if excluded in domain:
             return False
@@ -125,6 +178,16 @@ def update_scraping_state(seller_domain, pages_crawled, current_url, buyers_foun
     """
     try:
         with state_lock:
+            # Vérifier d'abord si le domaine est blacklisté
+            blacklist_file = Path(__file__).parent / 'blacklist.txt'
+            if blacklist_file.exists():
+                with open(blacklist_file, 'r') as f:
+                    blacklisted = {line.strip() for line in f if line.strip()}
+                    if seller_domain in blacklisted:
+                        # Domaine blacklisté, ne pas l'ajouter/mettre à jour dans le state
+                        print(f"    🚫 {seller_domain} blacklisté, pas de mise à jour du state")
+                        return
+
             # Lire l'état actuel
             if STATE_FILE.exists():
                 with open(STATE_FILE, 'r') as f:
@@ -241,6 +304,18 @@ class BacklinksCrawler:
         buyer_domains = set()
 
         while to_visit:
+            # Vérifier si le domaine a été blacklisté (annulé via dashboard)
+            # Optimisation: vérifier toutes les 10 pages seulement
+            if len(visited) % 10 == 0:
+                blacklist_file = Path(__file__).parent / 'blacklist.txt'
+                if blacklist_file.exists():
+                    with open(blacklist_file, 'r') as f:
+                        blacklisted = {line.strip() for line in f if line.strip()}
+                        if seller_domain in blacklisted:
+                            print(f"    🚫 {seller_domain} blacklisté, arrêt immédiat du crawl")
+                            remove_seller_from_state(seller_domain)
+                            return buyer_domains
+
             url = to_visit.popleft()
 
             if url in visited:
@@ -295,14 +370,20 @@ class BacklinksCrawler:
 
         return buyer_domains
 
-    async def process_seller(self, session, db, seller_site):
+    async def process_seller(self, session, db, seller_site, blacklist=None):
         """
         Traite un site vendeur:
         1. Crawle le site vendeur
         2. Extrait les domaines acheteurs
         3. Cherche leurs emails
         4. Stocke dans la base
+
+        Args:
+            blacklist: Set de domaines à exclure (depuis blacklist.txt + hardcodés)
         """
+        if blacklist is None:
+            blacklist = set()
+
         # Utiliser source_url seulement si c'est une vraie URL (commence par http)
         if seller_site.source_url and seller_site.source_url.startswith('http'):
             seller_url = seller_site.source_url
@@ -314,6 +395,17 @@ class BacklinksCrawler:
         # Skip si le domaine est invalide
         if not seller_domain:
             print(f"  ⚠️  Domaine invalide ignoré: {seller_site.domain} (url={seller_url})")
+            return
+
+        # Skip si le domaine est blacklisté (gouv.fr, cnil.fr, ou annulé via dashboard)
+        if is_blacklisted_domain(seller_domain) or seller_domain in blacklist:
+            print(f"  🚫 Domaine blacklisté ignoré: {seller_domain}")
+            # Marquer comme crawlé pour ne plus le retraiter
+            db.session.query(Site).filter_by(id=seller_site.id).update({
+                'backlinks_crawled': True,
+                'backlinks_crawled_at': datetime.utcnow()
+            })
+            db.session.commit()
             return
 
         try:
@@ -424,11 +516,16 @@ class BacklinksCrawler:
 
         start_time = time.time()
 
+        # Charger la blacklist depuis le fichier
+        blacklist = load_blacklist_file()
+
         with DBHelper() as db:
-            # Charger UNIQUEMENT les sites NON crawlés et non blacklistés
+            # Charger UNIQUEMENT les sites vendeurs NON crawlés et non blacklistés
             query = db.session.query(Site).filter(
+                Site.is_linkavista_seller == True,  # Seulement les vendeurs
                 Site.blacklisted == False,
-                Site.backlinks_crawled == False  # Uniquement les sites pas encore crawlés
+                Site.backlinks_crawled == False,  # Uniquement les sites pas encore crawlés
+                ~Site.domain.in_(blacklist)  # Exclure les domaines du fichier blacklist.txt
             )
 
             if limit:
@@ -457,13 +554,16 @@ class BacklinksCrawler:
                 # Créer une queue avec TOUS les vendeurs
                 seller_queue = list(seller_sites)
                 running_tasks = {}  # {task: seller_domain}
+                processed_domains = set()  # Domaines déjà traités pour éviter les doublons
 
                 # Lancer les premiers vendeurs
                 while len(running_tasks) < MAX_SELLERS_PARALLEL and seller_queue:
                     seller_site = seller_queue.pop(0)
-                    print(f"  ▶️  {seller_site.domain}")
-                    task = asyncio.create_task(self.process_seller(session, db, seller_site))
-                    running_tasks[task] = seller_site.domain
+                    if seller_site.domain not in processed_domains:
+                        print(f"  ▶️  {seller_site.domain}")
+                        task = asyncio.create_task(self.process_seller(session, db, seller_site, blacklist))
+                        running_tasks[task] = seller_site.domain
+                        processed_domains.add(seller_site.domain)
 
                 # Tant qu'il y a des tâches en cours
                 while running_tasks:
@@ -483,11 +583,32 @@ class BacklinksCrawler:
                             print(f"  ✗ {seller_domain} erreur: {e}")
 
                     # Lancer de nouveaux vendeurs pour remplir les slots libres
-                    while len(running_tasks) < MAX_SELLERS_PARALLEL and seller_queue:
-                        seller_site = seller_queue.pop(0)
-                        print(f"  ▶️  {seller_site.domain} (slot libéré)")
-                        task = asyncio.create_task(self.process_seller(session, db, seller_site))
-                        running_tasks[task] = seller_site.domain
+                    while len(running_tasks) < MAX_SELLERS_PARALLEL:
+                        # Si la queue locale est vide, recharger depuis la DB (pour les sites annulés)
+                        if not seller_queue:
+                            new_sites = db.session.query(Site).filter(
+                                Site.is_linkavista_seller == True,
+                                Site.blacklisted == False,
+                                Site.backlinks_crawled == False,
+                                ~Site.domain.in_(processed_domains),  # Exclure les déjà traités
+                                ~Site.domain.in_(blacklist)  # Exclure les domaines du fichier blacklist.txt
+                            ).limit(10).all()  # Charger 10 nouveaux sites max
+
+                            if new_sites:
+                                seller_queue.extend(new_sites)
+                                print(f"  🔄 {len(new_sites)} nouveaux sites chargés depuis la DB")
+                            else:
+                                break  # Plus de sites disponibles
+
+                        if seller_queue:
+                            seller_site = seller_queue.pop(0)
+                            if seller_site.domain not in processed_domains:
+                                print(f"  ▶️  {seller_site.domain} (slot libéré)")
+                                task = asyncio.create_task(self.process_seller(session, db, seller_site, blacklist))
+                                running_tasks[task] = seller_site.domain
+                                processed_domains.add(seller_site.domain)
+                        else:
+                            break  # Plus de sites à traiter
 
                     await asyncio.sleep(PAUSE_BETWEEN_SELLERS)
 

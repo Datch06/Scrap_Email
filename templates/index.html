@@ -734,9 +734,12 @@ async function loadActiveCrawlers() {
                                 </div>
                             </div>
                             <div class="text-end">
-                                <small class="text-muted">
+                                <small class="text-muted d-block mb-2">
                                     ${seller.last_update ? new Date(seller.last_update).toLocaleTimeString('fr-FR') : ''}
                                 </small>
+                                <button class="btn btn-sm btn-danger" onclick="cancelCrawl('${seller.domain}')" title="Arrêter et blacklister ce site">
+                                    <i class="bi bi-x-circle"></i> Annuler
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -832,5 +835,36 @@ setInterval(loadStats, 30000);
 
 // Auto-refresh toutes les 60 secondes pour les stats quotidiennes
 setInterval(loadDailyStats, 60000);
+
+// Fonction pour annuler le crawl d'un site
+async function cancelCrawl(domain) {
+    if (!confirm(`Voulez-vous vraiment arrêter le crawl de "${domain}" et le blacklister ?\n\nCe site ne sera plus jamais crawlé et un nouveau site sera automatiquement démarré.`)) {
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/cancel-crawl', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ domain: domain })
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            alert(`✅ Succès!\n\n${result.message}\n\nNouveau site démarré: ${result.new_site || 'Aucun'}`);
+            // Recharger immédiatement l'état des crawlers
+            loadActiveCrawlers();
+            loadStats();
+        } else {
+            alert(`❌ Erreur: ${result.error || 'Impossible d\'annuler le crawl'}`);
+        }
+    } catch (error) {
+        console.error('Erreur lors de l\'annulation du crawl:', error);
+        alert('❌ Erreur lors de la communication avec le serveur');
+    }
+}
 </script>
 {% endblock %}
