@@ -15,6 +15,18 @@
     </div>
 </div>
 
+<!-- Alertes Processus -->
+<div class="row mb-4" id="process-alerts-section" style="display: none;">
+    <div class="col-12">
+        <div class="alert alert-danger" role="alert">
+            <h5 class="alert-heading">
+                <i class="bi bi-exclamation-triangle-fill"></i> Alerte Processus
+            </h5>
+            <div id="process-alerts-content"></div>
+        </div>
+    </div>
+</div>
+
 <!-- Statistiques principales -->
 <div class="row mb-4" id="stats-cards">
     <div class="col-md-3">
@@ -150,25 +162,39 @@
             <div class="card-body">
                 <!-- Résumé 30 jours -->
                 <div class="row mb-3 text-center">
-                    <div class="col-md-4">
+                    <div class="col-md-2 col-sm-6 mb-2">
                         <div class="p-3 bg-light rounded">
                             <h6 class="text-muted mb-2">Total Sites Crawlés</h6>
                             <h3 class="text-primary mb-0" id="summary-sites-crawled">-</h3>
-                            <small class="text-muted"><span id="avg-sites-day">-</span>/jour en moyenne</small>
+                            <small class="text-muted"><span id="avg-sites-day">-</span>/jour</small>
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-2 col-sm-6 mb-2">
                         <div class="p-3 bg-light rounded">
                             <h6 class="text-muted mb-2">Acheteurs de Liens</h6>
                             <h3 class="text-success mb-0" id="summary-buyers-found">-</h3>
-                            <small class="text-muted"><span id="avg-buyers-day">-</span>/jour en moyenne</small>
+                            <small class="text-muted"><span id="avg-buyers-day">-</span>/jour</small>
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-2 col-sm-6 mb-2">
+                        <div class="p-3 bg-light rounded">
+                            <h6 class="text-muted mb-2">SIRET Trouvés</h6>
+                            <h3 class="text-warning mb-0" id="summary-siret-found">-</h3>
+                            <small class="text-muted"><span id="avg-siret-day">-</span>/jour</small>
+                        </div>
+                    </div>
+                    <div class="col-md-2 col-sm-6 mb-2">
+                        <div class="p-3 bg-light rounded">
+                            <h6 class="text-muted mb-2">Dirigeants Trouvés</h6>
+                            <h3 class="text-secondary mb-0" id="summary-leaders-found">-</h3>
+                            <small class="text-muted"><span id="avg-leaders-day">-</span>/jour</small>
+                        </div>
+                    </div>
+                    <div class="col-md-2 col-sm-6 mb-2">
                         <div class="p-3 bg-light rounded">
                             <h6 class="text-muted mb-2">Emails Trouvés</h6>
                             <h3 class="text-info mb-0" id="summary-emails-found">-</h3>
-                            <small class="text-muted"><span id="avg-emails-day">-</span>/jour en moyenne</small>
+                            <small class="text-muted"><span id="avg-emails-day">-</span>/jour</small>
                         </div>
                     </div>
                 </div>
@@ -344,10 +370,14 @@
                     <span id="live-recent-emails" class="ms-3"><strong>-</strong> emails trouvés</span>
                 </div>
 
-                <!-- Crawlers en cours (en temps réel) -->
-                <div class="alert alert-success mb-3" id="crawlers-section" style="display: none;">
-                    <h6 class="mb-2"><i class="bi bi-gear-fill"></i> Crawlers en Cours (<span id="active-crawlers-count">0</span>)</h6>
-                    <div id="active-crawlers-list"></div>
+                <!-- Workers Actifs avec détail des pages crawlées -->
+                <div class="mb-3" id="crawlers-section">
+                    <h6 class="mb-2"><i class="bi bi-gear-fill"></i> Workers Actifs (<span id="active-crawlers-count">0</span>)</h6>
+                    <div id="active-workers-list" class="row">
+                        <div class="text-center text-muted py-2 col-12">
+                            <i class="bi bi-hourglass-split"></i> Chargement...
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Sites vendeurs en cours -->
@@ -403,9 +433,13 @@ async function loadDailyStats() {
         // Mettre à jour le résumé 30 jours
         document.getElementById('summary-sites-crawled').textContent = data.summary_30_days.total_sites_crawled.toLocaleString();
         document.getElementById('summary-buyers-found').textContent = data.summary_30_days.total_buyers_found.toLocaleString();
+        document.getElementById('summary-siret-found').textContent = data.summary_30_days.total_siret_found.toLocaleString();
+        document.getElementById('summary-leaders-found').textContent = data.summary_30_days.total_leaders_found.toLocaleString();
         document.getElementById('summary-emails-found').textContent = data.summary_30_days.total_emails_found.toLocaleString();
         document.getElementById('avg-sites-day').textContent = data.summary_30_days.avg_sites_per_day;
         document.getElementById('avg-buyers-day').textContent = data.summary_30_days.avg_buyers_per_day;
+        document.getElementById('avg-siret-day').textContent = data.summary_30_days.avg_siret_per_day;
+        document.getElementById('avg-leaders-day').textContent = data.summary_30_days.avg_leaders_per_day;
         document.getElementById('avg-emails-day').textContent = data.summary_30_days.avg_emails_per_day;
 
         // Créer le graphique
@@ -431,6 +465,8 @@ function updateDailyStatsChart(dailyData) {
     });
     const sitesCrawled = dailyData.map(d => d.sites_crawled);
     const buyersFound = dailyData.map(d => d.buyers_found);
+    const siretFound = dailyData.map(d => d.siret_found || 0);
+    const leadersFound = dailyData.map(d => d.leaders_found || 0);
     const emailsFound = dailyData.map(d => d.emails_found);
 
     dailyStatsChart = new Chart(ctx, {
@@ -451,6 +487,22 @@ function updateDailyStatsChart(dailyData) {
                     data: buyersFound,
                     borderColor: '#198754',
                     backgroundColor: 'rgba(25, 135, 84, 0.1)',
+                    tension: 0.3,
+                    fill: true
+                },
+                {
+                    label: 'SIRET Trouvés',
+                    data: siretFound,
+                    borderColor: '#ffc107',
+                    backgroundColor: 'rgba(255, 193, 7, 0.1)',
+                    tension: 0.3,
+                    fill: true
+                },
+                {
+                    label: 'Dirigeants Trouvés',
+                    data: leadersFound,
+                    borderColor: '#6c757d',
+                    backgroundColor: 'rgba(108, 117, 125, 0.1)',
                     tension: 0.3,
                     fill: true
                 },
@@ -682,129 +734,148 @@ async function loadLiveScrapingStats() {
     }
 }
 
-// Charger l'état en temps réel des crawlers actifs
+// Charger les alertes processus
+async function loadProcessAlerts() {
+    try {
+        const response = await fetch('/api/process-alerts');
+        const alerts = await response.json();
+
+        const alertsSection = document.getElementById('process-alerts-section');
+        const alertsContent = document.getElementById('process-alerts-content');
+
+        // Vérifier s'il y a des alertes avec statut "error"
+        const hasErrors = Object.values(alerts).some(alert => alert.status === 'error');
+
+        if (hasErrors) {
+            alertsSection.style.display = 'block';
+
+            let html = '<ul class="mb-0">';
+            for (const [processName, alert] of Object.entries(alerts)) {
+                if (alert.status === 'error') {
+                    let processDisplayName = processName;
+                    if (processName === 'siret_extractor') {
+                        processDisplayName = 'Script SIRET Extractor';
+                    } else if (processName === 'leaders_extractor') {
+                        processDisplayName = 'Script Leaders Extractor';
+                    }
+                    const timestamp = alert.timestamp ? new Date(alert.timestamp).toLocaleString('fr-FR') : 'N/A';
+                    html += `
+                        <li>
+                            <strong>${processDisplayName}:</strong> ${alert.message}
+                            <br><small class="text-muted">Dernière vérification: ${timestamp}</small>
+                        </li>
+                    `;
+                }
+            }
+            html += '</ul>';
+            alertsContent.innerHTML = html;
+        } else {
+            alertsSection.style.display = 'none';
+        }
+    } catch (error) {
+        console.error('Erreur lors du chargement des alertes:', error);
+    }
+}
+
+// Charger l'état en temps réel des workers actifs
 async function loadActiveCrawlers() {
     try {
-        const response = await fetch('/api/scraping-state');
-        const data = await response.json();
+        const workersResponse = await fetch('/api/crawl/workers');
+        const workersData = await workersResponse.json();
 
-        const crawlersSection = document.getElementById('crawlers-section');
         const crawlersCount = document.getElementById('active-crawlers-count');
-        const crawlersList = document.getElementById('active-crawlers-list');
+        const workersList = document.getElementById('active-workers-list');
 
-        // Toujours afficher la section
-        crawlersSection.style.display = 'block';
+        crawlersCount.textContent = workersData.active_count || 0;
 
-        // Calculer l'âge de la dernière mise à jour
-        const lastUpdate = data.last_update ? new Date(data.last_update) : null;
-        const now = new Date();
-        const ageMinutes = lastUpdate ? Math.floor((now - lastUpdate) / 60000) : null;
-
-        // Considérer comme inactif si plus de 5 minutes sans mise à jour
-        const isActive = lastUpdate && ageMinutes < 5;
-
-        if (data.sellers_in_progress && data.sellers_in_progress.length > 0 && isActive) {
-            // Crawlers actifs
-            crawlersSection.className = 'alert alert-success mb-3';
-            crawlersCount.textContent = data.sellers_in_progress.length;
-
-            // Générer l'HTML pour chaque crawler actif
-            crawlersList.innerHTML = `
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <span><i class="bi bi-gear-fill"></i> <strong>Statut:</strong> <span class="badge bg-success">ACTIF</span></span>
-                    <small class="text-muted">Dernière mise à jour: ${lastUpdate ? lastUpdate.toLocaleString('fr-FR') : 'N/A'}</small>
+        if (!workersData.active_workers || workersData.active_workers.length === 0) {
+            workersList.innerHTML = `
+                <div class="col-12 text-center text-muted py-3">
+                    <i class="bi bi-pause-circle"></i> Aucun worker actif
                 </div>
-            ` + data.sellers_in_progress.map(seller => {
-                // Tronquer l'URL si trop longue
-                const shortUrl = seller.current_url && seller.current_url.length > 80
-                    ? seller.current_url.substring(0, 80) + '...'
-                    : seller.current_url;
+            `;
+            return;
+        }
 
-                return `
-                    <div class="mb-2 p-2 border rounded bg-white">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div class="flex-grow-1">
-                                <strong><i class="bi bi-globe2"></i> ${seller.domain}</strong>
-                                <div class="small text-muted mt-1">
-                                    <i class="bi bi-file-earmark-text"></i> Page actuelle: <code class="small">${shortUrl || 'Chargement...'}</code>
-                                </div>
-                                <div class="mt-1">
-                                    <span class="badge bg-info me-2">${seller.pages_crawled || 0} pages crawlées</span>
-                                    <span class="badge bg-success">${seller.buyers_found || 0} acheteurs trouvés</span>
-                                </div>
+        const now = new Date();
+        let html = '';
+
+        workersData.active_workers.forEach(worker => {
+            const lastBeat = worker.last_heartbeat ? new Date(worker.last_heartbeat) : null;
+            const secondsAgo = lastBeat ? Math.floor(Math.abs(now - lastBeat) / 1000) : null;
+
+            // Utiliser sites_in_progress si disponible
+            const sitesInProgress = worker.sites_in_progress || [];
+
+            // Générer la liste des sites en cours avec URLs récentes
+            let sitesHtml = '';
+            if (sitesInProgress.length > 0) {
+                sitesHtml = '<div class="mt-2" style="max-height: 250px; overflow-y: auto;">';
+                sitesInProgress.forEach(site => {
+                    const isFr = site.domain.endsWith('.fr');
+                    const recentUrls = site.recent_urls || [];
+
+                    sitesHtml += `
+                        <div class="border-bottom py-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span>
+                                    <i class="bi bi-globe2 ${isFr ? 'text-primary' : 'text-secondary'}"></i>
+                                    <strong class="${isFr ? 'text-primary' : ''}">${site.domain}</strong>
+                                </span>
+                                <span class="badge bg-info">${(site.pages || 0).toLocaleString()} pages</span>
                             </div>
-                            <div class="text-end">
-                                <small class="text-muted d-block mb-2">
-                                    ${seller.last_update ? new Date(seller.last_update).toLocaleTimeString('fr-FR') : ''}
-                                </small>
-                                <button class="btn btn-sm btn-danger" onclick="cancelCrawl('${seller.domain}')" title="Arrêter et blacklister ce site">
-                                    <i class="bi bi-x-circle"></i> Annuler
-                                </button>
+                            ${recentUrls.length > 0 ? `
+                                <div class="small text-muted mt-1" style="font-size: 0.75rem;">
+                                    <i class="bi bi-arrow-right"></i> Dernière page:
+                                    <code class="text-truncate d-inline-block" style="max-width: 300px; vertical-align: bottom;" title="${recentUrls[recentUrls.length - 1]}">${recentUrls[recentUrls.length - 1].replace(/^https?:\/\/[^/]+/, '')}</code>
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                });
+                sitesHtml += '</div>';
+            } else {
+                sitesHtml = '<div class="text-muted small mt-2"><i class="bi bi-hourglass"></i> En attente de tâches...</div>';
+            }
+
+            html += `
+                <div class="col-md-6 mb-3">
+                    <div class="card border-success h-100">
+                        <div class="card-header py-2 bg-success text-white">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <i class="bi bi-hdd-network"></i>
+                                    <strong>${worker.worker_id}</strong>
+                                </div>
+                                <small>il y a ${secondsAgo}s</small>
                             </div>
                         </div>
-                    </div>
-                `;
-            }).join('');
-        } else {
-            // Aucun crawler actif - afficher les données historiques
-            crawlersSection.className = 'alert alert-warning mb-3';
-            crawlersCount.textContent = '0';
-
-            const lastUpdateText = lastUpdate
-                ? `${lastUpdate.toLocaleString('fr-FR')} (il y a ${ageMinutes} minutes)`
-                : 'Jamais';
-
-            crawlersList.innerHTML = `
-                <div class="mb-3">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span><i class="bi bi-pause-circle"></i> <strong>Statut:</strong> <span class="badge bg-warning">INACTIF</span></span>
-                        <small class="text-muted">Dernière activité: ${lastUpdateText}</small>
-                    </div>
-                    <div class="text-muted small">
-                        <i class="bi bi-info-circle"></i> Aucun crawler n'est actuellement en cours d'exécution.
-                    </div>
-                </div>
-                ${data.sellers_in_progress && data.sellers_in_progress.length > 0 ? `
-                    <div class="border-top pt-2 mt-2">
-                        <h6 class="small"><i class="bi bi-clock-history"></i> Derniers crawlers exécutés:</h6>
-                        ${data.sellers_in_progress.map(seller => `
-                            <div class="mb-2 p-2 border rounded bg-light">
-                                <div class="d-flex justify-content-between align-items-start">
-                                    <div class="flex-grow-1">
-                                        <strong class="text-muted"><i class="bi bi-globe2"></i> ${seller.domain}</strong>
-                                        <div class="mt-1">
-                                            <span class="badge bg-secondary me-2">${seller.pages_crawled || 0} pages crawlées</span>
-                                            <span class="badge bg-secondary">${seller.buyers_found || 0} acheteurs trouvés</span>
-                                        </div>
-                                    </div>
-                                    <div class="text-end">
-                                        <small class="text-muted">
-                                            ${seller.last_update ? new Date(seller.last_update).toLocaleString('fr-FR') : 'N/A'}
-                                        </small>
-                                    </div>
-                                </div>
+                        <div class="card-body p-2">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="badge bg-info">${(worker.pages_crawled || 0).toLocaleString()} pages</span>
+                                <span class="badge bg-primary">${worker.tasks_completed || 0} tâches</span>
+                                <span class="badge bg-success">${worker.buyers_found || 0} acheteurs</span>
+                                <span class="badge bg-warning text-dark">${worker.emails_found || 0} emails</span>
                             </div>
-                        `).join('')}
-                    </div>
-                ` : ''}
-                <div class="border-top pt-2 mt-3">
-                    <h6 class="small mb-2"><i class="bi bi-play-circle"></i> Pour démarrer le scraping:</h6>
-                    <div class="small text-muted">
-                        <code class="bg-dark text-white p-1 rounded">python3 /var/www/Scrap_Email/find_emails.py</code>
-                        <div class="mt-1">ou</div>
-                        <code class="bg-dark text-white p-1 rounded">python3 /var/www/Scrap_Email/rescrape_sellers.py</code>
+                            <div class="small text-muted mb-1">
+                                <i class="bi bi-collection"></i> <strong>${sitesInProgress.length}</strong> sites en cours:
+                            </div>
+                            ${sitesHtml}
+                        </div>
                     </div>
                 </div>
             `;
-        }
+        });
+
+        workersList.innerHTML = html;
 
     } catch (error) {
-        console.error('Erreur lors du chargement des crawlers actifs:', error);
-        const crawlersSection = document.getElementById('crawlers-section');
-        const crawlersList = document.getElementById('active-crawlers-list');
-        crawlersSection.style.display = 'block';
-        crawlersSection.className = 'alert alert-danger mb-3';
-        crawlersList.innerHTML = '<div class="text-center"><i class="bi bi-exclamation-triangle"></i> Erreur lors du chargement du statut des crawlers</div>';
+        console.error('Erreur lors du chargement des workers actifs:', error);
+        document.getElementById('active-workers-list').innerHTML = `
+            <div class="col-12 text-center text-danger py-2">
+                <i class="bi bi-exclamation-triangle"></i> Erreur de chargement
+            </div>
+        `;
     }
 }
 
@@ -814,6 +885,7 @@ function refreshStats() {
     loadDailyStats();
     loadLiveScrapingStats();
     loadActiveCrawlers();
+    loadProcessAlerts();
 }
 
 // Charger au démarrage
@@ -822,16 +894,18 @@ document.addEventListener('DOMContentLoaded', () => {
     loadDailyStats();
     loadLiveScrapingStats();
     loadActiveCrawlers();
+    loadProcessAlerts();
 });
 
-// Auto-refresh toutes les 5 secondes pour les crawlers actifs (temps réel)
-setInterval(loadActiveCrawlers, 5000);
+// Auto-refresh toutes les 5 minutes pour les crawlers actifs (l'API fait des SSH qui prennent du temps)
+setInterval(loadActiveCrawlers, 300000);
 
 // Auto-refresh toutes les 10 secondes pour le scraping en temps réel
 setInterval(loadLiveScrapingStats, 10000);
 
-// Auto-refresh toutes les 30 secondes pour les stats globales
+// Auto-refresh toutes les 30 secondes pour les stats globales et alertes
 setInterval(loadStats, 30000);
+setInterval(loadProcessAlerts, 30000);
 
 // Auto-refresh toutes les 60 secondes pour les stats quotidiennes
 setInterval(loadDailyStats, 60000);
@@ -855,9 +929,9 @@ async function cancelCrawl(domain) {
 
         if (response.ok) {
             alert(`✅ Succès!\n\n${result.message}\n\nNouveau site démarré: ${result.new_site || 'Aucun'}`);
-            // Recharger immédiatement l'état des crawlers
-            loadActiveCrawlers();
+            // Recharger immédiatement les stats
             loadStats();
+            loadLiveScrapingStats();
         } else {
             alert(`❌ Erreur: ${result.error || 'Impossible d\'annuler le crawl'}`);
         }

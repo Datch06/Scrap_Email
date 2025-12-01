@@ -6,19 +6,30 @@ Application Flask pour l'interface de gestion du scraping
 from flask import Flask, render_template, jsonify, request, send_file, redirect, url_for
 from flask_cors import CORS
 from sqlalchemy import func, case
-from database import init_db, get_session, Site, ScrapingJob, SiteStatus
+from database import init_db, get_session, Site, ScrapingJob, SiteStatus, safe_commit
 from campaign_database import get_campaign_session, Unsubscribe
 from datetime import datetime, timedelta
+from pathlib import Path
 import json
 import csv
 import logging
+import threading
 from io import StringIO, BytesIO
 from scenario_routes import register_scenario_routes
 from segment_routes import register_segment_routes
+from distributed_crawl_api import crawl_api
 
 # Logger
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Cache pour les stats (évite les requêtes SQL lourdes à chaque refresh)
+STATS_CACHE_FILE = Path('/var/www/Scrap_Email/stats_cache.json')
+DAILY_STATS_CACHE_FILE = Path('/var/www/Scrap_Email/daily_stats_cache.json')
+STATS_CACHE_MAX_AGE = 300  # 5 minutes
+DAILY_STATS_CACHE_MAX_AGE = 600  # 10 minutes (données journalières, moins urgentes)
+stats_update_lock = threading.Lock()
+daily_stats_update_lock = threading.Lock()
 
 app = Flask(__name__)
 CORS(app)
@@ -31,6 +42,9 @@ register_scenario_routes(app)
 
 # Enregistrer les routes des segments
 register_segment_routes(app)
+
+# Enregistrer les routes de crawl distribué
+app.register_blueprint(crawl_api)
 
 
 # ============================================================================
@@ -67,11 +81,49 @@ def campaigns_page():
 # API - STATISTIQUES
 # ============================================================================
 
-@app.route('/api/stats')
-def get_stats():
-    """Obtenir les statistiques globales"""
-    session = get_session()
+def load_stats_cache():
+    """Charger les stats depuis le cache si disponible et récent"""
+    if STATS_CACHE_FILE.exists():
+        try:
+            with open(STATS_CACHE_FILE, 'r') as f:
+                cache = json.load(f)
+            cached_at = datetime.fromisoformat(cache.get('cached_at', '2000-01-01'))
+            if (datetime.utcnow() - cached_at).total_seconds() < STATS_CACHE_MAX_AGE:
+                return cache.get('data')
+        except Exception as e:
+            logger.warning(f"Erreur lecture cache stats: {e}")
+    return None
 
+
+def save_stats_cache(data):
+    """Sauvegarder les stats dans le cache"""
+    try:
+        cache = {
+            'cached_at': datetime.utcnow().isoformat(),
+            'data': data
+        }
+        with open(STATS_CACHE_FILE, 'w') as f:
+            json.dump(cache, f)
+    except Exception as e:
+        logger.warning(f"Erreur écriture cache stats: {e}")
+
+
+def compute_stats_background():
+    """Calculer les stats en arrière-plan et mettre à jour le cache"""
+    if not stats_update_lock.acquire(blocking=False):
+        return  # Un autre thread calcule déjà
+    try:
+        logger.info("🔄 Calcul des stats en arrière-plan...")
+        data = compute_stats_data()
+        save_stats_cache(data)
+        logger.info("✅ Stats mises à jour dans le cache")
+    finally:
+        stats_update_lock.release()
+
+
+def compute_stats_data():
+    """Calculer les stats depuis la DB (fonction lourde)"""
+    session = get_session()
     try:
         # Total de sites
         total_sites = session.query(Site).count()
@@ -100,6 +152,7 @@ def get_stats():
         sites_with_leaders = session.query(Site).filter(
             Site.leaders.isnot(None),
             Site.leaders != '',
+            Site.leaders != '[]',
             Site.leaders != 'NON TROUVÉ'
         ).count()
 
@@ -147,8 +200,12 @@ def get_stats():
         emails_invalid = session.query(Site).filter(Site.email_validation_status == 'invalid').count()
         emails_risky = session.query(Site).filter(Site.email_validation_status == 'risky').count()
 
-        # Stats CMS
-        sites_with_cms = session.query(Site).filter(Site.cms.isnot(None)).count()
+        # Stats CMS (exclure NONE et vide)
+        sites_with_cms = session.query(Site).filter(
+            Site.cms.isnot(None),
+            Site.cms != '',
+            Site.cms != 'NONE'
+        ).count()
         cms_counts = {}
         cms_results = session.query(Site.cms, func.count(Site.id)).filter(Site.cms.isnot(None)).group_by(Site.cms).all()
         for cms, count in cms_results:
@@ -187,7 +244,13 @@ def get_stats():
             (Site.backlinks_crawled == False) | (Site.backlinks_crawled.is_(None))
         ).count()
 
-        return jsonify({
+        # Stats Contacts extraits
+        sites_with_contacts = session.query(Site).filter(
+            Site.contact_firstname.isnot(None),
+            Site.contact_lastname.isnot(None)
+        ).count()
+
+        return {
             'total_sites': total_sites,
             'status_counts': status_counts,
             'sites_with_email': sites_with_email,
@@ -203,7 +266,6 @@ def get_stats():
             'siret_rate': round((sites_with_siret / total_sites * 100) if total_sites > 0 else 0, 1),
             'leaders_rate': round((sites_with_leaders / total_sites * 100) if total_sites > 0 else 0, 1),
             'completion_rate': round((sites_complete / total_sites * 100) if total_sites > 0 else 0, 1),
-            # Stats validation
             'emails_validated': emails_validated,
             'emails_valid': emails_valid,
             'emails_invalid': emails_invalid,
@@ -211,19 +273,14 @@ def get_stats():
             'emails_deliverable': emails_deliverable,
             'validation_rate': round((emails_validated / sites_with_email * 100) if sites_with_email > 0 else 0, 1),
             'deliverable_rate': round((emails_deliverable / emails_validated * 100) if emails_validated > 0 else 0, 1),
-            # Stats CMS
             'sites_with_cms': sites_with_cms,
             'cms_counts': cms_counts,
             'cms_rate': round((sites_with_cms / total_sites * 100) if total_sites > 0 else 0, 1),
-            # Stats Blacklist
             'sites_blacklisted': sites_blacklisted,
             'blacklist_rate': round((sites_blacklisted / total_sites * 100) if total_sites > 0 else 0, 1),
-            # Stats Sites Vendeurs
             'total_sellers': total_sellers,
             'total_buyers': total_buyers,
-            # Stats Désinscrits
             'total_unsubscribed': total_unsubscribed,
-            # Stats Scraping Backlinks
             'backlinks_scraped': backlinks_scraped,
             'backlinks_not_scraped': backlinks_not_scraped,
             'backlinks_total': backlinks_scraped + backlinks_not_scraped,
@@ -231,10 +288,48 @@ def get_stats():
             'sellers_scraped': sellers_scraped,
             'sellers_not_scraped': sellers_not_scraped,
             'sellers_scraping_progress': round((sellers_scraped / total_sellers * 100) if total_sellers > 0 else 0, 1),
-        })
-
+            'sites_with_contacts': sites_with_contacts,
+            'contacts_rate': round((sites_with_contacts / sites_with_email * 100) if sites_with_email > 0 else 0, 1),
+        }
     finally:
         session.close()
+
+
+@app.route('/api/stats')
+def get_stats():
+    """Obtenir les statistiques globales (avec cache)"""
+    # Essayer de charger depuis le cache
+    cached_data = load_stats_cache()
+    if cached_data:
+        return jsonify(cached_data)
+
+    # Pas de cache valide - lancer le calcul en arrière-plan
+    threading.Thread(target=compute_stats_background, daemon=True).start()
+
+    # Retourner le cache périmé s'il existe, sinon des valeurs par défaut
+    if STATS_CACHE_FILE.exists():
+        try:
+            with open(STATS_CACHE_FILE, 'r') as f:
+                cache = json.load(f)
+            return jsonify(cache.get('data', {}))
+        except:
+            pass
+
+    # Retourner des valeurs par défaut pendant le premier calcul
+    return jsonify({
+        'total_sites': 0,
+        'status_counts': {},
+        'sites_with_email': 0,
+        'sites_with_siret': 0,
+        'sites_with_leaders': 0,
+        'sites_complete': 0,
+        'email_rate': 0,
+        'siret_rate': 0,
+        'leaders_rate': 0,
+        'completion_rate': 0,
+        'loading': True,
+        'message': 'Calcul des stats en cours...'
+    })
 
 
 @app.route('/api/scraping-live')
@@ -266,10 +361,12 @@ def get_scraping_live():
             Site.email_found_at >= one_hour_ago
         ).count()
 
-        # Top 10 derniers sites vendeurs traités
+        # Top 10 derniers sites vendeurs RÉELLEMENT CRAWLÉS (pas juste mis à jour)
         recent_sellers = session.query(Site).filter(
-            Site.is_linkavista_seller == True
-        ).order_by(Site.updated_at.desc()).limit(10).all()
+            Site.is_linkavista_seller == True,
+            Site.backlinks_crawled == True,
+            Site.backlinks_crawled_at.isnot(None)
+        ).order_by(Site.backlinks_crawled_at.desc()).limit(10).all()
 
         sellers_data = []
         for seller in recent_sellers:
@@ -278,7 +375,7 @@ def get_scraping_live():
             sellers_data.append({
                 'domain': seller.domain,
                 'buyers_found': buyers_count,
-                'updated_at': seller.updated_at.isoformat() if seller.updated_at else None
+                'updated_at': seller.backlinks_crawled_at.isoformat() if seller.backlinks_crawled_at else None
             })
 
         # Derniers acheteurs avec email trouvés
@@ -324,19 +421,43 @@ def get_scraping_live():
 def get_scraping_state():
     """Obtenir l'état en temps réel des crawlers actifs (pages en cours de crawling)"""
     from pathlib import Path
+    from datetime import datetime, timedelta
 
-    state_file = Path('/var/www/Scrap_Email/scraping_state.json')
+    workers_file = Path('/var/www/Scrap_Email/crawl_workers.json')
+    WORKER_TIMEOUT = 300  # 5 minutes
 
     try:
-        if state_file.exists():
-            with open(state_file, 'r') as f:
-                state = json.load(f)
-            return jsonify(state)
-        else:
-            return jsonify({
-                'sellers_in_progress': [],
-                'last_update': None
-            })
+        sites = []
+        if workers_file.exists():
+            with open(workers_file, 'r') as f:
+                workers_data = json.load(f)
+
+            # Parcourir tous les workers actifs et collecter leurs sites en cours
+            for worker_id, worker in workers_data.get('workers', {}).items():
+                # Vérifier si le worker est encore actif
+                last_heartbeat = worker.get('last_heartbeat')
+                if last_heartbeat:
+                    try:
+                        last_beat = datetime.fromisoformat(last_heartbeat)
+                        if (datetime.utcnow() - last_beat).total_seconds() > WORKER_TIMEOUT:
+                            continue  # Worker mort, ignorer
+                    except:
+                        continue
+
+                # Ajouter les sites en cours de ce worker
+                for site in worker.get('sites_in_progress', []):
+                    sites.append({
+                        'domain': site.get('domain', '?'),
+                        'pages_crawled': site.get('pages', 0),
+                        'recent_urls': site.get('recent_urls', []),
+                        'worker_id': worker_id
+                    })
+
+        return jsonify({
+            'sites': sites,
+            'count': len(sites),
+            'last_update': datetime.utcnow().isoformat()
+        })
 
     except Exception as e:
         logger.error(f"Erreur lors de la lecture du state de scraping: {e}")
@@ -427,7 +548,7 @@ def cancel_crawl():
                     site.backlinks_crawled = True
                     site.backlinks_crawled_at = datetime.utcnow()
                     site.updated_at = datetime.utcnow()
-                    session.commit()
+                    safe_commit(session)
                     logger.info(f"🚫 Site {domain} blacklisté dans la DB (async)")
                 session.close()
                 break  # Succès
@@ -474,37 +595,408 @@ def cancel_crawl():
     })
 
 
-@app.route('/api/stats/daily')
-def get_daily_stats():
-    """Obtenir les statistiques quotidiennes (30 derniers jours)"""
-    session = get_session()
+@app.route('/api/process-alerts')
+def get_process_alerts():
+    """Obtenir les alertes des processus en arrière-plan"""
+    from pathlib import Path
+
+    alert_file = Path('/var/www/Scrap_Email/process_alerts.json')
 
     try:
-        # Calculer la date d'il y a 30 jours
-        thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+        if alert_file.exists():
+            with open(alert_file, 'r') as f:
+                alerts = json.load(f)
+            return jsonify(alerts)
+        else:
+            return jsonify({
+                "siret_extractor": {
+                    "status": "unknown",
+                    "message": "Fichier d'alertes non trouvé",
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "last_check": datetime.utcnow().isoformat()
+                }
+            })
+    except json.JSONDecodeError as e:
+        logger.error(f"Erreur lors de la lecture des alertes: {e}")
+        # Réparer le fichier corrompu
+        try:
+            with open(alert_file, 'w') as f:
+                json.dump({}, f)
+            logger.info("Fichier process_alerts.json réparé")
+        except:
+            pass
+        return jsonify({})
+    except Exception as e:
+        logger.error(f"Erreur lors de la lecture des alertes: {e}")
+        return jsonify({
+            "siret_extractor": {
+                "status": "error",
+                "message": f"Erreur: {str(e)}",
+                "timestamp": datetime.utcnow().isoformat(),
+                "last_check": datetime.utcnow().isoformat()
+            }
+        }), 500
 
-        # Statistiques par jour pour les 30 derniers jours
+
+@app.route('/api/scripts-status')
+def get_scripts_status():
+    """Obtenir le statut de tous les scripts Python en temps réel avec auto-restart"""
+    import subprocess
+    from pathlib import Path
+
+    try:
+        # Obtenir la liste des processus
+        result = subprocess.run(['ps', 'aux'], capture_output=True, text=True)
+        processes = result.stdout
+
+        # Scripts à monitorer avec configuration de relance
+        scripts_config = {
+            'app.py': {
+                'name': 'API Flask',
+                'icon': '🌐',
+                'category': 'core',
+                'auto_restart': False,
+                'critical': True,
+                'description': 'Interface web principale qui expose toutes les API et sert le dashboard'
+            },
+            'campaign_sender.py': {
+                'name': 'Envoi Campagnes',
+                'icon': '📧',
+                'category': 'email',
+                'auto_restart': True,
+                'command': 'cd /var/www/Scrap_Email && nohup python3 campaign_sender.py >> campaign_sender.log 2>&1 &',
+                'critical': True,
+                'description': 'Envoie automatiquement les emails de campagnes selon les scénarios programmés'
+            },
+            'continuous_campaign_worker.py': {
+                'name': 'Worker Campagnes',
+                'icon': '⚙️',
+                'category': 'email',
+                'auto_restart': True,
+                'command': 'cd /var/www/Scrap_Email && nohup python3 continuous_campaign_worker.py --interval 30 >> continuous_campaign_worker.log 2>&1 &',
+                'critical': True,
+                'description': 'Traite en continu les campagnes d\'emails en attente dans la queue'
+            },
+            'extract_siret_leaders.py': {
+                'name': 'SIRET/Dirigeants',
+                'icon': '🏢',
+                'category': 'extraction',
+                'auto_restart': True,
+                'command': 'cd /var/www/Scrap_Email && nohup python3 extract_siret_leaders.py --batch-size 50 --delay 2 >> siret_extractor.log 2>&1 &',
+                'critical': True,
+                'description': 'Enrichit les sites avec les données SIRET et informations des dirigeants via API Pappers'
+            },
+            'scrape_backlinks_async.py': {
+                'name': 'Scraping Backlinks',
+                'icon': '🔗',
+                'category': 'scraping',
+                'auto_restart': True,
+                'command': 'cd /var/www/Scrap_Email && nohup python3 scrape_backlinks_async.py >> scrape_backlinks.log 2>&1 &',
+                'critical': True,
+                'description': 'Crawle les sites vendeurs de backlinks pour découvrir les acheteurs et leurs emails'
+            },
+            'validate_emails_daemon.py': {
+                'name': 'Validation Emails',
+                'icon': '✉️',
+                'category': 'email',
+                'auto_restart': True,
+                'command': 'cd /var/www/Scrap_Email && nohup python3 validate_emails_daemon.py --batch-size 100 --check-interval 30 >> email_validation_daemon.log 2>&1 &',
+                'critical': True,
+                'description': 'Vérifie la validité des adresses emails via vérification syntaxique et DNS MX'
+            },
+            'rescrape_no_emails_async.py': {
+                'name': 'Recherche Emails',
+                'icon': '🔍',
+                'category': 'email',
+                'auto_restart': True,
+                'command': 'cd /var/www/Scrap_Email && nohup python3 rescrape_no_emails_async.py --limit 1000 --concurrent 25 >> rescrape_emails.log 2>&1 &',
+                'critical': True,
+                'description': 'Re-scrape les sites où aucun email n\'a été trouvé pour tenter d\'en découvrir'
+            },
+            'scenario_daemon.py': {
+                'name': 'Scénarios Auto',
+                'icon': '🎯',
+                'category': 'automation',
+                'auto_restart': True,
+                'command': 'cd /var/www/Scrap_Email && nohup python3 scenario_daemon.py >> scenario_daemon.log 2>&1 &',
+                'critical': True,
+                'description': 'Exécute automatiquement les scénarios d\'emails selon les règles définies'
+            },
+            'scenario_orchestrator.py': {
+                'name': 'Orchestrateur',
+                'icon': '🎼',
+                'category': 'automation',
+                'auto_restart': True,
+                'command': 'cd /var/www/Scrap_Email && nohup python3 scenario_orchestrator.py >> scenario_orchestrator.log 2>&1 &',
+                'critical': True,
+                'description': 'Coordonne et orchestre l\'exécution des différents scénarios d\'automation'
+            },
+            'cms_detector_daemon.py': {
+                'name': 'Détection CMS',
+                'icon': '🔍',
+                'category': 'extraction',
+                'auto_restart': True,
+                'command': 'cd /var/www/Scrap_Email && nohup python3 cms_detector_daemon.py --batch-size 150 --interval 15 >> cms_detector.log 2>&1 &',
+                'critical': False,
+                'description': 'Détecte le CMS utilisé par chaque site (WordPress, Prestashop, Shopify, etc.)'
+            },
+            'find_any_valid_email_daemon.py': {
+                'name': 'Guessing Emails',
+                'icon': '🎯',
+                'category': 'email',
+                'auto_restart': True,
+                'command': 'cd /var/www/Scrap_Email && nohup python3 find_any_valid_email_daemon.py --check-interval 300 --batch-size 50 --limit-per-run 500 >> find_any_valid_email_daemon.log 2>&1 &',
+                'critical': True,
+                'description': 'Teste des emails génériques (contact@, info@, etc.) sur les sites sans email et les valide via SMTP'
+            },
+            'language_detector_daemon.py': {
+                'name': 'Détection de Langue',
+                'icon': '🌍',
+                'category': 'detection',
+                'auto_restart': True,
+                'command': 'cd /var/www/Scrap_Email && nohup python3 language_detector_daemon.py --batch-size 100 --interval 30 >> language_detector.log 2>&1 &',
+                'critical': False,
+                'description': 'Détecte automatiquement la langue principale de chaque site (français, anglais, espagnol, etc.)'
+            },
+            'extract_contact_names_daemon.py': {
+                'name': 'Extraction Contacts',
+                'icon': '👤',
+                'category': 'extraction',
+                'auto_restart': True,
+                'command': 'cd /var/www/Scrap_Email && nohup python3 extract_contact_names_daemon.py --check-interval 60 --batch-size 100 --limit-per-run 1000 >> extract_contact_names_daemon.log 2>&1 &',
+                'critical': False,
+                'description': 'Extrait les prénoms et noms depuis les adresses email (ex: jean.dupont@mail.com → Jean Dupont)'
+            },
+        }
+
+        active_scripts = []
+        inactive_scripts = []
+        restart_attempts = []
+
+        # Analyser les processus
+        for script_name, config in scripts_config.items():
+            is_running = script_name in processes
+
+            if is_running:
+                # Script actif
+                for line in processes.split('\n'):
+                    if script_name in line and 'python' in line.lower():
+                        parts = line.split()
+                        if len(parts) >= 11:
+                            active_scripts.append({
+                                'script': script_name,
+                                'name': config['name'],
+                                'icon': config['icon'],
+                                'category': config['category'],
+                                'status': 'running',
+                                'pid': parts[1],
+                                'cpu': parts[2],
+                                'memory': parts[3],
+                                'critical': config.get('critical', False),
+                                'description': config.get('description', '')
+                            })
+                        break
+            else:
+                # Script inactif
+                script_info = {
+                    'script': script_name,
+                    'name': config['name'],
+                    'icon': config['icon'],
+                    'category': config['category'],
+                    'status': 'stopped',
+                    'critical': config.get('critical', False),
+                    'auto_restart': config.get('auto_restart', False)
+                }
+
+                # Relancer si auto_restart activé
+                if config.get('auto_restart', False) and config.get('command'):
+                    try:
+                        logger.info(f"Relance automatique: {script_name}")
+                        subprocess.Popen(config['command'], shell=True, cwd='/var/www/Scrap_Email')
+                        script_info['restart_attempted'] = True
+                        script_info['restart_status'] = 'success'
+                        restart_attempts.append({
+                            'script': script_name,
+                            'name': config['name'],
+                            'status': 'restarted',
+                            'message': 'Relancé automatiquement'
+                        })
+                    except Exception as e:
+                        logger.error(f"Échec relance {script_name}: {e}")
+                        script_info['restart_attempted'] = True
+                        script_info['restart_status'] = 'failed'
+                        script_info['error'] = str(e)
+                        restart_attempts.append({
+                            'script': script_name,
+                            'name': config['name'],
+                            'status': 'failed',
+                            'message': f'Échec: {str(e)}'
+                        })
+
+                inactive_scripts.append(script_info)
+
+        # Lire alertes
+        alert_file = Path('/var/www/Scrap_Email/process_alerts.json')
+        alerts = {}
+        if alert_file.exists():
+            try:
+                with open(alert_file, 'r') as f:
+                    alerts = json.load(f)
+            except json.JSONDecodeError:
+                # Fichier corrompu, le réparer
+                try:
+                    with open(alert_file, 'w') as f:
+                        json.dump({}, f)
+                except:
+                    pass
+                alerts = {}
+
+        # Ajouter les crawl workers (locaux et distants)
+        crawl_workers = {
+            'local': {'count': 0, 'workers': [], 'min_required': 1},
+            'remote': {'count': 0, 'workers': [], 'min_required': 8, 'host': 'ns500898 (192.99.44.191)'},
+            'remote2': {'count': 0, 'workers': [], 'min_required': 4, 'host': 'prestashop (137.74.26.28)'}
+        }
+
+        try:
+            # Workers locaux
+            for line in processes.split('\n'):
+                if 'crawl_worker_multi.py' in line and 'python3' in line and 'bash -c' not in line:
+                    parts = line.split()
+                    if len(parts) >= 11:
+                        crawl_workers['local']['workers'].append({
+                            'pid': parts[1],
+                            'cpu': parts[2],
+                            'memory': parts[3],
+                            'started': parts[8] if len(parts) > 8 else 'N/A'
+                        })
+            crawl_workers['local']['count'] = len(crawl_workers['local']['workers'])
+
+            # Workers distants ns500898 via SSH (avec timeout augmenté)
+            try:
+                remote_result = subprocess.run(
+                    ['ssh', '-o', 'ConnectTimeout=30', '-o', 'StrictHostKeyChecking=no', '-o', 'BatchMode=yes',
+                     'debian@192.99.44.191',
+                     "ps aux | grep 'python3.*crawl_worker_multi.py' | grep -v grep | grep -v 'bash -c'"],
+                    capture_output=True, text=True, timeout=60
+                )
+                for line in remote_result.stdout.strip().split('\n'):
+                    if line.strip() and 'crawl_worker_multi.py' in line:
+                        parts = line.split()
+                        if len(parts) >= 11 and parts[1].isdigit():
+                            crawl_workers['remote']['workers'].append({
+                                'pid': parts[1],
+                                'cpu': parts[2],
+                                'memory': parts[3],
+                                'started': parts[8] if len(parts) > 8 else 'N/A'
+                            })
+                crawl_workers['remote']['count'] = len(crawl_workers['remote']['workers'])
+            except (subprocess.TimeoutExpired, Exception) as e:
+                crawl_workers['remote']['error'] = str(e)
+
+            # Workers distants prestashop via SSH (avec timeout augmenté)
+            try:
+                remote2_result = subprocess.run(
+                    ['ssh', '-o', 'ConnectTimeout=30', '-o', 'StrictHostKeyChecking=no', '-o', 'BatchMode=yes',
+                     'debian@137.74.26.28',
+                     "ps aux | grep 'python3.*crawl_worker_multi.py' | grep -v grep | grep -v 'bash -c'"],
+                    capture_output=True, text=True, timeout=60
+                )
+                for line in remote2_result.stdout.strip().split('\n'):
+                    if line.strip() and 'crawl_worker_multi.py' in line:
+                        parts = line.split()
+                        if len(parts) >= 11 and parts[1].isdigit():
+                            crawl_workers['remote2']['workers'].append({
+                                'pid': parts[1],
+                                'cpu': parts[2],
+                                'memory': parts[3],
+                                'started': parts[8] if len(parts) > 8 else 'N/A'
+                            })
+                crawl_workers['remote2']['count'] = len(crawl_workers['remote2']['workers'])
+            except (subprocess.TimeoutExpired, Exception) as e:
+                crawl_workers['remote2']['error'] = str(e)
+        except Exception as e:
+            logger.error(f"Erreur récupération crawl workers: {e}")
+
+        return jsonify({
+            'active_scripts': active_scripts,
+            'inactive_scripts': inactive_scripts,
+            'restart_attempts': restart_attempts,
+            'alerts': alerts,
+            'crawl_workers': crawl_workers,
+            'total_active': len(active_scripts),
+            'total_inactive': len(inactive_scripts),
+            'timestamp': datetime.utcnow().isoformat()
+        })
+
+    except Exception as e:
+        logger.error(f"Erreur statut scripts: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+def load_daily_stats_cache():
+    """Charger les stats daily depuis le cache si disponible et récent"""
+    if DAILY_STATS_CACHE_FILE.exists():
+        try:
+            with open(DAILY_STATS_CACHE_FILE, 'r') as f:
+                cache = json.load(f)
+            cached_at = datetime.fromisoformat(cache.get('cached_at', '2000-01-01'))
+            if (datetime.utcnow() - cached_at).total_seconds() < DAILY_STATS_CACHE_MAX_AGE:
+                return cache.get('data')
+        except Exception as e:
+            logger.warning(f"Erreur lecture cache daily stats: {e}")
+    return None
+
+
+def save_daily_stats_cache(data):
+    """Sauvegarder les stats daily dans le cache"""
+    try:
+        cache = {
+            'cached_at': datetime.utcnow().isoformat(),
+            'data': data
+        }
+        with open(DAILY_STATS_CACHE_FILE, 'w') as f:
+            json.dump(cache, f)
+    except Exception as e:
+        logger.warning(f"Erreur écriture cache daily stats: {e}")
+
+
+def compute_daily_stats_background():
+    """Calculer les stats daily en arrière-plan et mettre à jour le cache"""
+    if not daily_stats_update_lock.acquire(blocking=False):
+        return
+    try:
+        logger.info("🔄 Calcul des stats daily en arrière-plan...")
+        data = compute_daily_stats_data()
+        save_daily_stats_cache(data)
+        logger.info("✅ Stats daily mises à jour dans le cache")
+    finally:
+        daily_stats_update_lock.release()
+
+
+def compute_daily_stats_data():
+    """Calculer les stats daily depuis la DB (fonction lourde)"""
+    session = get_session()
+    try:
+        thirty_days_ago = datetime.utcnow() - timedelta(days=30)
         daily_data = []
 
-        for i in range(30, -1, -1):  # De 30 jours avant à aujourd'hui
+        for i in range(30, -1, -1):
             date = datetime.utcnow() - timedelta(days=i)
             date_start = date.replace(hour=0, minute=0, second=0, microsecond=0)
             date_end = date_start + timedelta(days=1)
 
-            # Sites crawlés ce jour-là
             sites_crawled = session.query(Site).filter(
                 Site.created_at >= date_start,
                 Site.created_at < date_end
             ).count()
 
-            # Sites acheteurs de liens (LinkAvista) ce jour-là
             buyers_found = session.query(Site).filter(
                 Site.purchased_from.isnot(None),
-                Site.created_at >= date_start,
-                Site.created_at < date_end
+                Site.purchased_at >= date_start,
+                Site.purchased_at < date_end
             ).count()
 
-            # Emails trouvés ce jour-là
             emails_found = session.query(Site).filter(
                 Site.email_found_at >= date_start,
                 Site.email_found_at < date_end,
@@ -513,18 +1005,45 @@ def get_daily_stats():
                 Site.emails != 'NO EMAIL FOUND'
             ).count()
 
+            siret_found = session.query(Site).filter(
+                Site.updated_at >= date_start,
+                Site.updated_at < date_end,
+                Site.siret.isnot(None),
+                Site.siret != '',
+                Site.siret != 'NON TROUVÉ'
+            ).count()
+
+            leaders_found = session.query(Site).filter(
+                Site.leaders_found_at >= date_start,
+                Site.leaders_found_at < date_end,
+                Site.leaders.isnot(None),
+                Site.leaders != ''
+            ).count()
+
             daily_data.append({
                 'date': date_start.strftime('%Y-%m-%d'),
                 'sites_crawled': sites_crawled,
                 'buyers_found': buyers_found,
+                'siret_found': siret_found,
+                'leaders_found': leaders_found,
                 'emails_found': emails_found
             })
 
-        # Statistiques globales des 30 derniers jours
         total_sites = session.query(Site).filter(Site.created_at >= thirty_days_ago).count()
         total_buyers = session.query(Site).filter(
             Site.purchased_from.isnot(None),
-            Site.created_at >= thirty_days_ago
+            Site.purchased_at >= thirty_days_ago
+        ).count()
+        total_siret = session.query(Site).filter(
+            Site.updated_at >= thirty_days_ago,
+            Site.siret.isnot(None),
+            Site.siret != '',
+            Site.siret != 'NON TROUVÉ'
+        ).count()
+        total_leaders = session.query(Site).filter(
+            Site.leaders_found_at >= thirty_days_ago,
+            Site.leaders.isnot(None),
+            Site.leaders != ''
         ).count()
         total_emails = session.query(Site).filter(
             Site.email_found_at >= thirty_days_ago,
@@ -533,24 +1052,62 @@ def get_daily_stats():
             Site.emails != 'NO EMAIL FOUND'
         ).count()
 
-        return jsonify({
+        return {
             'daily': daily_data,
             'summary_30_days': {
                 'total_sites_crawled': total_sites,
                 'total_buyers_found': total_buyers,
+                'total_siret_found': total_siret,
+                'total_leaders_found': total_leaders,
                 'total_emails_found': total_emails,
                 'avg_sites_per_day': round(total_sites / 30, 1),
                 'avg_buyers_per_day': round(total_buyers / 30, 1),
+                'avg_siret_per_day': round(total_siret / 30, 1),
+                'avg_leaders_per_day': round(total_leaders / 30, 1),
                 'avg_emails_per_day': round(total_emails / 30, 1)
             }
-        })
-
-    except Exception as e:
-        logger.error(f"Erreur lors de la récupération des stats quotidiennes: {e}")
-        return jsonify({'error': str(e)}), 500
-
+        }
     finally:
         session.close()
+
+
+@app.route('/api/stats/daily')
+def get_daily_stats():
+    """Obtenir les statistiques quotidiennes (30 derniers jours) avec cache"""
+    # Essayer de charger depuis le cache
+    cached_data = load_daily_stats_cache()
+    if cached_data:
+        return jsonify(cached_data)
+
+    # Pas de cache valide - lancer le calcul en arrière-plan
+    threading.Thread(target=compute_daily_stats_background, daemon=True).start()
+
+    # Retourner le cache périmé s'il existe
+    if DAILY_STATS_CACHE_FILE.exists():
+        try:
+            with open(DAILY_STATS_CACHE_FILE, 'r') as f:
+                cache = json.load(f)
+            return jsonify(cache.get('data', {}))
+        except:
+            pass
+
+    # Retourner des valeurs par défaut pendant le premier calcul
+    return jsonify({
+        'daily': [],
+        'summary_30_days': {
+            'total_sites_crawled': 0,
+            'total_buyers_found': 0,
+            'total_siret_found': 0,
+            'total_leaders_found': 0,
+            'total_emails_found': 0,
+            'avg_sites_per_day': 0,
+            'avg_buyers_per_day': 0,
+            'avg_siret_per_day': 0,
+            'avg_leaders_per_day': 0,
+            'avg_emails_per_day': 0
+        },
+        'loading': True
+    })
 
 
 # ============================================================================
@@ -573,6 +1130,7 @@ def get_sites():
         has_email = request.args.get('has_email')
         has_siret = request.args.get('has_siret')
         has_leaders = request.args.get('has_leaders')
+        cms_filter = request.args.get('cms')
         include_blacklisted = request.args.get('include_blacklisted', 'false').lower() == 'true'
 
         # Construire la requête
@@ -626,11 +1184,20 @@ def get_sites():
                 (Site.leaders.is_(None)) | (Site.leaders == '') | (Site.leaders == 'NON TROUVÉ')
             )
 
+        # Filtre CMS
+        if cms_filter:
+            if cms_filter == 'no_cms':
+                query = query.filter(
+                    (Site.cms.is_(None)) | (Site.cms == '')
+                )
+            else:
+                query = query.filter(Site.cms == cms_filter)
+
         # Total
         total = query.count()
 
-        # Tri par date de mise à jour (plus récents en premier)
-        query = query.order_by(Site.updated_at.desc())
+        # Tri par date de découverte d'email (plus récents en premier), puis date de mise à jour
+        query = query.order_by(Site.email_found_at.desc().nullslast(), Site.updated_at.desc())
 
         # Pagination
         offset = (page - 1) * per_page
@@ -688,7 +1255,7 @@ def create_site():
             status=SiteStatus.DISCOVERED
         )
         session.add(site)
-        session.commit()
+        safe_commit(session)
 
         return jsonify(site.to_dict()), 201
 
@@ -739,7 +1306,7 @@ def update_site(site_id):
             site.last_error = data['last_error']
 
         site.updated_at = datetime.utcnow()
-        session.commit()
+        safe_commit(session)
 
         return jsonify(site.to_dict())
 
@@ -758,7 +1325,7 @@ def delete_site(site_id):
             return jsonify({'error': 'Site not found'}), 404
 
         session.delete(site)
-        session.commit()
+        safe_commit(session)
 
         return jsonify({'success': True})
 
@@ -779,7 +1346,7 @@ def toggle_site_active(site_id):
         # Inverser le statut is_active
         site.is_active = not getattr(site, 'is_active', True)
         site.updated_at = datetime.utcnow()
-        session.commit()
+        safe_commit(session)
 
         return jsonify({
             'success': True,
@@ -807,7 +1374,7 @@ def blacklist_site(site_id):
         site.blacklisted = True
         site.blacklist_reason = reason
         site.blacklisted_at = datetime.utcnow()
-        session.commit()
+        safe_commit(session)
 
         return jsonify({
             'success': True,
@@ -831,7 +1398,7 @@ def unblacklist_site(site_id):
         site.blacklisted = False
         site.blacklist_reason = None
         site.blacklisted_at = None
-        session.commit()
+        safe_commit(session)
 
         return jsonify({
             'success': True,
@@ -845,6 +1412,145 @@ def unblacklist_site(site_id):
 # ============================================================================
 # API - JOBS
 # ============================================================================
+
+@app.route('/api/database-health')
+def get_database_health():
+    """Vérifier la santé de la base de données et les erreurs récentes"""
+    import os
+    import subprocess
+    from datetime import datetime, timedelta
+
+    health = {
+        'status': 'healthy',
+        'alerts': [],
+        'database_locked_errors': 0,
+        'last_check': datetime.utcnow().isoformat(),
+        'wal_size_mb': 0,
+        'active_connections': 0
+    }
+
+    try:
+        # Vérifier la taille du fichier WAL
+        wal_path = os.path.join(os.path.dirname(__file__), 'scrap_email.db-wal')
+        if os.path.exists(wal_path):
+            wal_size = os.path.getsize(wal_path) / (1024 * 1024)
+            health['wal_size_mb'] = round(wal_size, 2)
+            if wal_size > 50:  # Plus de 50MB
+                health['alerts'].append({
+                    'type': 'warning',
+                    'message': f'Fichier WAL volumineux: {wal_size:.1f} MB',
+                    'icon': 'exclamation-triangle'
+                })
+
+        # Compter les erreurs "database locked" dans les logs récents
+        log_files = [
+            'email_validation_daemon.log',
+            'cms_detector.log',
+            'language_detector.log',
+            'scraping_output.log',
+            'find_any_valid_email.log'
+        ]
+
+        total_errors = 0
+        errors_by_log = {}
+
+        for log_file in log_files:
+            log_path = os.path.join(os.path.dirname(__file__), log_file)
+            if os.path.exists(log_path):
+                try:
+                    # Lire les 500 dernières lignes
+                    result = subprocess.run(
+                        ['tail', '-500', log_path],
+                        capture_output=True,
+                        text=True,
+                        timeout=5
+                    )
+                    count = result.stdout.lower().count('database is locked')
+                    if count > 0:
+                        errors_by_log[log_file] = count
+                        total_errors += count
+                except:
+                    pass
+
+        health['database_locked_errors'] = total_errors
+        health['errors_by_log'] = errors_by_log
+
+        if total_errors > 0:
+            health['status'] = 'warning' if total_errors < 10 else 'critical'
+            health['alerts'].append({
+                'type': 'danger' if total_errors >= 10 else 'warning',
+                'message': f'{total_errors} erreurs "database locked" détectées récemment',
+                'icon': 'database-x',
+                'details': errors_by_log
+            })
+
+        # Compter les connexions actives (via lsof)
+        try:
+            db_path = os.path.join(os.path.dirname(__file__), 'scrap_email.db')
+            result = subprocess.run(
+                ['lsof', db_path],
+                capture_output=True,
+                text=True,
+                timeout=5
+            )
+            # Compter les lignes (moins l'en-tête)
+            connections = len(result.stdout.strip().split('\n')) - 1 if result.stdout.strip() else 0
+            health['active_connections'] = max(0, connections)
+
+            if connections > 20:
+                health['alerts'].append({
+                    'type': 'warning',
+                    'message': f'{connections} connexions actives à la base de données',
+                    'icon': 'plug'
+                })
+        except:
+            pass
+
+    except Exception as e:
+        health['status'] = 'error'
+        health['alerts'].append({
+            'type': 'danger',
+            'message': f'Erreur lors de la vérification: {str(e)}',
+            'icon': 'x-circle'
+        })
+
+    return jsonify(health)
+
+@app.route('/api/force-wal-checkpoint', methods=['POST'])
+def force_wal_checkpoint():
+    """Forcer un checkpoint WAL pour libérer de l'espace"""
+    import sqlite3
+    import os
+
+    try:
+        db_path = os.path.join(os.path.dirname(__file__), 'scrap_email.db')
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+
+        # Forcer un checkpoint complet
+        cursor.execute('PRAGMA wal_checkpoint(TRUNCATE)')
+        result = cursor.fetchone()
+
+        conn.close()
+
+        # Vérifier la nouvelle taille du WAL
+        wal_path = db_path + '-wal'
+        new_size = os.path.getsize(wal_path) / (1024 * 1024) if os.path.exists(wal_path) else 0
+
+        return jsonify({
+            'success': True,
+            'message': 'Checkpoint WAL effectué',
+            'blocked': result[0],
+            'log_frames': result[1],
+            'checkpointed': result[2],
+            'new_wal_size_mb': round(new_size, 2)
+        })
+
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
 
 @app.route('/api/jobs')
 def get_jobs():
@@ -877,7 +1583,7 @@ def create_job():
             config=json.dumps(data.get('config', {}))
         )
         session.add(job)
-        session.commit()
+        safe_commit(session)
 
         return jsonify(job.to_dict()), 201
 
@@ -911,7 +1617,7 @@ def update_job(job_id):
         if 'error_count' in data:
             job.error_count = data['error_count']
 
-        session.commit()
+        safe_commit(session)
         return jsonify(job.to_dict())
 
     finally:
@@ -1049,6 +1755,56 @@ def get_validation_stats():
         session.close()
 
 
+@app.route('/api/cms/stats')
+def get_cms_stats():
+    """Statistiques de détection CMS"""
+    session = get_session()
+
+    try:
+        from sqlalchemy import func
+
+        # Total de sites actifs
+        total_sites = session.query(Site).filter(Site.is_active == True).count()
+
+        # Sites avec CMS détecté
+        total_with_cms = session.query(Site).filter(
+            Site.cms.isnot(None),
+            Site.cms != ''
+        ).count()
+
+        # Répartition par CMS
+        cms_distribution = session.query(
+            Site.cms,
+            func.count(Site.id).label('count')
+        ).filter(
+            Site.cms.isnot(None),
+            Site.cms != ''
+        ).group_by(Site.cms).order_by(func.count(Site.id).desc()).all()
+
+        cms_list = [{'name': cms, 'count': count} for cms, count in cms_distribution]
+
+        # Sites avec email ET CMS
+        with_email_and_cms = session.query(Site).filter(
+            Site.cms.isnot(None),
+            Site.cms != '',
+            Site.emails.isnot(None),
+            Site.emails != '',
+            Site.emails != 'NO EMAIL FOUND'
+        ).count()
+
+        return jsonify({
+            'total_sites': total_sites,
+            'total_with_cms': total_with_cms,
+            'pending_detection': total_sites - total_with_cms,
+            'detection_rate': round((total_with_cms / total_sites * 100) if total_sites > 0 else 0, 1),
+            'cms_distribution': cms_list,
+            'with_email_and_cms': with_email_and_cms
+        })
+
+    finally:
+        session.close()
+
+
 @app.route('/api/validation/status')
 def get_validation_script_status():
     """Vérifier si le script find_any_valid_email.py tourne"""
@@ -1152,7 +1908,7 @@ def create_campaign():
             campaign_from_manager = manager.campaign_session.query(Campaign).get(campaign.id)
             if campaign_from_manager:
                 campaign_from_manager.segment_id = int(data.get('segment_id'))
-                manager.campaign_session.commit()
+                manager.campaign_safe_commit(session)
 
                 # Préparer automatiquement la campagne
                 try:
@@ -1307,7 +2063,7 @@ def create_template():
         )
 
         session.add(template)
-        session.commit()
+        safe_commit(session)
 
         logger.info(f"Nouveau template créé: {template.name} (ID: {template.id})")
 
@@ -1416,7 +2172,7 @@ def pause_campaign(campaign_id):
 
         # Mettre en pause
         campaign.status = CampaignStatus.PAUSED
-        session.commit()
+        safe_commit(session)
 
         logger.info(f"⏸️  Campagne '{campaign.name}' (ID: {campaign_id}) mise en pause")
 
@@ -1454,7 +2210,7 @@ def resume_campaign(campaign_id):
 
         # Reprendre (remettre en RUNNING)
         campaign.status = CampaignStatus.RUNNING
-        session.commit()
+        safe_commit(session)
 
         logger.info(f"▶️  Campagne '{campaign.name}' (ID: {campaign_id}) reprise")
 
@@ -1502,7 +2258,7 @@ def delete_campaign(campaign_id):
 
         # Supprimer la campagne
         session.delete(campaign)
-        session.commit()
+        safe_commit(session)
 
         logger.info(f"🗑️  Campagne '{campaign_name}' (ID: {campaign_id}) supprimée")
 
@@ -1515,6 +2271,285 @@ def delete_campaign(campaign_id):
     except Exception as e:
         session.rollback()
         logger.error(f"Erreur lors de la suppression de la campagne {campaign_id}: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        session.close()
+
+
+# ============================================================================
+# ROUTES - CAMPAIGN REPLIES
+# ============================================================================
+
+@app.route('/replies')
+def replies_page():
+    """Page de gestion des réponses"""
+    return render_template('replies.html')
+
+
+@app.route('/api/replies', methods=['GET'])
+def get_replies():
+    """Récupérer les réponses avec filtres"""
+    from campaign_database import get_campaign_session, CampaignReply, Campaign, ReplyStatus, ReplySentiment
+
+    session = get_campaign_session()
+
+    try:
+        # Paramètres de pagination
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 50, type=int)
+
+        # Filtres
+        status_filter = request.args.get('status', '')
+        sentiment_filter = request.args.get('sentiment', '')
+        campaign_id = request.args.get('campaign_id', type=int)
+        search = request.args.get('search', '').strip()
+
+        # Query de base
+        query = session.query(CampaignReply)
+
+        # Appliquer les filtres
+        if status_filter:
+            query = query.filter(CampaignReply.status == ReplyStatus[status_filter.upper()])
+
+        if sentiment_filter:
+            query = query.filter(CampaignReply.sentiment == ReplySentiment[sentiment_filter.upper()])
+
+        if campaign_id:
+            query = query.filter(CampaignReply.campaign_id == campaign_id)
+
+        if search:
+            search_pattern = f"%{search}%"
+            query = query.filter(
+                (CampaignReply.from_email.like(search_pattern)) |
+                (CampaignReply.subject.like(search_pattern)) |
+                (CampaignReply.body_text.like(search_pattern))
+            )
+
+        # Trier par date de réception (plus récent en premier)
+        query = query.order_by(CampaignReply.received_at.desc())
+
+        # Pagination
+        total = query.count()
+        replies = query.limit(per_page).offset((page - 1) * per_page).all()
+
+        # Enrichir avec le nom de la campagne
+        replies_data = []
+        for reply in replies:
+            reply_dict = reply.to_dict()
+
+            if reply.campaign_id:
+                campaign = session.query(Campaign).get(reply.campaign_id)
+                if campaign:
+                    reply_dict['campaign_name'] = campaign.name
+
+            replies_data.append(reply_dict)
+
+        return jsonify({
+            'replies': replies_data,
+            'total': total,
+            'page': page,
+            'per_page': per_page,
+            'total_pages': (total + per_page - 1) // per_page
+        })
+
+    except Exception as e:
+        logger.error(f"Erreur récupération réponses: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        session.close()
+
+
+@app.route('/api/replies/<int:reply_id>', methods=['GET'])
+def get_reply(reply_id):
+    """Récupérer une réponse spécifique"""
+    from campaign_database import get_campaign_session, CampaignReply, Campaign
+
+    session = get_campaign_session()
+
+    try:
+        reply = session.query(CampaignReply).get(reply_id)
+
+        if not reply:
+            return jsonify({'error': 'Réponse non trouvée'}), 404
+
+        reply_dict = reply.to_dict()
+
+        # Enrichir avec info campagne
+        if reply.campaign_id:
+            campaign = session.query(Campaign).get(reply.campaign_id)
+            if campaign:
+                reply_dict['campaign_name'] = campaign.name
+
+        return jsonify(reply_dict)
+
+    except Exception as e:
+        logger.error(f"Erreur récupération réponse {reply_id}: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        session.close()
+
+
+@app.route('/api/replies/<int:reply_id>/mark-read', methods=['POST'])
+def mark_reply_read(reply_id):
+    """Marquer une réponse comme lue"""
+    from campaign_database import get_campaign_session, CampaignReply, ReplyStatus
+
+    session = get_campaign_session()
+
+    try:
+        reply = session.query(CampaignReply).get(reply_id)
+
+        if not reply:
+            return jsonify({'error': 'Réponse non trouvée'}), 404
+
+        reply.status = ReplyStatus.READ
+        reply.read_at = datetime.utcnow()
+        safe_commit(session)
+
+        return jsonify({'success': True})
+
+    except Exception as e:
+        session.rollback()
+        logger.error(f"Erreur marquage lu {reply_id}: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        session.close()
+
+
+@app.route('/api/replies/<int:reply_id>/send-reply', methods=['POST'])
+def send_reply_to_email(reply_id):
+    """Envoyer une réponse"""
+    from campaign_database import get_campaign_session, CampaignReply, ReplyStatus
+    from ses_manager import SESManager
+
+    data = request.json
+    reply_subject = data.get('subject')
+    reply_body = data.get('body')
+
+    if not reply_subject or not reply_body:
+        return jsonify({'error': 'Sujet et corps requis'}), 400
+
+    session = get_campaign_session()
+
+    try:
+        reply = session.query(CampaignReply).get(reply_id)
+
+        if not reply:
+            return jsonify({'error': 'Réponse non trouvée'}), 404
+
+        # Envoyer via SES
+        ses = SESManager()
+
+        # Email d'envoi des réponses
+        from_email = "david@perfect-cocon-seo.fr"
+
+        result = ses.send_email(
+            to_email=reply.from_email,
+            subject=reply_subject,
+            html_body=reply_body,
+            text_body=reply_body,
+            reply_to=from_email
+        )
+
+        if result['success']:
+            # Mettre à jour la réponse
+            reply.status = ReplyStatus.REPLIED
+            reply.replied_at = datetime.utcnow()
+            reply.our_reply_subject = reply_subject
+            reply.our_reply_body = reply_body
+            reply.our_reply_sent_at = datetime.utcnow()
+            safe_commit(session)
+
+            return jsonify({
+                'success': True,
+                'message': 'Réponse envoyée avec succès'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': result.get('error', 'Erreur inconnue')
+            }), 500
+
+    except Exception as e:
+        session.rollback()
+        logger.error(f"Erreur envoi réponse {reply_id}: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        session.close()
+
+
+@app.route('/api/replies/<int:reply_id>/update-status', methods=['POST'])
+def update_reply_status(reply_id):
+    """Mettre à jour le statut d'une réponse"""
+    from campaign_database import get_campaign_session, CampaignReply, ReplyStatus
+
+    data = request.json
+    new_status = data.get('status')
+
+    if not new_status:
+        return jsonify({'error': 'Statut requis'}), 400
+
+    session = get_campaign_session()
+
+    try:
+        reply = session.query(CampaignReply).get(reply_id)
+
+        if not reply:
+            return jsonify({'error': 'Réponse non trouvée'}), 404
+
+        reply.status = ReplyStatus[new_status.upper()]
+        safe_commit(session)
+
+        return jsonify({'success': True})
+
+    except Exception as e:
+        session.rollback()
+        logger.error(f"Erreur mise à jour statut {reply_id}: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        session.close()
+
+
+@app.route('/api/replies/stats', methods=['GET'])
+def get_replies_stats():
+    """Statistiques des réponses"""
+    from campaign_database import get_campaign_session, CampaignReply, ReplyStatus, ReplySentiment
+    from sqlalchemy import func
+
+    session = get_campaign_session()
+
+    try:
+        # Total réponses
+        total = session.query(CampaignReply).count()
+
+        # Par statut
+        by_status = {}
+        for status in ReplyStatus:
+            count = session.query(CampaignReply).filter(
+                CampaignReply.status == status
+            ).count()
+            by_status[status.value] = count
+
+        # Par sentiment
+        by_sentiment = {}
+        for sentiment in ReplySentiment:
+            count = session.query(CampaignReply).filter(
+                CampaignReply.sentiment == sentiment
+            ).count()
+            by_sentiment[sentiment.value] = count
+
+        # Nouvelles réponses (non lues)
+        new_count = by_status.get('new', 0)
+
+        return jsonify({
+            'total': total,
+            'new': new_count,
+            'by_status': by_status,
+            'by_sentiment': by_sentiment
+        })
+
+    except Exception as e:
+        logger.error(f"Erreur stats réponses: {e}")
         return jsonify({'error': str(e)}), 500
     finally:
         session.close()
@@ -1560,7 +2595,14 @@ def unsubscribe():
         )
 
         campaign_session.add(unsubscribe_record)
-        campaign_session.commit()
+
+        # Incrémenter le compteur de la campagne
+        if campaign_id:
+            campaign = campaign_session.query(Campaign).get(int(campaign_id))
+            if campaign:
+                campaign.emails_unsubscribed = (campaign.emails_unsubscribed or 0) + 1
+
+        safe_commit(campaign_session)
 
         return render_template('unsubscribe.html',
                              email=email,
@@ -1625,7 +2667,7 @@ def track_open(email_id):
                 except Exception as e:
                     logger.error(f"❌ Erreur scenario event: {e}")
 
-            campaign_session.commit()
+            safe_commit(campaign_session)
 
     except Exception as e:
         campaign_session.rollback()
@@ -1699,7 +2741,7 @@ def track_click(email_id):
                 except Exception as e:
                     logger.error(f"❌ Erreur scenario event: {e}")
 
-            campaign_session.commit()
+            safe_commit(campaign_session)
 
     except Exception as e:
         campaign_session.rollback()
@@ -1773,7 +2815,7 @@ def ses_webhook():
                 elif notification_type == 'Click':
                     handle_click(message, campaign_session)
 
-                campaign_session.commit()
+                campaign_safe_commit(session)
                 return jsonify({'status': 'success', 'type': notification_type}), 200
 
             except Exception as e:
@@ -1888,6 +2930,11 @@ def handle_complaint(message, session):
                 unsubscribed_at=datetime.utcnow()
             )
             session.add(unsubscribe)
+
+            # Incrémenter le compteur de désinscrits de la campagne
+            if campaign:
+                campaign.emails_unsubscribed = (campaign.emails_unsubscribed or 0) + 1
+
             logger.info(f"  ✅ Email {campaign_email.to_email} ajouté à la liste de désinscription")
 
 
@@ -2015,6 +3062,217 @@ def handle_click(message, session):
                 logger.error(f"❌ Erreur traitement événement scenario: {e}", exc_info=True)
 
 
+@app.route('/api/scripts-progress')
+def get_scripts_progress():
+    """Obtenir la progression des scripts d'extraction"""
+    session = get_session()
+
+    try:
+        # Total de sites actifs
+        total_sites = session.query(Site).filter(Site.is_active == True).count()
+
+        # Sites avec email trouvé
+        sites_with_email = session.query(Site).filter(
+            Site.email_checked == True,
+            Site.emails.isnot(None),
+            Site.emails != '',
+            Site.emails != 'NO EMAIL FOUND'
+        ).count()
+
+        # Sites avec email vérifié (checked)
+        sites_email_checked = session.query(Site).filter(
+            Site.email_checked == True
+        ).count()
+
+        # Sites avec SIRET trouvé
+        sites_with_siret = session.query(Site).filter(
+            Site.siret_checked == True,
+            Site.siret.isnot(None),
+            Site.siret != '',
+            Site.siret != 'NON TROUVÉ'
+        ).count()
+
+        # Sites avec SIRET vérifié (checked)
+        sites_siret_checked = session.query(Site).filter(
+            Site.siret_checked == True
+        ).count()
+
+        # Sites avec leaders trouvés
+        sites_with_leaders = session.query(Site).filter(
+            Site.leaders_checked == True,
+            Site.leaders.isnot(None),
+            Site.leaders != '',
+            Site.leaders != 'NON TROUVÉ'
+        ).count()
+
+        # Sites avec leaders vérifié (checked)
+        sites_leaders_checked = session.query(Site).filter(
+            Site.leaders_checked == True
+        ).count()
+
+        # Sites avec CMS détecté (exclure NONE)
+        sites_with_cms = session.query(Site).filter(
+            Site.cms.isnot(None),
+            Site.cms != '',
+            Site.cms != 'NONE'
+        ).count()
+
+        # Sites acheteurs (buyers)
+        sites_buyers = session.query(Site).filter(
+            Site.purchased_from.isnot(None),
+            Site.purchased_from != ''
+        ).count()
+
+        # Stats Guessing Emails (sites sans email qui n'ont pas encore été testés avec guessing)
+        sites_without_email = session.query(Site).filter(
+            Site.is_active == True,
+            Site.blacklisted == False,
+            (Site.emails == "NO EMAIL FOUND") | (Site.emails == None) | (Site.emails == "")
+        ).count()
+
+        # Sites testés avec guessing (any_valid dans email_source)
+        sites_guessing_tested = session.query(Site).filter(
+            Site.email_source.like('%any_valid%')
+        ).count()
+
+        # Sites où guessing a trouvé un email
+        sites_guessing_found = session.query(Site).filter(
+            Site.email_source == 'any_valid_email'
+        ).count()
+
+        # Sites où guessing générique a trouvé un email
+        sites_generic_found = session.query(Site).filter(
+            Site.email_source == 'generic_validated'
+        ).count()
+
+        # Total à traiter par guessing = sites sans email qui n'ont pas encore été testés
+        sites_guessing_pending = session.query(Site).filter(
+            Site.is_active == True,
+            Site.blacklisted == False,
+            (Site.emails == "NO EMAIL FOUND") | (Site.emails == None) | (Site.emails == ""),
+            ~Site.email_source.like('%any_valid%')
+        ).count()
+
+        # Sites avec contact extrait
+        sites_with_contacts = session.query(Site).filter(
+            Site.contact_firstname.isnot(None),
+            Site.contact_lastname.isnot(None)
+        ).count()
+
+        # Sites avec email qui peuvent avoir un contact extrait
+        sites_with_email_total = session.query(Site).filter(
+            Site.emails.isnot(None),
+            Site.emails != '',
+            Site.emails != 'NO EMAIL FOUND',
+            Site.is_active == True
+        ).count()
+
+        # Sites en attente d'extraction contact
+        sites_contacts_pending = sites_with_email_total - sites_with_contacts
+
+        # Calculer les pourcentages
+        email_progress = round((sites_email_checked / total_sites * 100) if total_sites > 0 else 0, 1)
+        siret_progress = round((sites_siret_checked / total_sites * 100) if total_sites > 0 else 0, 1)
+        leaders_progress = round((sites_leaders_checked / total_sites * 100) if total_sites > 0 else 0, 1)
+        cms_progress = round((sites_with_cms / total_sites * 100) if total_sites > 0 else 0, 1)
+        contacts_progress = round((sites_with_contacts / sites_with_email_total * 100) if sites_with_email_total > 0 else 0, 1)
+
+        # Progression guessing = sites testés / (sites testés + sites en attente)
+        guessing_total = sites_guessing_tested + sites_guessing_pending
+        guessing_progress = round((sites_guessing_tested / guessing_total * 100) if guessing_total > 0 else 0, 1)
+
+        return jsonify({
+            'total_sites': total_sites,
+            'email': {
+                'checked': sites_email_checked,
+                'found': sites_with_email,
+                'progress': email_progress,
+                'pending': total_sites - sites_email_checked
+            },
+            'siret': {
+                'checked': sites_siret_checked,
+                'found': sites_with_siret,
+                'progress': siret_progress,
+                'pending': total_sites - sites_siret_checked
+            },
+            'leaders': {
+                'checked': sites_leaders_checked,
+                'found': sites_with_leaders,
+                'progress': leaders_progress,
+                'pending': total_sites - sites_leaders_checked
+            },
+            'cms': {
+                'detected': sites_with_cms,
+                'progress': cms_progress,
+                'pending': total_sites - sites_with_cms
+            },
+            'buyers': {
+                'found': sites_buyers
+            },
+            'guessing': {
+                'tested': sites_guessing_tested,
+                'found': sites_guessing_found + sites_generic_found,
+                'found_on_site': sites_guessing_found,
+                'generic_validated': sites_generic_found,
+                'pending': sites_guessing_pending,
+                'progress': guessing_progress,
+                'total_without_email': sites_without_email
+            },
+            'contacts': {
+                'extracted': sites_with_contacts,
+                'total_with_email': sites_with_email_total,
+                'pending': sites_contacts_pending,
+                'progress': contacts_progress
+            }
+        })
+
+    finally:
+        session.close()
+
+
+@app.route('/api/sync-campaign-stats', methods=['POST'])
+def sync_campaign_stats_api():
+    """Synchroniser les statistiques des campagnes"""
+    import subprocess
+    try:
+        # Lancer le script de synchronisation
+        result = subprocess.run(
+            ['python3', 'sync_campaign_stats.py', '--quiet'],
+            cwd='/var/www/Scrap_Email',
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+
+        if result.returncode == 0:
+            # Récupérer les statistiques après sync
+            from sync_campaign_stats import get_overall_stats
+            stats = get_overall_stats()
+
+            return jsonify({
+                'success': True,
+                'message': 'Statistiques synchronisées avec succès',
+                'stats': stats
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': result.stderr or 'Erreur inconnue'
+            }), 500
+
+    except subprocess.TimeoutExpired:
+        return jsonify({
+            'success': False,
+            'error': 'Timeout lors de la synchronisation'
+        }), 500
+    except Exception as e:
+        logger.error(f"Erreur sync campaign stats: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
 # ============================================================================
 # LANCEMENT
 # ============================================================================
@@ -2045,4 +3303,4 @@ if __name__ == '__main__':
     print("\nAppuyez sur Ctrl+C pour arrêter le serveur")
     print("=" * 70)
 
-    app.run(debug=debug_mode, host=host, port=port)
+    app.run(debug=debug_mode, host=host, port=port, threaded=True)
