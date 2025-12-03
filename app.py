@@ -18,6 +18,7 @@ from io import StringIO, BytesIO
 from scenario_routes import register_scenario_routes
 from segment_routes import register_segment_routes
 from distributed_crawl_api import crawl_api
+from claude_ai_analyzer import ai_analyzer_bp
 
 # Logger
 logging.basicConfig(level=logging.INFO)
@@ -46,6 +47,9 @@ register_segment_routes(app)
 # Enregistrer les routes de crawl distribué
 app.register_blueprint(crawl_api)
 
+# Enregistrer les routes AI Analyzer
+app.register_blueprint(ai_analyzer_bp)
+
 
 # ============================================================================
 # ROUTES - PAGES HTML
@@ -65,6 +69,11 @@ def sites_page():
 def jobs_page():
     """Page des jobs de scraping"""
     return render_template('jobs.html')
+
+@app.route('/workers')
+def workers_page():
+    """Page des workers de crawl distribué"""
+    return render_template('workers.html')
 
 @app.route('/validation')
 def validation_page():

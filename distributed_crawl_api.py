@@ -28,7 +28,49 @@ crawl_api = Blueprint('crawl_api', __name__)
 
 # Fichier de suivi des workers
 WORKERS_FILE = Path('/var/www/Scrap_Email/crawl_workers.json')
+DAILY_PAGES_FILE = Path('/var/www/Scrap_Email/crawl_daily_pages.json')
 WORKER_TIMEOUT = 600  # 10 minutes sans heartbeat = worker considéré comme mort (heartbeat toutes les 30s)
+
+
+def load_daily_pages():
+    """Charger les stats de pages crawlées par jour"""
+    if DAILY_PAGES_FILE.exists():
+        try:
+            with open(DAILY_PAGES_FILE, 'r') as f:
+                return json.load(f)
+        except:
+            pass
+    return {}
+
+
+def save_daily_pages(data):
+    """Sauvegarder les stats de pages crawlées par jour"""
+    with open(DAILY_PAGES_FILE, 'w') as f:
+        json.dump(data, f, indent=2)
+
+
+def add_pages_crawled(pages_count, worker_id='unknown'):
+    """Ajouter des pages au compteur du jour et par worker"""
+    today = datetime.utcnow().strftime('%Y-%m-%d')
+    data = load_daily_pages()
+
+    # Structure: { "2025-12-02": { "total": 1000, "workers": { "worker_xxx": { "pages": 500, "sellers": 10 } } } }
+    if today not in data:
+        data[today] = {'total': 0, 'workers': {}}
+
+    # Migration: ancien format (juste un nombre) vers nouveau format
+    if isinstance(data[today], int):
+        data[today] = {'total': data[today], 'workers': {}}
+
+    data[today]['total'] = data[today].get('total', 0) + pages_count
+
+    if worker_id not in data[today]['workers']:
+        data[today]['workers'][worker_id] = {'pages': 0, 'sellers': 0}
+
+    data[today]['workers'][worker_id]['pages'] += pages_count
+    data[today]['workers'][worker_id]['sellers'] += 1
+
+    save_daily_pages(data)
 
 # Domaines blacklistés (gouvernementaux, etc.)
 BLACKLISTED_DOMAINS = {
@@ -225,15 +267,16 @@ def submit_crawl_result():
     buyers = data.get('buyers', [])
     pages_crawled = data.get('pages_crawled', 0)
     error = data.get('error')
+    is_intermediate = data.get('is_intermediate', False)  # Batch intermédiaire ou résultat final
 
     if not site_id or not domain:
         return jsonify({'error': 'site_id et domain requis'}), 400
 
     session = get_session()
     try:
-        # Marquer le site vendeur comme crawlé
+        # Marquer le site vendeur comme crawlé (seulement si c'est le résultat final)
         seller = session.query(Site).filter_by(id=site_id).first()
-        if seller:
+        if seller and not is_intermediate:
             seller.backlinks_crawled = True
             seller.backlinks_crawled_at = datetime.utcnow()
             if error:
@@ -284,7 +327,9 @@ def submit_crawl_result():
         # Mettre à jour les stats du worker
         workers_data = load_workers()
         if worker_id in workers_data['workers']:
-            workers_data['workers'][worker_id]['tasks_completed'] += 1
+            # tasks_completed seulement pour les résultats finaux
+            if not is_intermediate:
+                workers_data['workers'][worker_id]['tasks_completed'] += 1
             workers_data['workers'][worker_id]['buyers_found'] += len(buyers)
             workers_data['workers'][worker_id]['emails_found'] += emails_found
             if error:
@@ -293,7 +338,14 @@ def submit_crawl_result():
             workers_data['workers'][worker_id]['last_heartbeat'] = datetime.utcnow().isoformat()
             save_workers(workers_data)
 
-        logger.info(f"✅ Worker {worker_id}: {domain} terminé - {len(buyers)} buyers, {emails_found} emails")
+        # Enregistrer les pages crawlées dans les stats journalières
+        if pages_crawled > 0:
+            add_pages_crawled(pages_crawled, worker_id)
+
+        if is_intermediate:
+            logger.info(f"📤 Worker {worker_id}: {domain} batch - {pages_crawled} pages")
+        else:
+            logger.info(f"✅ Worker {worker_id}: {domain} terminé - {pages_crawled} pages, {len(buyers)} buyers, {emails_found} emails")
 
         return jsonify({
             'status': 'ok',
@@ -575,9 +627,13 @@ def get_workers():
     from datetime import datetime
 
     crawl_workers = {
-        'local': {'count': 0, 'workers': [], 'min_required': 1, 'host': 'server-pbn1 (local)'},
+        'local': {'count': 0, 'workers': [], 'min_required': 0, 'host': 'server-pbn1 (local)'},
         'remote': {'count': 0, 'workers': [], 'min_required': 8, 'host': 'ns500898 (192.99.44.191)'},
-        'remote2': {'count': 0, 'workers': [], 'min_required': 4, 'host': 'prestashop (137.74.26.28)'}
+        'remote2': {'count': 0, 'workers': [], 'min_required': 4, 'host': 'prestashop (137.74.26.28)'},
+        'remote3': {'count': 0, 'workers': [], 'min_required': 4, 'host': 'betterweb (51.178.78.138)'},
+        'remote4': {'count': 0, 'workers': [], 'min_required': 2, 'host': 'wordpress (137.74.31.238)'},
+        'remote5': {'count': 0, 'workers': [], 'min_required': 1, 'host': 'ladd-prod3 (141.94.169.126)'},
+        'remote6': {'count': 0, 'workers': [], 'min_required': 1, 'host': 'ladd-prod6 (51.77.13.24)'}
     }
 
     try:
@@ -587,7 +643,7 @@ def get_workers():
             capture_output=True, text=True, timeout=10
         )
         for line in local_result.stdout.split('\n'):
-            if 'crawl_worker_multi.py' in line and 'python3' in line and 'bash -c' not in line:
+            if 'crawl_worker_multi.py' in line and 'python3' in line and 'bash -c' not in line and 'ssh ' not in line and '@' not in line:
                 parts = line.split()
                 if len(parts) >= 11:
                     crawl_workers['local']['workers'].append({
@@ -642,13 +698,105 @@ def get_workers():
         except (subprocess.TimeoutExpired, Exception) as e:
             crawl_workers['remote2']['error'] = str(e)
 
+        # Workers distants betterweb via SSH
+        try:
+            remote3_result = subprocess.run(
+                ['ssh', '-o', 'ConnectTimeout=30', '-o', 'StrictHostKeyChecking=no', '-o', 'BatchMode=yes',
+                 'datch@51.178.78.138',
+                 "ps aux | grep 'python3.*crawl_worker_multi.py' | grep -v grep | grep -v 'bash -c'"],
+                capture_output=True, text=True, timeout=60
+            )
+            for line in remote3_result.stdout.strip().split('\n'):
+                if line.strip() and 'crawl_worker_multi.py' in line:
+                    parts = line.split()
+                    if len(parts) >= 11 and parts[1].isdigit():
+                        crawl_workers['remote3']['workers'].append({
+                            'pid': parts[1],
+                            'cpu': parts[2],
+                            'memory': parts[3],
+                            'started': parts[8] if len(parts) > 8 else 'N/A'
+                        })
+            crawl_workers['remote3']['count'] = len(crawl_workers['remote3']['workers'])
+        except (subprocess.TimeoutExpired, Exception) as e:
+            crawl_workers['remote3']['error'] = str(e)
+
+        # Workers distants wordpress via SSH
+        try:
+            remote4_result = subprocess.run(
+                ['ssh', '-o', 'ConnectTimeout=30', '-o', 'StrictHostKeyChecking=no', '-o', 'BatchMode=yes',
+                 'debian@137.74.31.238',
+                 "ps aux | grep 'python3.*crawl_worker_multi.py' | grep -v grep | grep -v 'bash -c'"],
+                capture_output=True, text=True, timeout=60
+            )
+            for line in remote4_result.stdout.strip().split('\n'):
+                if line.strip() and 'crawl_worker_multi.py' in line:
+                    parts = line.split()
+                    if len(parts) >= 11 and parts[1].isdigit():
+                        crawl_workers['remote4']['workers'].append({
+                            'pid': parts[1],
+                            'cpu': parts[2],
+                            'memory': parts[3],
+                            'started': parts[8] if len(parts) > 8 else 'N/A'
+                        })
+            crawl_workers['remote4']['count'] = len(crawl_workers['remote4']['workers'])
+        except (subprocess.TimeoutExpired, Exception) as e:
+            crawl_workers['remote4']['error'] = str(e)
+
+        # Workers distants ladd-prod3 via SSH
+        try:
+            remote5_result = subprocess.run(
+                ['ssh', '-o', 'ConnectTimeout=30', '-o', 'StrictHostKeyChecking=no', '-o', 'BatchMode=yes',
+                 'apps@server-prod3.ladd.guru',
+                 "ps aux | grep 'python3.*crawl_worker_multi.py' | grep -v grep | grep -v 'bash -c'"],
+                capture_output=True, text=True, timeout=60
+            )
+            for line in remote5_result.stdout.strip().split('\n'):
+                if line.strip() and 'crawl_worker_multi.py' in line:
+                    parts = line.split()
+                    if len(parts) >= 11 and parts[1].isdigit():
+                        crawl_workers['remote5']['workers'].append({
+                            'pid': parts[1],
+                            'cpu': parts[2],
+                            'memory': parts[3],
+                            'started': parts[8] if len(parts) > 8 else 'N/A'
+                        })
+            crawl_workers['remote5']['count'] = len(crawl_workers['remote5']['workers'])
+        except (subprocess.TimeoutExpired, Exception) as e:
+            crawl_workers['remote5']['error'] = str(e)
+
+        # Workers distants ladd-prod6 via SSH
+        try:
+            remote6_result = subprocess.run(
+                ['ssh', '-o', 'ConnectTimeout=30', '-o', 'StrictHostKeyChecking=no', '-o', 'BatchMode=yes',
+                 'apps@server-prod6.ladd.guru',
+                 "ps aux | grep 'python3.*crawl_worker_multi.py' | grep -v grep | grep -v 'bash -c'"],
+                capture_output=True, text=True, timeout=60
+            )
+            for line in remote6_result.stdout.strip().split('\n'):
+                if line.strip() and 'crawl_worker_multi.py' in line:
+                    parts = line.split()
+                    if len(parts) >= 11 and parts[1].isdigit():
+                        crawl_workers['remote6']['workers'].append({
+                            'pid': parts[1],
+                            'cpu': parts[2],
+                            'memory': parts[3],
+                            'started': parts[8] if len(parts) > 8 else 'N/A'
+                        })
+            crawl_workers['remote6']['count'] = len(crawl_workers['remote6']['workers'])
+        except (subprocess.TimeoutExpired, Exception) as e:
+            crawl_workers['remote6']['error'] = str(e)
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
     # Calculer le total
     total_count = (crawl_workers['local']['count'] +
                    crawl_workers['remote']['count'] +
-                   crawl_workers['remote2']['count'])
+                   crawl_workers['remote2']['count'] +
+                   crawl_workers['remote3']['count'] +
+                   crawl_workers['remote4']['count'] +
+                   crawl_workers['remote5']['count'] +
+                   crawl_workers['remote6']['count'])
 
     # Charger les données détaillées des workers depuis crawl_workers.json
     active_workers = []
@@ -687,6 +835,8 @@ def get_workers():
         'local_count': crawl_workers['local']['count'],
         'remote_count': crawl_workers['remote']['count'],
         'remote2_count': crawl_workers['remote2']['count'],
+        'remote3_count': crawl_workers['remote3']['count'],
+        'remote4_count': crawl_workers['remote4']['count'],
         'timestamp': datetime.utcnow().isoformat()
     })
 
@@ -777,6 +927,89 @@ def get_crawl_stats():
 
     except Exception as e:
         logger.error(f"❌ Erreur get_crawl_stats: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        session.close()
+
+
+@crawl_api.route('/api/crawl/daily-stats', methods=['GET'])
+def get_crawl_daily_stats():
+    """
+    Statistiques journalières du crawl (pages, acheteurs, emails par jour)
+    """
+    from sqlalchemy import func
+    session = get_session()
+
+    try:
+        # Charger les stats de pages journalières
+        pages_data = load_daily_pages()
+
+        # Stats des 14 derniers jours
+        daily_stats = []
+
+        for i in range(14):
+            day = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=i)
+            next_day = day + timedelta(days=1)
+            day_str = day.strftime('%Y-%m-%d')
+
+            # Pages crawlées ce jour (depuis le fichier JSON)
+            day_data = pages_data.get(day_str, {})
+            # Support ancien format (int) et nouveau format (dict)
+            if isinstance(day_data, int):
+                pages_crawled = day_data
+                workers_stats = {}
+            else:
+                pages_crawled = day_data.get('total', 0)
+                workers_stats = day_data.get('workers', {})
+
+            # Sites vendeurs crawlés ce jour
+            sellers_crawled = session.query(Site).filter(
+                Site.is_linkavista_seller == True,
+                Site.backlinks_crawled == True,
+                Site.backlinks_crawled_at >= day,
+                Site.backlinks_crawled_at < next_day
+            ).count()
+
+            # Acheteurs trouvés ce jour
+            buyers_found = session.query(Site).filter(
+                Site.purchased_from.isnot(None),
+                Site.created_at >= day,
+                Site.created_at < next_day
+            ).count()
+
+            # Emails trouvés ce jour (via email_found_at ou created_at pour les nouveaux)
+            emails_found = session.query(Site).filter(
+                Site.purchased_from.isnot(None),
+                Site.emails.isnot(None),
+                Site.emails != '',
+                Site.emails != 'NO EMAIL FOUND',
+                Site.created_at >= day,
+                Site.created_at < next_day
+            ).count()
+
+            daily_stats.append({
+                'date': day_str,
+                'date_display': day.strftime('%d/%m'),
+                'day_name': ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'][day.weekday()],
+                'pages_crawled': pages_crawled,
+                'sellers_crawled': sellers_crawled,
+                'buyers_found': buyers_found,
+                'emails_found': emails_found,
+                'workers': workers_stats
+            })
+
+        return jsonify({
+            'daily_stats': daily_stats,
+            'total_14_days': {
+                'pages_crawled': sum(d['pages_crawled'] for d in daily_stats),
+                'sellers_crawled': sum(d['sellers_crawled'] for d in daily_stats),
+                'buyers_found': sum(d['buyers_found'] for d in daily_stats),
+                'emails_found': sum(d['emails_found'] for d in daily_stats)
+            }
+        })
+
+    except Exception as e:
+        logger.error(f"❌ Erreur get_crawl_daily_stats: {e}")
         return jsonify({'error': str(e)}), 500
     finally:
         session.close()

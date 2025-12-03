@@ -1,0 +1,750 @@
+{% extends "base.html" %}
+
+{% block title %}Workers - Scrap Email Manager{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1 class="display-5"><i class="bi bi-hdd-network"></i> Workers Actifs</h1>
+        <p class="text-muted">Surveillance en temps réel des workers de crawl distribué</p>
+    </div>
+    <div class="col-auto">
+        <button class="btn btn-primary" onclick="loadWorkers()">
+            <i class="bi bi-arrow-clockwise"></i> Actualiser
+        </button>
+    </div>
+</div>
+
+<!-- Statistiques globales -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-subtitle mb-2">Workers Actifs</h6>
+                        <h2 class="card-title mb-0" id="workers-count">-</h2>
+                    </div>
+                    <div class="fs-1">
+                        <i class="bi bi-hdd-network"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-info">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-subtitle mb-2">Total Pages</h6>
+                        <h2 class="card-title mb-0" id="total-pages">-</h2>
+                    </div>
+                    <div class="fs-1">
+                        <i class="bi bi-file-earmark-text"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-primary">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-subtitle mb-2">Total Acheteurs</h6>
+                        <h2 class="card-title mb-0" id="total-buyers">-</h2>
+                    </div>
+                    <div class="fs-1">
+                        <i class="bi bi-people"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-warning">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-subtitle mb-2">Total Emails</h6>
+                        <h2 class="card-title mb-0" id="total-emails">-</h2>
+                    </div>
+                    <div class="fs-1">
+                        <i class="bi bi-envelope"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Répartition par serveur -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-server"></i> Répartition par Serveur
+            </div>
+            <div class="card-body">
+                <div class="row" id="servers-distribution">
+                    <div class="text-center text-muted py-3">
+                        <i class="bi bi-hourglass-split"></i> Chargement...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistiques journalières -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-calendar3"></i> Statistiques journalières</span>
+                <button class="btn btn-sm btn-outline-primary" id="toggle-days-btn" onclick="toggleDaysView()">
+                    <i class="bi bi-chevron-down"></i> Voir plus
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th class="text-end">Pages Crawlées</th>
+                                <th class="text-end">Vendeurs Crawlés</th>
+                                <th class="text-end">Acheteurs Trouvés</th>
+                                <th class="text-end">Emails Trouvés</th>
+                                <th class="text-center">Détails</th>
+                            </tr>
+                        </thead>
+                        <tbody id="daily-stats-table">
+                            <tr><td colspan="6" class="text-center text-muted">Chargement...</td></tr>
+                        </tbody>
+                        <tfoot class="table-light fw-bold">
+                            <tr>
+                                <td id="total-days-label">Total 7 jours</td>
+                                <td class="text-end" id="total-pages-14d">-</td>
+                                <td class="text-end" id="total-sellers-14d">-</td>
+                                <td class="text-end" id="total-buyers-14d">-</td>
+                                <td class="text-end" id="total-emails-14d">-</td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistiques par Worker -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-bar-chart"></i> Statistiques par Worker (cumul depuis démarrage)
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead>
+                            <tr>
+                                <th>Worker</th>
+                                <th class="text-end">Pages</th>
+                                <th class="text-end">Tâches</th>
+                                <th class="text-end">Acheteurs</th>
+                                <th class="text-end">Emails</th>
+                                <th class="text-end">Sites en cours</th>
+                                <th class="text-end">Dernier heartbeat</th>
+                            </tr>
+                        </thead>
+                        <tbody id="workers-stats-table">
+                            <tr><td colspan="7" class="text-center text-muted">Chargement...</td></tr>
+                        </tbody>
+                        <tfoot class="table-light fw-bold">
+                            <tr>
+                                <td>Total</td>
+                                <td class="text-end" id="workers-total-pages">-</td>
+                                <td class="text-end" id="workers-total-tasks">-</td>
+                                <td class="text-end" id="workers-total-buyers">-</td>
+                                <td class="text-end" id="workers-total-emails">-</td>
+                                <td class="text-end" id="workers-total-sites">-</td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Liste des workers -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-list-task"></i> Détail des Workers</span>
+                <small class="text-muted">Mise à jour auto: 10s</small>
+            </div>
+            <div class="card-body">
+                <div id="workers-list" class="row">
+                    <div class="text-center text-muted py-3 col-12">
+                        <i class="bi bi-hourglass-split"></i> Chargement...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal détails par worker -->
+<div class="modal fade" id="dayWorkersModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-bar-chart"></i> Stats par Worker - <span id="modal-day-title"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead>
+                            <tr>
+                                <th>Worker</th>
+                                <th class="text-end">Pages Crawlées</th>
+                                <th class="text-end">Vendeurs Terminés</th>
+                            </tr>
+                        </thead>
+                        <tbody id="modal-workers-table">
+                            <tr><td colspan="3" class="text-center text-muted">Aucune donnée</td></tr>
+                        </tbody>
+                        <tfoot class="table-light fw-bold">
+                            <tr>
+                                <td>Total</td>
+                                <td class="text-end" id="modal-total-pages">-</td>
+                                <td class="text-end" id="modal-total-sellers">-</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+async function loadWorkers() {
+    try {
+        const response = await fetch('/api/crawl/workers');
+        const data = await response.json();
+
+        // Mise à jour des compteurs globaux
+        document.getElementById('workers-count').textContent = data.active_count || 0;
+
+        // Calculer les totaux
+        let totalPages = 0, totalBuyers = 0, totalEmails = 0;
+        (data.active_workers || []).forEach(w => {
+            totalPages += w.pages_crawled || 0;
+            totalBuyers += w.buyers_found || 0;
+            totalEmails += w.emails_found || 0;
+        });
+
+        document.getElementById('total-pages').textContent = totalPages.toLocaleString();
+        document.getElementById('total-buyers').textContent = totalBuyers.toLocaleString();
+        document.getElementById('total-emails').textContent = totalEmails.toLocaleString();
+
+        // Répartition par serveur
+        const crawlWorkers = data.crawl_workers || {};
+        let serversHtml = '';
+
+        // Ne pas afficher le serveur local s'il n'a pas de workers requis
+        if (crawlWorkers.local && crawlWorkers.local.min_required > 0) {
+            const status = crawlWorkers.local.count >= crawlWorkers.local.min_required ? 'success' : 'danger';
+            serversHtml += `
+                <div class="col-md-2">
+                    <div class="card border-${status}">
+                        <div class="card-body text-center">
+                            <h6><i class="bi bi-pc-display"></i> ${crawlWorkers.local.host}</h6>
+                            <h3 class="text-${status}">${crawlWorkers.local.count} / ${crawlWorkers.local.min_required}</h3>
+                            <small class="text-muted">workers</small>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        if (crawlWorkers.remote) {
+            const status = crawlWorkers.remote.count >= crawlWorkers.remote.min_required ? 'success' : 'danger';
+            serversHtml += `
+                <div class="col-md-2">
+                    <div class="card border-${status}">
+                        <div class="card-body text-center">
+                            <h6><i class="bi bi-cloud"></i> ${crawlWorkers.remote.host}</h6>
+                            <h3 class="text-${status}">${crawlWorkers.remote.count} / ${crawlWorkers.remote.min_required}</h3>
+                            <small class="text-muted">workers</small>
+                            ${crawlWorkers.remote.error ? `<div class="text-danger small mt-1">${crawlWorkers.remote.error}</div>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        if (crawlWorkers.remote2) {
+            const status = crawlWorkers.remote2.count >= crawlWorkers.remote2.min_required ? 'success' : 'danger';
+            serversHtml += `
+                <div class="col-md-2">
+                    <div class="card border-${status}">
+                        <div class="card-body text-center">
+                            <h6><i class="bi bi-cloud"></i> ${crawlWorkers.remote2.host}</h6>
+                            <h3 class="text-${status}">${crawlWorkers.remote2.count} / ${crawlWorkers.remote2.min_required}</h3>
+                            <small class="text-muted">workers</small>
+                            ${crawlWorkers.remote2.error ? `<div class="text-danger small mt-1">${crawlWorkers.remote2.error}</div>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        if (crawlWorkers.remote3) {
+            const status = crawlWorkers.remote3.count >= crawlWorkers.remote3.min_required ? 'success' : 'danger';
+            serversHtml += `
+                <div class="col-md-2">
+                    <div class="card border-${status}">
+                        <div class="card-body text-center">
+                            <h6><i class="bi bi-cloud"></i> ${crawlWorkers.remote3.host}</h6>
+                            <h3 class="text-${status}">${crawlWorkers.remote3.count} / ${crawlWorkers.remote3.min_required}</h3>
+                            <small class="text-muted">workers</small>
+                            ${crawlWorkers.remote3.error ? `<div class="text-danger small mt-1">${crawlWorkers.remote3.error}</div>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        if (crawlWorkers.remote4) {
+            const status = crawlWorkers.remote4.count >= crawlWorkers.remote4.min_required ? 'success' : 'danger';
+            serversHtml += `
+                <div class="col-md-2">
+                    <div class="card border-${status}">
+                        <div class="card-body text-center">
+                            <h6><i class="bi bi-cloud"></i> ${crawlWorkers.remote4.host}</h6>
+                            <h3 class="text-${status}">${crawlWorkers.remote4.count} / ${crawlWorkers.remote4.min_required}</h3>
+                            <small class="text-muted">workers</small>
+                            ${crawlWorkers.remote4.error ? `<div class="text-danger small mt-1">${crawlWorkers.remote4.error}</div>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        if (crawlWorkers.remote5) {
+            const status = crawlWorkers.remote5.count >= crawlWorkers.remote5.min_required ? 'success' : 'danger';
+            serversHtml += `
+                <div class="col-md-2">
+                    <div class="card border-${status}">
+                        <div class="card-body text-center">
+                            <h6><i class="bi bi-cloud"></i> ${crawlWorkers.remote5.host}</h6>
+                            <h3 class="text-${status}">${crawlWorkers.remote5.count} / ${crawlWorkers.remote5.min_required}</h3>
+                            <small class="text-muted">workers</small>
+                            ${crawlWorkers.remote5.error ? `<div class="text-danger small mt-1">${crawlWorkers.remote5.error}</div>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        if (crawlWorkers.remote6) {
+            const status = crawlWorkers.remote6.count >= crawlWorkers.remote6.min_required ? 'success' : 'danger';
+            serversHtml += `
+                <div class="col-md-2">
+                    <div class="card border-${status}">
+                        <div class="card-body text-center">
+                            <h6><i class="bi bi-cloud"></i> ${crawlWorkers.remote6.host}</h6>
+                            <h3 class="text-${status}">${crawlWorkers.remote6.count} / ${crawlWorkers.remote6.min_required}</h3>
+                            <small class="text-muted">workers</small>
+                            ${crawlWorkers.remote6.error ? `<div class="text-danger small mt-1">${crawlWorkers.remote6.error}</div>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        document.getElementById('servers-distribution').innerHTML = serversHtml || '<div class="col-12 text-muted text-center">Aucun serveur configuré</div>';
+
+        // Liste des workers
+        const workersList = document.getElementById('workers-list');
+
+        if (!data.active_workers || data.active_workers.length === 0) {
+            workersList.innerHTML = `
+                <div class="col-12 text-center text-muted py-3">
+                    <i class="bi bi-pause-circle"></i> Aucun worker actif
+                </div>
+            `;
+            return;
+        }
+
+        const now = new Date();
+        let html = '';
+
+        data.active_workers.forEach(worker => {
+            const lastBeat = worker.last_heartbeat ? new Date(worker.last_heartbeat) : null;
+            const secondsAgo = lastBeat ? Math.floor(Math.abs(now - lastBeat) / 1000) : null;
+            const heartbeatClass = secondsAgo < 60 ? 'text-success' : (secondsAgo < 300 ? 'text-warning' : 'text-danger');
+
+            const sitesInProgress = worker.sites_in_progress || [];
+
+            let sitesHtml = '';
+            if (sitesInProgress.length > 0) {
+                sitesHtml = '<div class="mt-2" style="max-height: 300px; overflow-y: auto;">';
+                sitesInProgress.forEach(site => {
+                    const isFr = site.domain.endsWith('.fr');
+                    const recentUrls = site.recent_urls || [];
+
+                    sitesHtml += `
+                        <div class="border-bottom py-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span>
+                                    <i class="bi bi-globe2 ${isFr ? 'text-primary' : 'text-secondary'}"></i>
+                                    <strong class="${isFr ? 'text-primary' : ''}">${site.domain}</strong>
+                                </span>
+                                <span class="badge bg-info">${(site.pages || 0).toLocaleString()} pages</span>
+                            </div>
+                            ${recentUrls.length > 0 ? `
+                                <div class="small text-muted mt-1" style="font-size: 0.75rem;">
+                                    <i class="bi bi-arrow-right"></i> Dernière page:
+                                    <code class="text-truncate d-inline-block" style="max-width: 400px; vertical-align: bottom;" title="${recentUrls[recentUrls.length - 1]}">${recentUrls[recentUrls.length - 1].replace(/^https?:\/\/[^/]+/, '')}</code>
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                });
+                sitesHtml += '</div>';
+            } else {
+                sitesHtml = '<div class="text-muted small mt-2"><i class="bi bi-hourglass"></i> En attente de tâches...</div>';
+            }
+
+            html += `
+                <div class="col-md-6 col-lg-4 mb-3">
+                    <div class="card border-success h-100">
+                        <div class="card-header py-2 bg-success text-white">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <i class="bi bi-hdd-network"></i>
+                                    <strong>${worker.worker_id}</strong>
+                                </div>
+                                <small class="${heartbeatClass}"><i class="bi bi-heart-pulse"></i> ${secondsAgo}s</small>
+                            </div>
+                        </div>
+                        <div class="card-body p-2">
+                            <div class="row text-center mb-2">
+                                <div class="col-3">
+                                    <div class="small text-muted">Pages</div>
+                                    <strong class="text-info">${(worker.pages_crawled || 0).toLocaleString()}</strong>
+                                </div>
+                                <div class="col-3">
+                                    <div class="small text-muted">Tâches</div>
+                                    <strong class="text-primary">${worker.tasks_completed || 0}</strong>
+                                </div>
+                                <div class="col-3">
+                                    <div class="small text-muted">Acheteurs</div>
+                                    <strong class="text-success">${(worker.buyers_found || 0).toLocaleString()}</strong>
+                                </div>
+                                <div class="col-3">
+                                    <div class="small text-muted">Emails</div>
+                                    <strong class="text-warning">${(worker.emails_found || 0).toLocaleString()}</strong>
+                                </div>
+                            </div>
+                            <div class="small text-muted mb-1">
+                                <i class="bi bi-collection"></i> <strong>${sitesInProgress.length}</strong> sites en cours (${worker.sites_total || sitesInProgress.length} total):
+                            </div>
+                            ${sitesHtml}
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        workersList.innerHTML = html;
+
+        // Mettre à jour le tableau des stats par worker
+        loadWorkersStats(data);
+
+    } catch (error) {
+        console.error('Erreur lors du chargement des workers:', error);
+        document.getElementById('workers-list').innerHTML = `
+            <div class="col-12 text-center text-danger py-3">
+                <i class="bi bi-exclamation-triangle"></i> Erreur de chargement: ${error.message}
+            </div>
+        `;
+    }
+}
+
+// Variables globales pour les stats
+let allDailyStats = [];
+let showAllDays = false;
+
+// Charger les stats journalières
+async function loadDailyStats() {
+    try {
+        const response = await fetch('/api/crawl/daily-stats');
+        const data = await response.json();
+
+        allDailyStats = data.daily_stats || [];
+        renderDailyStats();
+
+    } catch (error) {
+        console.error('Erreur lors du chargement des stats journalières:', error);
+    }
+}
+
+// Afficher les stats journalières
+function renderDailyStats() {
+    const tableBody = document.getElementById('daily-stats-table');
+
+    if (!allDailyStats || allDailyStats.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Aucune donnée</td></tr>';
+        return;
+    }
+
+    const daysToShow = showAllDays ? allDailyStats : allDailyStats.slice(0, 7);
+
+    let html = '';
+    daysToShow.forEach((day, index) => {
+        const isToday = index === 0;
+        const rowClass = isToday ? 'table-primary' : '';
+        const btnHtml = `<button class="btn btn-sm btn-outline-info" onclick="showDayWorkers('${day.date}', '${day.day_name} ${day.date_display}')"><i class="bi bi-eye"></i></button>`;
+
+        html += `
+            <tr class="${rowClass}">
+                <td>${day.day_name} ${day.date_display}${isToday ? ' <span class="badge bg-primary">Aujourd\'hui</span>' : ''}</td>
+                <td class="text-end">${(day.pages_crawled || 0).toLocaleString()}</td>
+                <td class="text-end">${day.sellers_crawled.toLocaleString()}</td>
+                <td class="text-end">${day.buyers_found.toLocaleString()}</td>
+                <td class="text-end">${day.emails_found.toLocaleString()}</td>
+                <td class="text-center">${btnHtml}</td>
+            </tr>
+        `;
+    });
+
+    tableBody.innerHTML = html;
+
+    // Totaux
+    const totalPages = daysToShow.reduce((sum, d) => sum + (d.pages_crawled || 0), 0);
+    const totalSellers = daysToShow.reduce((sum, d) => sum + d.sellers_crawled, 0);
+    const totalBuyers = daysToShow.reduce((sum, d) => sum + d.buyers_found, 0);
+    const totalEmails = daysToShow.reduce((sum, d) => sum + d.emails_found, 0);
+
+    document.getElementById('total-pages-14d').textContent = totalPages.toLocaleString();
+    document.getElementById('total-sellers-14d').textContent = totalSellers.toLocaleString();
+    document.getElementById('total-buyers-14d').textContent = totalBuyers.toLocaleString();
+    document.getElementById('total-emails-14d').textContent = totalEmails.toLocaleString();
+    document.getElementById('total-days-label').textContent = showAllDays ? 'Total 14 jours' : 'Total 7 jours';
+
+    // Bouton
+    const btn = document.getElementById('toggle-days-btn');
+    btn.innerHTML = showAllDays
+        ? '<i class="bi bi-chevron-up"></i> Voir moins'
+        : '<i class="bi bi-chevron-down"></i> Voir plus';
+}
+
+// Afficher les détails par worker pour une journée
+function showDayWorkers(date, displayDate) {
+    const day = allDailyStats.find(d => d.date === date);
+
+    document.getElementById('modal-day-title').textContent = displayDate;
+    const tableBody = document.getElementById('modal-workers-table');
+
+    if (!day || !day.workers) {
+        tableBody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">Le tracking par worker n\'était pas encore activé pour cette journée</td></tr>';
+        document.getElementById('modal-total-pages').textContent = '-';
+        document.getElementById('modal-total-sellers').textContent = '-';
+        const modal = new bootstrap.Modal(document.getElementById('dayWorkersModal'));
+        modal.show();
+        return;
+    }
+
+    const workers = day.workers;
+    const workerIds = Object.keys(workers);
+
+    if (workerIds.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">Aucune donnée pour cette journée</td></tr>';
+        document.getElementById('modal-total-pages').textContent = '0';
+        document.getElementById('modal-total-sellers').textContent = '0';
+    } else {
+        // Regrouper par serveur
+        const serverGroups = {};
+        const serverOrder = ['ns500898', 'prestashop', 'betterweb', 'wordpress', 'server-pbn1', 'ladd-prod3', 'ladd-prod6'];
+
+        workerIds.forEach(workerId => {
+            const shortName = workerId.replace('worker_', '');
+            let serverName = 'autre';
+
+            if (shortName.startsWith('ns500898')) serverName = 'ns500898';
+            else if (shortName.startsWith('prestashop')) serverName = 'prestashop';
+            else if (shortName.startsWith('betterweb')) serverName = 'betterweb';
+            else if (shortName.startsWith('wordpress')) serverName = 'wordpress';
+            else if (shortName.startsWith('server-pbn1')) serverName = 'server-pbn1';
+            else if (shortName.startsWith('ladd-prod3')) serverName = 'ladd-prod3';
+            else if (shortName.startsWith('ladd-prod6')) serverName = 'ladd-prod6';
+
+            if (!serverGroups[serverName]) {
+                serverGroups[serverName] = { workers: [], totalPages: 0, totalSellers: 0 };
+            }
+
+            const w = workers[workerId];
+            const pages = w.pages || 0;
+            const sellers = w.sellers || 0;
+
+            serverGroups[serverName].workers.push({ shortName, pages, sellers });
+            serverGroups[serverName].totalPages += pages;
+            serverGroups[serverName].totalSellers += sellers;
+        });
+
+        // Trier les workers dans chaque groupe par pages (desc)
+        Object.values(serverGroups).forEach(group => {
+            group.workers.sort((a, b) => b.pages - a.pages);
+        });
+
+        let html = '';
+        let totalPages = 0;
+        let totalSellers = 0;
+
+        // Afficher par serveur dans l'ordre défini
+        const sortedServers = Object.keys(serverGroups).sort((a, b) => {
+            const idxA = serverOrder.indexOf(a);
+            const idxB = serverOrder.indexOf(b);
+            return (idxA === -1 ? 999 : idxA) - (idxB === -1 ? 999 : idxB);
+        });
+
+        sortedServers.forEach(serverName => {
+            const group = serverGroups[serverName];
+            totalPages += group.totalPages;
+            totalSellers += group.totalSellers;
+
+            // Ligne de titre du serveur
+            html += `
+                <tr class="table-secondary">
+                    <td colspan="3"><strong><i class="bi bi-server"></i> ${serverName}</strong> <span class="text-muted">(${group.workers.length} workers)</span></td>
+                </tr>
+            `;
+
+            // Sous-total du serveur
+            html += `
+                <tr class="table-light fw-bold">
+                    <td class="ps-4">Sous-total ${serverName}</td>
+                    <td class="text-end">${group.totalPages.toLocaleString()}</td>
+                    <td class="text-end">${group.totalSellers}</td>
+                </tr>
+            `;
+
+            // Workers du serveur
+            group.workers.forEach(w => {
+                html += `
+                    <tr>
+                        <td class="ps-4"><i class="bi bi-hdd-network text-success"></i> ${w.shortName}</td>
+                        <td class="text-end">${w.pages.toLocaleString()}</td>
+                        <td class="text-end">${w.sellers}</td>
+                    </tr>
+                `;
+            });
+        });
+
+        tableBody.innerHTML = html;
+        document.getElementById('modal-total-pages').textContent = totalPages.toLocaleString();
+        document.getElementById('modal-total-sellers').textContent = totalSellers.toLocaleString();
+    }
+
+    // Ouvrir la modal
+    const modal = new bootstrap.Modal(document.getElementById('dayWorkersModal'));
+    modal.show();
+}
+
+// Toggle vue 7/14 jours
+function toggleDaysView() {
+    showAllDays = !showAllDays;
+    renderDailyStats();
+}
+
+// Charger les stats par worker
+function loadWorkersStats(workersData) {
+    const tableBody = document.getElementById('workers-stats-table');
+    const workers = workersData.active_workers || [];
+
+    if (workers.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Aucun worker actif</td></tr>';
+        return;
+    }
+
+    const now = new Date();
+    let html = '';
+    let totalPages = 0, totalTasks = 0, totalBuyers = 0, totalEmails = 0, totalSites = 0;
+
+    // Trier par pages (desc)
+    workers.sort((a, b) => (b.pages_crawled || 0) - (a.pages_crawled || 0));
+
+    workers.forEach(worker => {
+        const lastBeat = worker.last_heartbeat ? new Date(worker.last_heartbeat) : null;
+        const secondsAgo = lastBeat ? Math.floor(Math.abs(now - lastBeat) / 1000) : null;
+        const heartbeatClass = secondsAgo < 60 ? 'text-success' : (secondsAgo < 300 ? 'text-warning' : 'text-danger');
+        const heartbeatText = secondsAgo !== null ? `${secondsAgo}s` : '-';
+
+        const pages = worker.pages_crawled || 0;
+        const tasks = worker.tasks_completed || 0;
+        const buyers = worker.buyers_found || 0;
+        const emails = worker.emails_found || 0;
+        const sites = worker.sites_total || (worker.sites_in_progress || []).length;
+
+        totalPages += pages;
+        totalTasks += tasks;
+        totalBuyers += buyers;
+        totalEmails += emails;
+        totalSites += sites;
+
+        // Extraire le nom court du worker
+        const shortName = worker.worker_id.replace('worker_', '');
+
+        html += `
+            <tr>
+                <td><i class="bi bi-hdd-network text-success"></i> ${shortName}</td>
+                <td class="text-end">${pages.toLocaleString()}</td>
+                <td class="text-end">${tasks}</td>
+                <td class="text-end">${buyers.toLocaleString()}</td>
+                <td class="text-end">${emails.toLocaleString()}</td>
+                <td class="text-end">${sites}</td>
+                <td class="text-end ${heartbeatClass}">${heartbeatText}</td>
+            </tr>
+        `;
+    });
+
+    tableBody.innerHTML = html;
+
+    // Totaux
+    document.getElementById('workers-total-pages').textContent = totalPages.toLocaleString();
+    document.getElementById('workers-total-tasks').textContent = totalTasks.toLocaleString();
+    document.getElementById('workers-total-buyers').textContent = totalBuyers.toLocaleString();
+    document.getElementById('workers-total-emails').textContent = totalEmails.toLocaleString();
+    document.getElementById('workers-total-sites').textContent = totalSites.toLocaleString();
+}
+
+// Charger au démarrage
+document.addEventListener('DOMContentLoaded', () => {
+    loadWorkers();
+    loadDailyStats();
+});
+
+// Auto-refresh toutes les 10 secondes pour les workers
+setInterval(loadWorkers, 10000);
+
+// Auto-refresh toutes les 60 secondes pour les stats journalières
+setInterval(loadDailyStats, 60000);
+</script>
+{% endblock %}
