@@ -33,20 +33,82 @@ WORKER_TIMEOUT = 600  # 10 minutes sans heartbeat = worker considéré comme mor
 
 
 def load_daily_pages():
-    """Charger les stats de pages crawlées par jour"""
+    """Charger les stats de pages crawlées par jour (fichier JSON ou base de données)"""
+    # Essayer le fichier JSON d'abord
     if DAILY_PAGES_FILE.exists():
         try:
             with open(DAILY_PAGES_FILE, 'r') as f:
-                return json.load(f)
+                data = json.load(f)
+                if data:
+                    return data
         except:
             pass
+
+    # Si fichier vide ou corrompu, charger depuis la base de données
+    try:
+        from sqlalchemy import text
+        session = get_session()
+        result = session.execute(text("""
+            SELECT date, pages_crawled, sellers_crawled, workers_data
+            FROM crawl_daily_stats
+            ORDER BY date DESC
+            LIMIT 30
+        """))
+        data = {}
+        for row in result:
+            date_str = row[0].strftime('%Y-%m-%d') if hasattr(row[0], 'strftime') else str(row[0])
+            workers = json.loads(row[3]) if row[3] else {}
+            data[date_str] = {
+                'total': row[1] or 0,
+                'workers': workers
+            }
+        session.close()
+        if data:
+            # Resauvegarder dans le fichier JSON
+            with open(DAILY_PAGES_FILE, 'w') as f:
+                json.dump(data, f, indent=2)
+            return data
+    except Exception as e:
+        logger.error(f"Erreur chargement BDD stats: {e}")
+
     return {}
 
 
 def save_daily_pages(data):
-    """Sauvegarder les stats de pages crawlées par jour"""
+    """Sauvegarder les stats de pages crawlées par jour (fichier JSON + base de données)"""
+    # Sauvegarder dans le fichier JSON (compatibilité)
     with open(DAILY_PAGES_FILE, 'w') as f:
         json.dump(data, f, indent=2)
+
+    # Sauvegarder aussi en base de données pour persistance
+    try:
+        from sqlalchemy import text
+        session = get_session()
+        today = datetime.utcnow().strftime('%Y-%m-%d')
+        if today in data:
+            day_data = data[today]
+            pages = day_data.get('total', 0) if isinstance(day_data, dict) else day_data
+            workers = day_data.get('workers', {}) if isinstance(day_data, dict) else {}
+            sellers = sum(w.get('sellers', 0) for w in workers.values()) if workers else 0
+
+            session.execute(text("""
+                INSERT INTO crawl_daily_stats (date, pages_crawled, sellers_crawled, workers_data, updated_at)
+                VALUES (:date, :pages, :sellers, :workers, CURRENT_TIMESTAMP)
+                ON CONFLICT (date) DO UPDATE SET
+                    pages_crawled = EXCLUDED.pages_crawled,
+                    sellers_crawled = EXCLUDED.sellers_crawled,
+                    workers_data = EXCLUDED.workers_data,
+                    updated_at = CURRENT_TIMESTAMP
+            """), {
+                'date': today,
+                'pages': pages,
+                'sellers': sellers,
+                'workers': json.dumps(workers)
+            })
+            session.commit()
+        session.close()
+    except Exception as e:
+        logger.error(f"Erreur sauvegarde BDD stats: {e}")
 
 
 def add_pages_crawled(pages_count, worker_id='unknown'):
@@ -155,7 +217,7 @@ def get_crawl_task():
         # FOR UPDATE SKIP LOCKED: verrouille les lignes et skip celles déjà verrouillées
         # Cela évite les doublons entre workers même en cas de requêtes simultanées
         sites_raw = session.query(Site).filter(
-            Site.is_linkavista_seller == True,
+            Site.purchased_from.is_(None),
             Site.backlinks_crawled == False,
             Site.blacklisted == False,
             (Site.updated_at.is_(None)) | (Site.updated_at < lock_threshold)
@@ -764,13 +826,13 @@ def get_workers():
         except (subprocess.TimeoutExpired, Exception) as e:
             crawl_workers['remote5']['error'] = str(e)
 
-        # Workers distants ladd-prod6 via SSH
+        # Workers distants ladd-prod6 via SSH (timeout court car serveur souvent inaccessible)
         try:
             remote6_result = subprocess.run(
-                ['ssh', '-o', 'ConnectTimeout=30', '-o', 'StrictHostKeyChecking=no', '-o', 'BatchMode=yes',
+                ['ssh', '-o', 'ConnectTimeout=5', '-o', 'StrictHostKeyChecking=no', '-o', 'BatchMode=yes',
                  'apps@server-prod6.ladd.guru',
                  "ps aux | grep 'python3.*crawl_worker_multi.py' | grep -v grep | grep -v 'bash -c'"],
-                capture_output=True, text=True, timeout=60
+                capture_output=True, text=True, timeout=10
             )
             for line in remote6_result.stdout.strip().split('\n'):
                 if line.strip() and 'crawl_worker_multi.py' in line:
@@ -851,9 +913,9 @@ def get_crawl_stats():
 
     try:
         # Stats depuis la DB
-        total_sellers = session.query(Site).filter(Site.is_linkavista_seller == True).count()
+        total_sellers = session.query(Site).filter(Site.purchased_from.is_(None)).count()
         sellers_crawled = session.query(Site).filter(
-            Site.is_linkavista_seller == True,
+            Site.purchased_from.is_(None),
             Site.backlinks_crawled == True
         ).count()
         sellers_remaining = total_sellers - sellers_crawled
@@ -889,7 +951,7 @@ def get_crawl_stats():
         # Estimation basée sur les dernières 24h
         yesterday = datetime.utcnow() - timedelta(days=1)
         crawled_last_24h = session.query(Site).filter(
-            Site.is_linkavista_seller == True,
+            Site.purchased_from.is_(None),
             Site.backlinks_crawled == True,
             Site.backlinks_crawled_at >= yesterday
         ).count()
@@ -952,7 +1014,7 @@ def get_crawl_daily_stats():
             next_day = day + timedelta(days=1)
             day_str = day.strftime('%Y-%m-%d')
 
-            # Pages crawlées ce jour (depuis le fichier JSON)
+            # Pages crawlées ce jour (depuis le fichier JSON backlinks + sites email)
             day_data = pages_data.get(day_str, {})
             # Support ancien format (int) et nouveau format (dict)
             if isinstance(day_data, int):
@@ -962,9 +1024,15 @@ def get_crawl_daily_stats():
                 pages_crawled = day_data.get('total', 0)
                 workers_stats = day_data.get('workers', {})
 
-            # Sites vendeurs crawlés ce jour
+            # Ajouter les sites traités par l'extraction email
+            emails_day_data = load_daily_emails().get(day_str, {})
+            if isinstance(emails_day_data, dict):
+                sites_email_crawled = emails_day_data.get('sites', 0)
+                pages_crawled += sites_email_crawled  # Ajouter les sites email aux pages
+
+            # Sites vendeurs crawlés ce jour (tous les sites crawlés, pas seulement les vendeurs sans purchased_from)
             sellers_crawled = session.query(Site).filter(
-                Site.is_linkavista_seller == True,
+                Site.is_link_seller == True,
                 Site.backlinks_crawled == True,
                 Site.backlinks_crawled_at >= day,
                 Site.backlinks_crawled_at < next_day
@@ -977,8 +1045,9 @@ def get_crawl_daily_stats():
                 Site.created_at < next_day
             ).count()
 
-            # Emails trouvés ce jour (via email_found_at ou created_at pour les nouveaux)
-            emails_found = session.query(Site).filter(
+            # Emails trouvés ce jour - inclure aussi les emails de l'extraction distribuée
+            # 1. Emails des nouveaux acheteurs découverts ce jour
+            emails_buyers = session.query(Site).filter(
                 Site.purchased_from.isnot(None),
                 Site.emails.isnot(None),
                 Site.emails != '',
@@ -986,6 +1055,13 @@ def get_crawl_daily_stats():
                 Site.created_at >= day,
                 Site.created_at < next_day
             ).count()
+
+            # 2. Emails trouvés par l'extraction distribuée (depuis le fichier JSON)
+            emails_data = load_daily_emails()
+            emails_extracted = emails_data.get(day_str, {}).get('emails', 0) if isinstance(emails_data.get(day_str), dict) else 0
+
+            # Total des emails trouvés ce jour
+            emails_found = emails_buyers + emails_extracted
 
             daily_stats.append({
                 'date': day_str,
@@ -1026,3 +1102,395 @@ def remove_worker(worker_id):
         return jsonify({'status': 'ok', 'message': f'Worker {worker_id} supprimé'})
 
     return jsonify({'error': 'Worker non trouvé'}), 404
+
+
+# ============================================================
+# ENDPOINTS POUR EXTRACTION D'EMAILS DISTRIBUÉE
+# ============================================================
+
+DAILY_EMAILS_FILE = Path('/var/www/Scrap_Email/crawl_daily_emails.json')
+
+
+def load_daily_emails():
+    """Charger les stats d'emails extraits par jour"""
+    if DAILY_EMAILS_FILE.exists():
+        try:
+            with open(DAILY_EMAILS_FILE, 'r') as f:
+                return json.load(f)
+        except:
+            pass
+    return {}
+
+
+def save_daily_emails(data):
+    """Sauvegarder les stats d'emails extraits par jour"""
+    with open(DAILY_EMAILS_FILE, 'w') as f:
+        json.dump(data, f, indent=2)
+
+
+def add_emails_extracted(emails_count, sites_count, worker_id='unknown'):
+    """Ajouter des emails au compteur du jour"""
+    today = datetime.utcnow().strftime('%Y-%m-%d')
+    data = load_daily_emails()
+
+    if today not in data:
+        data[today] = {'emails': 0, 'sites': 0, 'workers': {}}
+
+    data[today]['emails'] += emails_count
+    data[today]['sites'] += sites_count
+
+    if worker_id not in data[today]['workers']:
+        data[today]['workers'][worker_id] = {'emails': 0, 'sites': 0}
+
+    data[today]['workers'][worker_id]['emails'] += emails_count
+    data[today]['workers'][worker_id]['sites'] += sites_count
+
+    save_daily_emails(data)
+
+
+@crawl_api.route('/api/crawl/email-task', methods=['GET'])
+def get_email_extraction_task():
+    """
+    Obtenir un batch de sites pour extraction d'email.
+
+    Ces sites ont été découverts mais n'ont pas encore d'email.
+    Permet d'utiliser les workers inactifs pour extraire des emails.
+
+    Query params:
+    - worker_id: Identifiant unique du worker
+    - batch_size: Nombre de sites à récupérer (défaut: 20)
+    - sellers_first: Prioriser les vendeurs LinkAvista (défaut: true)
+    """
+    from sqlalchemy import or_, case, text
+
+    worker_id = request.args.get('worker_id', 'unknown')
+    batch_size = int(request.args.get('batch_size', 20))
+    sellers_first = request.args.get('sellers_first', 'true').lower() == 'true'
+
+    # Limiter la taille du batch
+    batch_size = min(batch_size, 100)
+
+    session = get_session()
+    try:
+        # Ordre de priorité: sellers d'abord, puis .fr
+        priority_order = case(
+            (Site.purchased_from.is_(None), 0),
+            (Site.domain.like('%.fr'), 1),
+            else_=2
+        )
+
+        # Sites sans email, pas traités récemment
+        lock_threshold = datetime.utcnow() - timedelta(minutes=30)
+
+        # FOR UPDATE SKIP LOCKED pour éviter les doublons
+        sites = session.query(Site).filter(
+            or_(
+                Site.emails.is_(None),
+                Site.emails == '',
+                Site.emails == 'NO EMAIL FOUND'
+            ),
+            Site.blacklisted == False,
+            # Pas traité récemment pour email
+            or_(
+                Site.email_crawl_at.is_(None),
+                Site.email_crawl_at < lock_threshold
+            )
+        ).order_by(
+            priority_order if sellers_first else Site.id,
+            Site.id
+        ).limit(batch_size * 2).with_for_update(skip_locked=True).all()
+
+        if not sites:
+            session.commit()
+            return jsonify({
+                'status': 'no_tasks',
+                'message': 'Aucun site sans email à traiter',
+                'sites': []
+            })
+
+        now = datetime.utcnow()
+        tasks = []
+
+        for site in sites[:batch_size]:
+            # Construire l'URL
+            if site.source_url and site.source_url.startswith('http'):
+                url = site.source_url
+            else:
+                url = f"https://{site.domain}"
+
+            tasks.append({
+                'id': site.id,
+                'domain': site.domain,
+                'url': url,
+                'is_seller': site.purchased_from is None or False
+            })
+
+            # Marquer comme en cours de traitement
+            site.email_crawl_at = now
+
+        safe_commit(session)
+
+        logger.info(f"📧 Worker {worker_id}: {len(tasks)} sites pour extraction email")
+
+        # Mettre à jour les stats du worker
+        workers_data = load_workers()
+        if worker_id not in workers_data['workers']:
+            workers_data['workers'][worker_id] = {
+                'first_seen': datetime.utcnow().isoformat(),
+                'tasks_assigned': 0,
+                'tasks_completed': 0,
+                'buyers_found': 0,
+                'emails_found': 0,
+                'errors': 0,
+                'email_extractions': 0
+            }
+
+        workers_data['workers'][worker_id]['email_tasks_assigned'] = \
+            workers_data['workers'][worker_id].get('email_tasks_assigned', 0) + len(tasks)
+        workers_data['workers'][worker_id]['last_heartbeat'] = datetime.utcnow().isoformat()
+        save_workers(workers_data)
+
+        return jsonify({
+            'status': 'ok',
+            'worker_id': worker_id,
+            'batch_size': len(tasks),
+            'task_type': 'email_extraction',
+            'sites': tasks
+        })
+
+    except Exception as e:
+        logger.error(f"❌ Erreur get_email_extraction_task: {e}")
+        session.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        session.close()
+
+
+@crawl_api.route('/api/crawl/email-result', methods=['POST'])
+def submit_email_result():
+    """
+    Soumettre les résultats d'extraction d'email.
+
+    Body JSON:
+    {
+        "worker_id": "worker_xxx",
+        "site_id": 12345,
+        "domain": "example.fr",
+        "emails": "contact@example.fr; info@example.fr",
+        "pages_checked": 5,
+        "error": null
+    }
+    """
+    data = request.get_json()
+
+    worker_id = data.get('worker_id', 'unknown')
+    site_id = data.get('site_id')
+    domain = data.get('domain')
+    emails = data.get('emails')  # String séparé par ;
+    pages_checked = data.get('pages_checked', 0)
+    error = data.get('error')
+
+    if not site_id or not domain:
+        return jsonify({'error': 'site_id et domain requis'}), 400
+
+    session = get_session()
+    try:
+        site = session.query(Site).filter_by(id=site_id).first()
+
+        if site:
+            site.email_crawl_at = datetime.utcnow()
+
+            if emails and emails.strip():
+                site.emails = emails.strip()
+                site.email_found_at = datetime.utcnow()
+                site.email_source = 'distributed_email_extraction'
+
+                # Compter le nombre d'emails
+                email_count = len([e for e in emails.split(';') if e.strip()])
+                add_emails_extracted(email_count, 1, worker_id)
+
+                logger.info(f"✅ Worker {worker_id}: {domain} - {email_count} email(s) trouvé(s)")
+            else:
+                site.emails = 'NO EMAIL FOUND'
+                add_emails_extracted(0, 1, worker_id)
+
+            if error:
+                site.last_error = error
+
+        safe_commit(session)
+
+        # Mettre à jour les stats du worker
+        workers_data = load_workers()
+        if worker_id in workers_data['workers']:
+            workers_data['workers'][worker_id]['email_extractions'] = \
+                workers_data['workers'][worker_id].get('email_extractions', 0) + 1
+            if emails and emails.strip():
+                email_count = len([e for e in emails.split(';') if e.strip()])
+                workers_data['workers'][worker_id]['emails_found'] = \
+                    workers_data['workers'][worker_id].get('emails_found', 0) + email_count
+            workers_data['workers'][worker_id]['last_heartbeat'] = datetime.utcnow().isoformat()
+            save_workers(workers_data)
+
+        return jsonify({
+            'status': 'ok',
+            'domain': domain,
+            'emails_found': len([e for e in (emails or '').split(';') if e.strip()])
+        })
+
+    except Exception as e:
+        logger.error(f"❌ Erreur submit_email_result: {e}")
+        session.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        session.close()
+
+
+@crawl_api.route('/api/crawl/email-results-batch', methods=['POST'])
+def submit_email_results_batch():
+    """
+    Soumettre les résultats d'extraction d'email en batch.
+    Plus efficace pour plusieurs sites à la fois.
+
+    Body JSON:
+    {
+        "worker_id": "worker_xxx",
+        "results": [
+            {"site_id": 123, "domain": "site1.fr", "emails": "a@site1.fr"},
+            {"site_id": 456, "domain": "site2.fr", "emails": null}
+        ]
+    }
+    """
+    data = request.get_json()
+
+    worker_id = data.get('worker_id', 'unknown')
+    results = data.get('results', [])
+
+    if not results:
+        return jsonify({'error': 'results requis'}), 400
+
+    session = get_session()
+    try:
+        total_emails = 0
+        sites_processed = 0
+
+        for result in results:
+            site_id = result.get('site_id')
+            emails = result.get('emails')
+
+            site = session.query(Site).filter_by(id=site_id).first()
+            if site:
+                site.email_crawl_at = datetime.utcnow()
+
+                if emails and emails.strip():
+                    site.emails = emails.strip()
+                    site.email_found_at = datetime.utcnow()
+                    site.email_source = 'distributed_email_extraction'
+                    total_emails += len([e for e in emails.split(';') if e.strip()])
+                else:
+                    site.emails = 'NO EMAIL FOUND'
+
+                sites_processed += 1
+
+        safe_commit(session)
+
+        # Stats journalières
+        add_emails_extracted(total_emails, sites_processed, worker_id)
+
+        # Mettre à jour les stats du worker
+        workers_data = load_workers()
+        if worker_id in workers_data['workers']:
+            workers_data['workers'][worker_id]['email_extractions'] = \
+                workers_data['workers'][worker_id].get('email_extractions', 0) + sites_processed
+            workers_data['workers'][worker_id]['emails_found'] = \
+                workers_data['workers'][worker_id].get('emails_found', 0) + total_emails
+            workers_data['workers'][worker_id]['last_heartbeat'] = datetime.utcnow().isoformat()
+            save_workers(workers_data)
+
+        logger.info(f"📧 Worker {worker_id}: batch {sites_processed} sites, {total_emails} emails")
+
+        return jsonify({
+            'status': 'ok',
+            'sites_processed': sites_processed,
+            'emails_found': total_emails
+        })
+
+    except Exception as e:
+        logger.error(f"❌ Erreur submit_email_results_batch: {e}")
+        session.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        session.close()
+
+
+@crawl_api.route('/api/crawl/email-stats', methods=['GET'])
+def get_email_extraction_stats():
+    """
+    Statistiques de l'extraction d'emails distribuée
+    """
+    from sqlalchemy import or_
+
+    session = get_session()
+    try:
+        # Sites sans email
+        sites_without_email = session.query(Site).filter(
+            or_(
+                Site.emails.is_(None),
+                Site.emails == '',
+                Site.emails == 'NO EMAIL FOUND'
+            )
+        ).count()
+
+        # Sites avec email
+        sites_with_email = session.query(Site).filter(
+            Site.emails.isnot(None),
+            Site.emails != '',
+            Site.emails != 'NO EMAIL FOUND'
+        ).count()
+
+        # Sellers sans email
+        sellers_without_email = session.query(Site).filter(
+            Site.purchased_from.is_(None),
+            or_(
+                Site.emails.is_(None),
+                Site.emails == '',
+                Site.emails == 'NO EMAIL FOUND'
+            )
+        ).count()
+
+        # Emails extraits aujourd'hui
+        daily_data = load_daily_emails()
+        today = datetime.utcnow().strftime('%Y-%m-%d')
+        today_stats = daily_data.get(today, {'emails': 0, 'sites': 0, 'workers': {}})
+
+        # Stats des 7 derniers jours
+        weekly_stats = []
+        for i in range(7):
+            day = (datetime.utcnow() - timedelta(days=i)).strftime('%Y-%m-%d')
+            day_data = daily_data.get(day, {'emails': 0, 'sites': 0})
+            weekly_stats.append({
+                'date': day,
+                'emails': day_data.get('emails', 0),
+                'sites': day_data.get('sites', 0)
+            })
+
+        return jsonify({
+            'status': 'ok',
+            'totals': {
+                'sites_without_email': sites_without_email,
+                'sites_with_email': sites_with_email,
+                'sellers_without_email': sellers_without_email,
+                'email_rate': round(sites_with_email / (sites_with_email + sites_without_email) * 100, 1) if (sites_with_email + sites_without_email) > 0 else 0
+            },
+            'today': {
+                'emails_found': today_stats.get('emails', 0),
+                'sites_processed': today_stats.get('sites', 0),
+                'workers': today_stats.get('workers', {})
+            },
+            'weekly': weekly_stats
+        })
+
+    except Exception as e:
+        logger.error(f"❌ Erreur get_email_extraction_stats: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        session.close()
