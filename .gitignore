@@ -56,3 +56,4 @@ htmlcov/
 dist/
 build/
 *.egg-info/
+backups/*.sql.gz
