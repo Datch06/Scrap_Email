@@ -14,9 +14,13 @@
 <div class="card mb-4">
     <div class="card-body">
         <div class="row g-3">
-            <div class="col-md-4">
-                <label class="form-label">Rechercher</label>
+            <div class="col-md-2">
+                <label class="form-label">Domaine</label>
                 <input type="text" class="form-control" id="search-input" placeholder="Domaine...">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Email</label>
+                <input type="text" class="form-control" id="email-search-input" placeholder="Email...">
             </div>
             <div class="col-md-2">
                 <label class="form-label">Statut</label>
@@ -56,6 +60,20 @@
                     <option value="false">Sans dirigeants</option>
                 </select>
             </div>
+            <div class="col-md-2">
+                <label class="form-label">CMS</label>
+                <select class="form-select" id="cms-filter">
+                    <option value="">Tous</option>
+                    <option value="WordPress">WordPress</option>
+                    <option value="WooCommerce">WooCommerce</option>
+                    <option value="Drupal">Drupal</option>
+                    <option value="PrestaShop">PrestaShop</option>
+                    <option value="Shopify">Shopify</option>
+                    <option value="Joomla">Joomla</option>
+                    <option value="Magento">Magento</option>
+                    <option value="no_cms">Sans CMS détecté</option>
+                </select>
+            </div>
         </div>
         <div class="mt-3">
             <button class="btn btn-primary" onclick="applyFilters()">
@@ -88,13 +106,14 @@
                         <th>Email</th>
                         <th>SIRET</th>
                         <th>Dirigeants</th>
-                        <th>Mis à jour</th>
+                        <th>Langue</th>
+                        <th>Email trouvé le</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody id="sites-table-body">
                     <tr>
-                        <td colspan="7" class="text-center">
+                        <td colspan="8" class="text-center">
                             <div class="spinner-border" role="status">
                                 <span class="visually-hidden">Chargement...</span>
                             </div>
@@ -180,7 +199,7 @@ async function loadSites(page = 1) {
     } catch (error) {
         console.error('Erreur:', error);
         document.getElementById('sites-table-body').innerHTML = `
-            <tr><td colspan="7" class="text-center text-danger">Erreur de chargement</td></tr>
+            <tr><td colspan="8" class="text-center text-danger">Erreur de chargement</td></tr>
         `;
     }
 }
@@ -190,7 +209,7 @@ function renderSitesTable(sites) {
     const tbody = document.getElementById('sites-table-body');
 
     if (sites.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="text-center">Aucun site trouvé</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center">Aucun site trouvé</td></tr>';
         return;
     }
 
@@ -205,7 +224,8 @@ function renderSitesTable(sites) {
             <td>${site.emails ? '<i class="bi bi-check-circle text-success"></i>' : '<i class="bi bi-x-circle text-muted"></i>'}</td>
             <td>${site.siret ? '<i class="bi bi-check-circle text-success"></i>' : '<i class="bi bi-x-circle text-muted"></i>'}</td>
             <td>${site.leaders ? '<i class="bi bi-check-circle text-success"></i>' : '<i class="bi bi-x-circle text-muted"></i>'}</td>
-            <td>${new Date(site.updated_at).toLocaleString('fr-FR')}</td>
+            <td>${site.language ? `<span class="badge bg-info">${site.language.toUpperCase()}</span>` : '<span class="text-muted">-</span>'}</td>
+            <td>${site.email_found_at ? new Date(site.email_found_at).toLocaleString('fr-FR') : (site.updated_at ? new Date(site.updated_at).toLocaleString('fr-FR') : '-')}</td>
             <td>
                 <button class="btn btn-sm btn-info" onclick="viewSite(${site.id})">
                     <i class="bi bi-eye"></i>
@@ -267,10 +287,12 @@ function renderPagination(current, total) {
 function applyFilters() {
     currentFilters = {
         search: document.getElementById('search-input').value,
+        email_search: document.getElementById('email-search-input').value,
         status: document.getElementById('status-filter').value,
         has_email: document.getElementById('email-filter').value,
         has_siret: document.getElementById('siret-filter').value,
         has_leaders: document.getElementById('leaders-filter').value,
+        cms: document.getElementById('cms-filter').value,
     };
     loadSites(1);
 }
@@ -278,10 +300,12 @@ function applyFilters() {
 // Réinitialiser les filtres
 function resetFilters() {
     document.getElementById('search-input').value = '';
+    document.getElementById('email-search-input').value = '';
     document.getElementById('status-filter').value = '';
     document.getElementById('email-filter').value = '';
     document.getElementById('siret-filter').value = '';
     document.getElementById('leaders-filter').value = '';
+    document.getElementById('cms-filter').value = '';
     currentFilters = {};
     loadSites(1);
 }
@@ -334,11 +358,28 @@ async function viewSite(id) {
             <table class="table">
                 <tr><th>Domaine</th><td><a href="https://${site.domain}" target="_blank">${site.domain}</a></td></tr>
                 <tr><th>Statut</th><td>${getStatusBadge(site.status)}</td></tr>
-                <tr><th>Emails</th><td>${site.emails || '-'}</td></tr>
+                ${site.cms ? `<tr><th>CMS</th><td><span class="badge bg-primary">${site.cms}</span> ${site.cms_version ? `<span class="badge bg-secondary">v${site.cms_version}</span>` : ''}</td></tr>` : ''}
+                ${site.language ? `<tr><th>🌍 Langue</th><td><span class="badge bg-info">${site.language.toUpperCase()}</span> ${site.language_confidence ? `<small class="text-muted">(${Math.round(site.language_confidence * 100)}% confiance)</small>` : ''}</td></tr>` : ''}
+                <tr><th>Emails</th><td><div id="emails-container" data-emails="${site.emails ? site.emails.replace(/"/g, '&quot;') : ''}"><i class="spinner-border spinner-border-sm"></i> Chargement...</div></td></tr>
                 <tr><th>SIRET</th><td>${site.siret || '-'}</td></tr>
                 <tr><th>SIREN</th><td>${site.siren || '-'}</td></tr>
                 <tr><th>Dirigeants</th><td>${site.leaders || '-'}</td></tr>
-                <tr><th>Source</th><td>${site.source_url || '-'}</td></tr>
+                ${site.purchased_from || site.source_url ? `
+                <tr>
+                    <th colspan="2" class="table-secondary"><i class="bi bi-link-45deg"></i> Source du backlink</th>
+                </tr>
+                ${site.purchased_from ? `<tr><th>Site vendeur</th><td><a href="https://${site.purchased_from}" target="_blank"><i class="bi bi-shop"></i> ${site.purchased_from}</a></td></tr>` : ''}
+                ${site.source_url ? `<tr><th>Page source</th><td><a href="${site.source_url.startsWith('http') ? site.source_url : 'https://' + site.source_url}" target="_blank" style="word-break: break-all;"><i class="bi bi-box-arrow-up-right"></i> ${site.source_url.length > 80 ? site.source_url.substring(0, 80) + '...' : site.source_url}</a></td></tr>` : ''}
+                ` : ''}
+                ${site.backlinks_crawled ? `
+                <tr>
+                    <th colspan="2" class="table-secondary"><i class="bi bi-search"></i> Statistiques de crawl</th>
+                </tr>
+                <tr><th>📄 Pages crawlées</th><td><strong>${site.pages_crawled || 0}</strong></td></tr>
+                <tr><th>🗺️ URLs sitemap</th><td>${site.sitemap_urls_count || 0}</td></tr>
+                ${site.sitemap_urls_count > 0 ? `<tr><th>📊 Couverture</th><td>${Math.min(100, Math.round((site.pages_crawled / site.sitemap_urls_count) * 100))}% ${site.sitemap_missed_interesting > 0 ? `<span class="badge bg-warning">${site.sitemap_missed_interesting} URLs intéressantes manquées</span>` : '<span class="badge bg-success">OK</span>'}</td></tr>` : ''}
+                <tr><th>📅 Crawlé le</th><td>${site.backlinks_crawled_at ? new Date(site.backlinks_crawled_at).toLocaleString('fr-FR') : '-'}</td></tr>
+                ` : ''}
                 <tr><th>Créé le</th><td>${new Date(site.created_at).toLocaleString('fr-FR')}</td></tr>
                 <tr><th>Mis à jour le</th><td>${new Date(site.updated_at).toLocaleString('fr-FR')}</td></tr>
                 ${site.last_error ? `<tr><th>Erreur</th><td class="text-danger">${site.last_error}</td></tr>` : ''}
@@ -348,6 +389,13 @@ async function viewSite(id) {
         document.getElementById('site-details-content').innerHTML = content;
         const modal = new bootstrap.Modal(document.getElementById('siteDetailsModal'));
         modal.show();
+
+        // Charger les emails de manière async (après affichage du modal)
+        if (site.emails) {
+            await formatEmailsWithUnsubscribe(site.emails, 'emails-container');
+        } else {
+            document.getElementById('emails-container').innerHTML = '-';
+        }
 
     } catch (error) {
         console.error('Erreur:', error);
@@ -370,6 +418,166 @@ async function toggleSiteActive(id, currentStatus) {
     } catch (error) {
         console.error('Erreur:', error);
         alert('❌ Erreur lors du changement de statut');
+    }
+}
+
+// Formater les emails avec boutons de désabonnement individuels (async pour vérifier statut)
+async function formatEmailsWithUnsubscribe(emailsStr, containerId) {
+    const emails = emailsStr.split(/[;,]/).map(e => e.trim()).filter(e => e);
+
+    if (emails.length === 0) {
+        document.getElementById(containerId).innerHTML = '-';
+        return;
+    }
+
+    // Vérifier quels emails sont désabonnés
+    let unsubscribedList = [];
+    try {
+        const response = await fetch('/api/check-unsubscribed', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({emails: emails})
+        });
+        const data = await response.json();
+        unsubscribedList = data.unsubscribed || [];
+    } catch (e) {
+        console.error('Erreur vérification désabonnements:', e);
+    }
+
+    let html = '<div class="d-flex flex-column gap-1">';
+
+    // Chaque email avec son bouton
+    emails.forEach(email => {
+        const isUnsubscribed = unsubscribedList.includes(email.toLowerCase());
+        if (isUnsubscribed) {
+            html += `
+                <div class="d-flex align-items-center gap-2" id="email-row-${email.replace(/[^a-z0-9]/gi, '_')}">
+                    <span style="text-decoration: line-through; color: #999;">${email}</span>
+                    <span class="badge bg-secondary">Désabonné</span>
+                    <button class="btn btn-sm btn-outline-success py-0 px-1" onclick="resubscribeEmail('${email.replace(/'/g, "\\'")}')">
+                        <i class="bi bi-arrow-counterclockwise"></i>
+                    </button>
+                </div>
+            `;
+        } else {
+            html += `
+                <div class="d-flex align-items-center gap-2" id="email-row-${email.replace(/[^a-z0-9]/gi, '_')}">
+                    <span>${email}</span>
+                    <button class="btn btn-sm btn-outline-danger py-0 px-1" onclick="unsubscribeEmail('${email.replace(/'/g, "\\'")}')">
+                        <i class="bi bi-x"></i>
+                    </button>
+                </div>
+            `;
+        }
+    });
+
+    // Bouton pour désabonner tous si plusieurs emails actifs
+    const activeEmails = emails.filter(e => !unsubscribedList.includes(e.toLowerCase()));
+    if (activeEmails.length > 1) {
+        html += `
+            <div class="mt-2">
+                <button class="btn btn-sm btn-danger" onclick="unsubscribeEmails('${activeEmails.join(';').replace(/'/g, "\\'")}')">
+                    <i class="bi bi-envelope-x"></i> Désabonner tous (${activeEmails.length})
+                </button>
+            </div>
+        `;
+    }
+
+    html += '</div>';
+    document.getElementById(containerId).innerHTML = html;
+}
+
+// Désabonner un seul email
+async function unsubscribeEmail(email) {
+    if (!confirm(`⚠️ Désabonner cet email ?\n\n${email}\n\nIl ne recevra plus aucun email de campagne.`)) return;
+
+    try {
+        const response = await fetch('/api/unsubscribe', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({email: email})
+        });
+        const data = await response.json();
+        if (data.success) {
+            alert(`✅ ${email} désabonné avec succès`);
+            // Rafraîchir le modal si ouvert
+            const emailContainer = document.getElementById('emails-container');
+            if (emailContainer && emailContainer.dataset.emails) {
+                await formatEmailsWithUnsubscribe(emailContainer.dataset.emails, 'emails-container');
+            }
+        } else {
+            alert(`❌ Erreur: ${data.error}`);
+        }
+    } catch (error) {
+        alert(`❌ Erreur: ${error.message}`);
+    }
+}
+
+// Désabonner plusieurs emails d'un site
+async function unsubscribeEmails(emailsStr) {
+    // Séparer les emails (peuvent être séparés par ; ou ,)
+    const emails = emailsStr.split(/[;,]/).map(e => e.trim()).filter(e => e);
+
+    if (emails.length === 0) {
+        alert('Aucun email à désabonner');
+        return;
+    }
+
+    const emailList = emails.join('\n  - ');
+    if (!confirm(`⚠️ Désabonner ces emails ?\n\n  - ${emailList}\n\nIls ne recevront plus aucun email de campagne.`)) return;
+
+    let success = 0;
+    let errors = [];
+
+    for (const email of emails) {
+        try {
+            const response = await fetch('/api/unsubscribe', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({email: email})
+            });
+            const data = await response.json();
+            if (data.success) {
+                success++;
+            } else {
+                errors.push(`${email}: ${data.error}`);
+            }
+        } catch (error) {
+            errors.push(`${email}: ${error.message}`);
+        }
+    }
+
+    if (success > 0) {
+        alert(`✅ ${success} email(s) désabonné(s) avec succès`);
+    }
+    if (errors.length > 0) {
+        alert(`❌ Erreurs:\n${errors.join('\n')}`);
+    }
+}
+
+// Réactiver un email désabonné
+async function resubscribeEmail(email) {
+    if (!confirm(`🔄 Réactiver cet email ?\n\n${email}\n\nIl pourra à nouveau recevoir des emails de campagne.`)) return;
+
+    try {
+        const response = await fetch('/api/resubscribe', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({email: email})
+        });
+        const data = await response.json();
+        if (data.success) {
+            alert(`✅ ${email} réactivé avec succès`);
+            // Rafraîchir le modal si ouvert
+            const emailContainer = document.getElementById('emails-container');
+            if (emailContainer && emailContainer.dataset.emails) {
+                await formatEmailsWithUnsubscribe(emailContainer.dataset.emails, 'emails-container');
+            }
+        } else {
+            alert(`❌ Erreur: ${data.error}`);
+        }
+    } catch (error) {
+        alert(`❌ Erreur: ${error.message}`);
     }
 }
 

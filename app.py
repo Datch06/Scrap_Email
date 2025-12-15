@@ -19,6 +19,9 @@ from scenario_routes import register_scenario_routes
 from segment_routes import register_segment_routes
 from distributed_crawl_api import crawl_api
 from claude_ai_analyzer import ai_analyzer_bp
+from ai_recommendation_applier import ai_applier_bp
+from ai_email_analyzer import ai_email_analyzer_bp
+from worker_routes import worker_bp
 
 # Logger
 logging.basicConfig(level=logging.INFO)
@@ -49,6 +52,38 @@ app.register_blueprint(crawl_api)
 
 # Enregistrer les routes AI Analyzer
 app.register_blueprint(ai_analyzer_bp)
+
+# Enregistrer les routes AI Applier (application des recommandations)
+app.register_blueprint(ai_applier_bp)
+
+# Enregistrer les routes AI Email Analyzer (analyse des emails)
+app.register_blueprint(ai_email_analyzer_bp)
+
+# Enregistrer les routes de gestion des workers
+app.register_blueprint(worker_bp)
+
+# Health check endpoint
+@app.route('/api/health')
+def health_check():
+    """Endpoint de health check pour monitoring"""
+    import psutil
+    health = {
+        'status': 'ok',
+        'timestamp': datetime.now().isoformat(),
+        'cpu_percent': psutil.cpu_percent(),
+        'memory_percent': psutil.virtual_memory().percent,
+        'disk_percent': psutil.disk_usage('/').percent
+    }
+    try:
+        from sqlalchemy import text
+        session = get_session()
+        session.execute(text('SELECT 1'))
+        session.close()
+        health['database'] = 'ok'
+    except Exception as e:
+        health['database'] = f'error: {str(e)}'
+        health['status'] = 'degraded'
+    return jsonify(health)
 
 
 # ============================================================================
@@ -224,8 +259,8 @@ def compute_stats_data():
         # Stats Blacklist
         sites_blacklisted = session.query(Site).filter(Site.blacklisted == True).count()
 
-        # Stats Sites Vendeurs (LinkAvista)
-        total_sellers = session.query(Site).filter_by(is_linkavista_seller=True).count()
+        # Stats Sites Vendeurs LinkAvista et Acheteurs
+        total_sellers = session.query(Site).filter(Site.is_link_seller == True).count()
         total_buyers = session.query(Site).filter(Site.purchased_from.isnot(None)).count()
 
         # Stats Campagnes - Désinscrits
@@ -238,18 +273,22 @@ def compute_stats_data():
         finally:
             campaign_session.close()
 
-        # Stats Scraping Backlinks
-        backlinks_scraped = session.query(Site).filter(Site.backlinks_crawled == True).count()
+        # Stats Scraping Backlinks - Utiliser is_link_seller pour les vrais vendeurs
+        backlinks_scraped = session.query(Site).filter(
+            Site.is_link_seller == True,
+            Site.backlinks_crawled == True
+        ).count()
         backlinks_not_scraped = session.query(Site).filter(
+            Site.is_link_seller == True,
             (Site.backlinks_crawled == False) | (Site.backlinks_crawled.is_(None))
         ).count()
-        # Sites vendeurs scrappés
+        # Sites vendeurs LinkAvista scrappés
         sellers_scraped = session.query(Site).filter(
-            Site.is_linkavista_seller == True,
+            Site.is_link_seller == True,
             Site.backlinks_crawled == True
         ).count()
         sellers_not_scraped = session.query(Site).filter(
-            Site.is_linkavista_seller == True,
+            Site.is_link_seller == True,
             (Site.backlinks_crawled == False) | (Site.backlinks_crawled.is_(None))
         ).count()
 
@@ -347,8 +386,8 @@ def get_scraping_live():
     session = get_session()
 
     try:
-        # Stats globales LinkAvista
-        total_sellers = session.query(Site).filter_by(is_linkavista_seller=True).count()
+        # Stats globales (vendeurs = sans purchased_from)
+        total_sellers = session.query(Site).filter(Site.purchased_from.is_(None)).count()
         total_buyers = session.query(Site).filter(Site.purchased_from.isnot(None)).count()
         buyers_with_email = session.query(Site).filter(
             Site.purchased_from.isnot(None),
@@ -372,7 +411,7 @@ def get_scraping_live():
 
         # Top 10 derniers sites vendeurs RÉELLEMENT CRAWLÉS (pas juste mis à jour)
         recent_sellers = session.query(Site).filter(
-            Site.is_linkavista_seller == True,
+            Site.purchased_from.is_(None),
             Site.backlinks_crawled == True,
             Site.backlinks_crawled_at.isnot(None)
         ).order_by(Site.backlinks_crawled_at.desc()).limit(10).all()
@@ -586,7 +625,7 @@ def cancel_crawl():
 
         session = get_session()
         next_site = session.query(Site).filter(
-            Site.is_linkavista_seller == True,
+            Site.purchased_from.is_(None),
             Site.backlinks_crawled == False,
             Site.blacklisted == False,
             ~Site.domain.in_(current_blacklist)  # Exclure les domaines du fichier blacklist
@@ -995,15 +1034,18 @@ def compute_daily_stats_data():
             date_start = date.replace(hour=0, minute=0, second=0, microsecond=0)
             date_end = date_start + timedelta(days=1)
 
-            sites_crawled = session.query(Site).filter(
-                Site.created_at >= date_start,
-                Site.created_at < date_end
+            # Sites crawlés ce jour (vendeurs ET acheteurs avec backlinks_crawled_at)
+            sellers_crawled = session.query(Site).filter(
+                Site.backlinks_crawled == True,
+                Site.backlinks_crawled_at >= date_start,
+                Site.backlinks_crawled_at < date_end
             ).count()
 
+            # Acheteurs découverts ce jour (created_at pour les nouveaux)
             buyers_found = session.query(Site).filter(
                 Site.purchased_from.isnot(None),
-                Site.purchased_at >= date_start,
-                Site.purchased_at < date_end
+                Site.created_at >= date_start,
+                Site.created_at < date_end
             ).count()
 
             emails_found = session.query(Site).filter(
@@ -1031,17 +1073,22 @@ def compute_daily_stats_data():
 
             daily_data.append({
                 'date': date_start.strftime('%Y-%m-%d'),
-                'sites_crawled': sites_crawled,
+                'sellers_crawled': sellers_crawled,
                 'buyers_found': buyers_found,
                 'siret_found': siret_found,
                 'leaders_found': leaders_found,
                 'emails_found': emails_found
             })
 
-        total_sites = session.query(Site).filter(Site.created_at >= thirty_days_ago).count()
+        # Total sites crawlés dans les 30 derniers jours (vendeurs ET acheteurs)
+        total_sellers_crawled = session.query(Site).filter(
+            Site.backlinks_crawled == True,
+            Site.backlinks_crawled_at >= thirty_days_ago
+        ).count()
+        # Total acheteurs découverts dans les 30 derniers jours (created_at)
         total_buyers = session.query(Site).filter(
             Site.purchased_from.isnot(None),
-            Site.purchased_at >= thirty_days_ago
+            Site.created_at >= thirty_days_ago
         ).count()
         total_siret = session.query(Site).filter(
             Site.updated_at >= thirty_days_ago,
@@ -1064,12 +1111,12 @@ def compute_daily_stats_data():
         return {
             'daily': daily_data,
             'summary_30_days': {
-                'total_sites_crawled': total_sites,
+                'total_sellers_crawled': total_sellers_crawled,
                 'total_buyers_found': total_buyers,
                 'total_siret_found': total_siret,
                 'total_leaders_found': total_leaders,
                 'total_emails_found': total_emails,
-                'avg_sites_per_day': round(total_sites / 30, 1),
+                'avg_sellers_per_day': round(total_sellers_crawled / 30, 1),
                 'avg_buyers_per_day': round(total_buyers / 30, 1),
                 'avg_siret_per_day': round(total_siret / 30, 1),
                 'avg_leaders_per_day': round(total_leaders / 30, 1),
@@ -1104,12 +1151,12 @@ def get_daily_stats():
     return jsonify({
         'daily': [],
         'summary_30_days': {
-            'total_sites_crawled': 0,
+            'total_sellers_crawled': 0,
             'total_buyers_found': 0,
             'total_siret_found': 0,
             'total_leaders_found': 0,
             'total_emails_found': 0,
-            'avg_sites_per_day': 0,
+            'avg_sellers_per_day': 0,
             'avg_buyers_per_day': 0,
             'avg_siret_per_day': 0,
             'avg_leaders_per_day': 0,
@@ -1136,6 +1183,7 @@ def get_sites():
         # Filtres
         status_filter = request.args.get('status')
         search_query = request.args.get('search', '').strip()
+        email_search = request.args.get('email_search', '').strip()
         has_email = request.args.get('has_email')
         has_siret = request.args.get('has_siret')
         has_leaders = request.args.get('has_leaders')
@@ -1156,6 +1204,10 @@ def get_sites():
         # Recherche par domaine
         if search_query:
             query = query.filter(Site.domain.like(f'%{search_query}%'))
+
+        # Recherche par email
+        if email_search:
+            query = query.filter(Site.emails.ilike(f'%{email_search}%'))
 
         # Filtre email
         if has_email == 'true':
@@ -1726,6 +1778,8 @@ def get_validation_stats():
     session = get_session()
 
     try:
+        from sqlalchemy import text
+
         # Total avec emails
         total_with_email = session.query(Site).filter(
             Site.emails.isnot(None),
@@ -1746,10 +1800,56 @@ def get_validation_stats():
         ).scalar()
         avg_score = round(avg_score_result, 1) if avg_score_result else 0
 
+        # Stats emails par source
+        email_sources = session.query(
+            Site.email_source,
+            func.count(Site.id)
+        ).filter(
+            Site.emails.isnot(None),
+            Site.emails != '',
+            Site.emails != 'NO EMAIL FOUND'
+        ).group_by(Site.email_source).order_by(func.count(Site.id).desc()).all()
+
+        sources_stats = [{'source': s or 'unknown', 'count': c} for s, c in email_sources[:10]]
+
+        # Compter les doublons d'emails
+        duplicates_result = session.execute(text("""
+            SELECT COUNT(*) as dup_count FROM (
+                SELECT emails FROM sites
+                WHERE emails IS NOT NULL AND emails != '' AND emails != 'NO EMAIL FOUND'
+                GROUP BY emails
+                HAVING COUNT(*) > 1
+            ) t
+        """))
+        duplicate_emails_count = duplicates_result.scalar() or 0
+
+        # Top doublons
+        top_duplicates_result = session.execute(text("""
+            SELECT emails, COUNT(*) as cnt
+            FROM sites
+            WHERE emails IS NOT NULL AND emails != '' AND emails != 'NO EMAIL FOUND'
+            GROUP BY emails
+            HAVING COUNT(*) > 1
+            ORDER BY cnt DESC
+            LIMIT 5
+        """))
+        top_duplicates = [{'email': row[0][:50], 'count': row[1]} for row in top_duplicates_result.fetchall()]
+
+        # Emails uniques vs total
+        unique_emails_result = session.execute(text("""
+            SELECT COUNT(DISTINCT emails) FROM sites
+            WHERE emails IS NOT NULL AND emails != '' AND emails != 'NO EMAIL FOUND'
+        """))
+        unique_emails = unique_emails_result.scalar() or 0
+
         return jsonify({
             'total_emails': total_with_email,
+            'unique_emails': unique_emails,
+            'duplicate_emails': total_with_email - unique_emails,
+            'duplicate_groups': duplicate_emails_count,
+            'top_duplicates': top_duplicates,
             'total_validated': total_validated,
-            'pending_validation': total_with_email - total_validated,
+            'pending_validation': max(0, total_with_email - total_validated),
             'valid': valid_count,
             'invalid': invalid_count,
             'risky': risky_count,
@@ -1758,6 +1858,7 @@ def get_validation_stats():
             'validation_rate': round((total_validated / total_with_email * 100) if total_with_email > 0 else 0, 1),
             'valid_rate': round((valid_count / total_validated * 100) if total_validated > 0 else 0, 1),
             'deliverable_rate': round((deliverable_count / total_validated * 100) if total_validated > 0 else 0, 1),
+            'sources': sources_stats
         })
 
     finally:
@@ -1917,7 +2018,7 @@ def create_campaign():
             campaign_from_manager = manager.campaign_session.query(Campaign).get(campaign.id)
             if campaign_from_manager:
                 campaign_from_manager.segment_id = int(data.get('segment_id'))
-                manager.campaign_safe_commit(session)
+                manager.campaign_session.commit()
 
                 # Préparer automatiquement la campagne
                 try:
@@ -2568,6 +2669,121 @@ def get_replies_stats():
 # ROUTES - UNSUBSCRIBE
 # ============================================================================
 
+@app.route('/api/unsubscribe', methods=['POST'])
+def api_unsubscribe():
+    """API pour désabonner un email depuis l'interface admin"""
+    data = request.get_json()
+    email = data.get('email', '').strip().lower()
+    reason = data.get('reason', 'Désabonnement manuel depuis admin')
+
+    if not email:
+        return jsonify({'error': 'Email requis'}), 400
+
+    campaign_session = get_campaign_session()
+
+    try:
+        # Vérifier si déjà désinscrit
+        existing = campaign_session.query(Unsubscribe).filter(
+            Unsubscribe.email == email
+        ).first()
+
+        if existing:
+            return jsonify({
+                'success': True,
+                'message': f'{email} était déjà désabonné',
+                'already_unsubscribed': True
+            })
+
+        # Ajouter à la liste
+        unsubscribe_record = Unsubscribe(
+            email=email,
+            reason=reason,
+            unsubscribed_at=datetime.utcnow()
+        )
+
+        campaign_session.add(unsubscribe_record)
+        campaign_session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': f'{email} désabonné avec succès'
+        })
+
+    except Exception as e:
+        campaign_session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+    finally:
+        campaign_session.close()
+
+
+@app.route('/api/resubscribe', methods=['POST'])
+def api_resubscribe():
+    """API pour réactiver un email désabonné"""
+    data = request.get_json()
+    email = data.get('email', '').strip().lower()
+
+    if not email:
+        return jsonify({'error': 'Email requis'}), 400
+
+    campaign_session = get_campaign_session()
+
+    try:
+        # Trouver et supprimer le désabonnement
+        existing = campaign_session.query(Unsubscribe).filter(
+            Unsubscribe.email == email
+        ).first()
+
+        if not existing:
+            return jsonify({
+                'success': True,
+                'message': f'{email} n\'était pas désabonné',
+                'was_not_unsubscribed': True
+            })
+
+        campaign_session.delete(existing)
+        campaign_session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': f'{email} réactivé avec succès'
+        })
+
+    except Exception as e:
+        campaign_session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+    finally:
+        campaign_session.close()
+
+
+@app.route('/api/check-unsubscribed', methods=['POST'])
+def api_check_unsubscribed():
+    """API pour vérifier si des emails sont désabonnés"""
+    data = request.get_json()
+    emails = data.get('emails', [])
+
+    if not emails:
+        return jsonify({'unsubscribed': []})
+
+    # Normaliser les emails
+    emails = [e.strip().lower() for e in emails if e.strip()]
+
+    campaign_session = get_campaign_session()
+
+    try:
+        unsubscribed = campaign_session.query(Unsubscribe.email).filter(
+            Unsubscribe.email.in_(emails)
+        ).all()
+
+        return jsonify({
+            'unsubscribed': [u[0] for u in unsubscribed]
+        })
+
+    finally:
+        campaign_session.close()
+
+
 @app.route('/unsubscribe')
 def unsubscribe():
     """Page de désinscription des emails"""
@@ -2824,7 +3040,7 @@ def ses_webhook():
                 elif notification_type == 'Click':
                     handle_click(message, campaign_session)
 
-                campaign_safe_commit(session)
+                campaign_session.commit()
                 return jsonify({'status': 'success', 'type': notification_type}), 200
 
             except Exception as e:
@@ -3139,17 +3355,17 @@ def get_scripts_progress():
             (Site.emails == "NO EMAIL FOUND") | (Site.emails == None) | (Site.emails == "")
         ).count()
 
-        # Sites testés avec guessing (any_valid dans email_source)
+        # Sites testés avec guessing (any_valid dans email_source - succès ou échec)
         sites_guessing_tested = session.query(Site).filter(
-            Site.email_source.like('%any_valid%')
+            (Site.email_source.like('%any_valid%')) | (Site.email_source == 'generic_validated')
         ).count()
 
-        # Sites où guessing a trouvé un email
+        # Sites où guessing a trouvé un email (any_valid_email = trouvé sur le site)
         sites_guessing_found = session.query(Site).filter(
             Site.email_source == 'any_valid_email'
         ).count()
 
-        # Sites où guessing générique a trouvé un email
+        # Sites où guessing générique a trouvé un email (generic_validated = email générique validé)
         sites_generic_found = session.query(Site).filter(
             Site.email_source == 'generic_validated'
         ).count()
@@ -3159,7 +3375,8 @@ def get_scripts_progress():
             Site.is_active == True,
             Site.blacklisted == False,
             (Site.emails == "NO EMAIL FOUND") | (Site.emails == None) | (Site.emails == ""),
-            ~Site.email_source.like('%any_valid%')
+            ~Site.email_source.like('%any_valid%'),
+            Site.email_source != 'generic_validated'
         ).count()
 
         # Sites avec contact extrait

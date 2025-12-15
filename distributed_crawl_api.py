@@ -15,6 +15,7 @@ Endpoints:
 
 import json
 import logging
+import os
 from datetime import datetime, timedelta
 from pathlib import Path
 from flask import Blueprint, jsonify, request
@@ -23,28 +24,135 @@ from sqlalchemy import func
 
 logger = logging.getLogger(__name__)
 
+# ============================================================================
+# Détection de langue via Claude API (pour les sites sans attribut HTML lang)
+# ============================================================================
+
+# Configuration Anthropic
+CLAUDE_CREDENTIALS_PATH = '/home/debian/.claude/.credentials.json'
+_anthropic_client = None
+
+def get_anthropic_client():
+    """Retourne un client Anthropic singleton"""
+    global _anthropic_client
+    if _anthropic_client is not None:
+        return _anthropic_client
+
+    # Récupérer la clé API
+    api_key = os.environ.get('ANTHROPIC_API_KEY', '')
+    if not api_key:
+        try:
+            if os.path.exists(CLAUDE_CREDENTIALS_PATH):
+                with open(CLAUDE_CREDENTIALS_PATH, 'r') as f:
+                    creds = json.load(f)
+                    api_key = creds.get('apiKey') or creds.get('anthropicApiKey') or ''
+        except Exception:
+            pass
+
+    if not api_key:
+        return None
+
+    try:
+        import anthropic
+        _anthropic_client = anthropic.Anthropic(api_key=api_key)
+        return _anthropic_client
+    except Exception as e:
+        logger.warning(f"Impossible d'initialiser Anthropic: {e}")
+        return None
+
+def detect_language_with_claude(text_sample: str) -> tuple:
+    """
+    Utilise Claude pour détecter la langue d'un texte.
+    Retourne (language_code, confidence) ou (None, None) en cas d'erreur.
+    """
+    if not text_sample or len(text_sample) < 20:
+        return None, None
+
+    client = get_anthropic_client()
+    if not client:
+        return None, None
+
+    try:
+        response = client.messages.create(
+            model="claude-3-5-haiku-20241022",
+            max_tokens=10,
+            messages=[{
+                "role": "user",
+                "content": f"Quelle est la langue de ce texte ? Réponds UNIQUEMENT par le code ISO 639-1 (ex: fr, en, es, de, it, pt, nl). Texte: {text_sample[:300]}"
+            }]
+        )
+
+        lang_code = response.content[0].text.strip().lower()[:2]
+
+        # Valider le code langue (2 lettres alphabétiques)
+        if len(lang_code) == 2 and lang_code.isalpha():
+            return lang_code, 0.85  # Confiance 85% pour détection par Claude
+        return None, None
+
+    except Exception as e:
+        logger.warning(f"Erreur détection langue Claude: {e}")
+        return None, None
+
 # Blueprint Flask pour les routes de crawl distribué
 crawl_api = Blueprint('crawl_api', __name__)
 
 # Fichier de suivi des workers
 WORKERS_FILE = Path('/var/www/Scrap_Email/crawl_workers.json')
 DAILY_PAGES_FILE = Path('/var/www/Scrap_Email/crawl_daily_pages.json')
-WORKER_TIMEOUT = 600  # 10 minutes sans heartbeat = worker considéré comme mort (heartbeat toutes les 30s)
+WORKER_TIMEOUT = 60  # 60 secondes sans heartbeat = worker considéré comme mort (heartbeat toutes les 30s)
+
+# Configuration centralisée des serveurs
+SERVERS_CONFIG = {
+    'local': {
+        'name': 'ns3132232 (local)',
+        'ssh': None,  # Pas de SSH pour le serveur local
+        'min_required': 1,
+        'worker_path': '/var/www/Scrap_Email'
+    },
+    'remote': {
+        'name': 'ns500898',
+        'ssh': 'debian@192.99.44.191',
+        'min_required': 8,
+        'worker_path': '/home/debian/crawl_worker'
+    },
+    'remote2': {
+        'name': 'prestashop',
+        'ssh': 'debian@137.74.26.28',
+        'min_required': 4,
+        'worker_path': '/home/debian/crawl_worker'
+    },
+    'remote3': {
+        'name': 'betterweb',
+        'ssh': 'datch@51.178.78.138',
+        'min_required': 4,
+        'worker_path': '/home/datch/crawl_worker'
+    },
+    'remote4': {
+        'name': 'wordpress',
+        'ssh': 'debian@137.74.31.238',
+        'min_required': 2,
+        'worker_path': '/home/debian/crawl_worker'
+    },
+    'remote5': {
+        'name': 'ladd-prod3',
+        'ssh': 'apps@server-prod3.ladd.guru',
+        'min_required': 1,
+        'worker_path': '/home/apps/crawl_worker'
+    },
+    'remote6': {
+        'name': 'ladd-prod6',
+        'ssh': 'apps@51.77.13.24',
+        'min_required': 1,
+        'worker_path': '/home/apps/crawl_worker'
+    }
+}
 
 
 def load_daily_pages():
-    """Charger les stats de pages crawlées par jour (fichier JSON ou base de données)"""
-    # Essayer le fichier JSON d'abord
-    if DAILY_PAGES_FILE.exists():
-        try:
-            with open(DAILY_PAGES_FILE, 'r') as f:
-                data = json.load(f)
-                if data:
-                    return data
-        except:
-            pass
+    """Charger les stats de pages crawlées par jour (fusion fichier JSON + base de données)"""
+    data = {}
 
-    # Si fichier vide ou corrompu, charger depuis la base de données
+    # Charger depuis la base de données d'abord (source de vérité pour l'historique)
     try:
         from sqlalchemy import text
         session = get_session()
@@ -54,24 +162,38 @@ def load_daily_pages():
             ORDER BY date DESC
             LIMIT 30
         """))
-        data = {}
         for row in result:
             date_str = row[0].strftime('%Y-%m-%d') if hasattr(row[0], 'strftime') else str(row[0])
-            workers = json.loads(row[3]) if row[3] else {}
+            workers_raw = row[3]
+            if workers_raw:
+                if isinstance(workers_raw, str):
+                    workers = json.loads(workers_raw)
+                else:
+                    workers = workers_raw
+            else:
+                workers = {}
             data[date_str] = {
                 'total': row[1] or 0,
                 'workers': workers
             }
         session.close()
-        if data:
-            # Resauvegarder dans le fichier JSON
-            with open(DAILY_PAGES_FILE, 'w') as f:
-                json.dump(data, f, indent=2)
-            return data
     except Exception as e:
         logger.error(f"Erreur chargement BDD stats: {e}")
 
-    return {}
+    # Fusionner avec le fichier JSON (peut avoir des données plus récentes pour aujourd'hui)
+    if DAILY_PAGES_FILE.exists():
+        try:
+            with open(DAILY_PAGES_FILE, 'r') as f:
+                json_data = json.load(f)
+                if json_data:
+                    # Fusionner: le JSON prend la priorité pour les données du jour
+                    for date_str, day_data in json_data.items():
+                        if date_str not in data or (isinstance(day_data, dict) and day_data.get('total', 0) > data.get(date_str, {}).get('total', 0)):
+                            data[date_str] = day_data
+        except:
+            pass
+
+    return data
 
 
 def save_daily_pages(data):
@@ -152,12 +274,34 @@ def load_blacklist():
     return blacklist
 
 
-def load_workers():
-    """Charger les informations des workers"""
+def load_workers(clean_inactive: bool = True):
+    """Charger les informations des workers et optionnellement nettoyer les inactifs"""
     if WORKERS_FILE.exists():
         try:
             with open(WORKERS_FILE, 'r') as f:
-                return json.load(f)
+                data = json.load(f)
+
+            # Nettoyer automatiquement les workers inactifs
+            if clean_inactive and data.get('workers'):
+                now = datetime.utcnow()
+                active_workers = {}
+                for wid, w in data['workers'].items():
+                    if w.get('last_heartbeat'):
+                        try:
+                            last_hb = datetime.fromisoformat(w['last_heartbeat'].replace('Z', ''))
+                            if (now - last_hb).total_seconds() < WORKER_TIMEOUT:
+                                active_workers[wid] = w
+                        except:
+                            pass
+
+                # Si on a supprimé des workers, sauvegarder
+                if len(active_workers) < len(data['workers']):
+                    data['workers'] = active_workers
+                    data['last_update'] = now.isoformat()
+                    with open(WORKERS_FILE, 'w') as f:
+                        json.dump(data, f, indent=2)
+
+            return data
         except:
             pass
     return {'workers': {}, 'last_update': None}
@@ -216,10 +360,16 @@ def get_crawl_task():
 
         # FOR UPDATE SKIP LOCKED: verrouille les lignes et skip celles déjà verrouillées
         # Cela évite les doublons entre workers même en cas de requêtes simultanées
+        # On exclut aussi les domaines gouvernementaux directement en SQL (plus efficace)
+        # Note: Un site peut être vendeur ET acheteur, donc on filtre sur is_link_seller, pas purchased_from
         sites_raw = session.query(Site).filter(
-            Site.purchased_from.is_(None),
+            Site.is_link_seller == True,
             Site.backlinks_crawled == False,
             Site.blacklisted == False,
+            Site.is_active == True,
+            ~Site.domain.like('%.gouv.fr'),  # Exclure les domaines gouvernementaux
+            ~Site.domain.like('%.senat.fr'),
+            ~Site.domain.like('%.assemblee-nationale.fr'),
             (Site.updated_at.is_(None)) | (Site.updated_at < lock_threshold)
         ).order_by(priority_order, Site.id).limit(batch_size * 3).with_for_update(skip_locked=True).all()
 
@@ -330,6 +480,23 @@ def submit_crawl_result():
     pages_crawled = data.get('pages_crawled', 0)
     error = data.get('error')
     is_intermediate = data.get('is_intermediate', False)  # Batch intermédiaire ou résultat final
+    sitemap_urls = data.get('sitemap_urls', 0)  # Nombre d'URLs dans le sitemap
+    missed_interesting = data.get('missed_interesting', 0)  # URLs intéressantes non crawlées
+    seller_email = data.get('seller_email')  # Email du vendeur extrait pendant le crawl
+    # CMS et langue détectés pendant le crawl
+    cms = data.get('cms')
+    cms_version = data.get('cms_version')
+    language = data.get('language')
+    language_confidence = data.get('language_confidence')
+    text_sample = data.get('text_sample')  # Échantillon de texte pour détection langue par Claude
+
+    # Si pas de langue détectée mais un text_sample est fourni, utiliser Claude
+    if not language and text_sample:
+        claude_lang, claude_confidence = detect_language_with_claude(text_sample)
+        if claude_lang:
+            language = claude_lang
+            language_confidence = claude_confidence
+            logger.info(f"🤖 Langue détectée par Claude pour {domain}: {language}")
 
     if not site_id or not domain:
         return jsonify({'error': 'site_id et domain requis'}), 400
@@ -338,11 +505,40 @@ def submit_crawl_result():
     try:
         # Marquer le site vendeur comme crawlé (seulement si c'est le résultat final)
         seller = session.query(Site).filter_by(id=site_id).first()
-        if seller and not is_intermediate:
-            seller.backlinks_crawled = True
-            seller.backlinks_crawled_at = datetime.utcnow()
-            if error:
-                seller.last_error = error
+        if seller:
+            # Toujours mettre à jour le nombre de pages (même pour les résultats intermédiaires)
+            seller.pages_crawled = max(seller.pages_crawled or 0, pages_crawled)
+
+            if not is_intermediate:
+                seller.backlinks_crawled = True
+                seller.backlinks_crawled_at = datetime.utcnow()
+                # Sauvegarder les infos sitemap
+                if sitemap_urls > 0:
+                    seller.sitemap_urls_count = sitemap_urls
+                    seller.sitemap_missed_interesting = missed_interesting
+                if error:
+                    seller.last_error = error
+                # Sauvegarder l'email du vendeur si extrait pendant le crawl (et pas déjà présent)
+                if seller_email and not seller.emails:
+                    seller.emails = seller_email
+                    seller.email_source = 'distributed_crawl'
+                    seller.email_found_at = datetime.utcnow()
+                    seller.email_crawl_at = datetime.utcnow()
+                    logger.info(f"📧 Email vendeur trouvé pour {domain}: {seller_email}")
+
+                # Sauvegarder le CMS si détecté (et pas déjà présent)
+                if cms and not seller.cms:
+                    seller.cms = cms
+                    seller.cms_version = cms_version
+                    seller.cms_detected_at = datetime.utcnow()
+                    logger.info(f"🔧 CMS détecté pour {domain}: {cms}" + (f" {cms_version}" if cms_version else ""))
+
+                # Sauvegarder la langue si détectée (et pas déjà présente)
+                if language and not seller.language:
+                    seller.language = language
+                    seller.language_confidence = language_confidence
+                    seller.language_detected_at = datetime.utcnow()
+                    logger.info(f"🌍 Langue détectée pour {domain}: {language} ({language_confidence})")
 
         # Traiter les acheteurs trouvés
         new_buyers = 0
@@ -550,6 +746,24 @@ def submit_buyers_batch():
         for buyer_data in buyers:
             buyer_domain = buyer_data.get('domain')
             buyer_email = buyer_data.get('email')
+            found_on_url = buyer_data.get('found_on_url')  # URL où le backlink a été trouvé
+
+            # Nouvelles données enrichies
+            language = buyer_data.get('language')
+            language_confidence = buyer_data.get('language_confidence')
+            text_sample = buyer_data.get('text_sample')
+            cms = buyer_data.get('cms')
+            cms_version = buyer_data.get('cms_version')
+            siret = buyer_data.get('siret')
+            siren = buyer_data.get('siren')
+            siret_type = buyer_data.get('siret_type')
+
+            # Si pas de langue détectée mais text_sample fourni, utiliser Claude
+            if not language and text_sample:
+                claude_lang, claude_confidence = detect_language_with_claude(text_sample)
+                if claude_lang:
+                    language = claude_lang
+                    language_confidence = claude_confidence
 
             if not buyer_domain:
                 continue
@@ -560,21 +774,52 @@ def submit_buyers_batch():
             if existing:
                 if not existing.purchased_from:
                     existing.purchased_from = seller_domain
+                    existing.purchased_on_url = found_on_url
                     existing.purchased_at = datetime.utcnow()
                 if buyer_email and not existing.emails:
                     existing.emails = buyer_email
                     existing.email_source = 'distributed_crawl'
                     existing.email_found_at = datetime.utcnow()
                     emails_added += 1
+                # Mettre à jour langue si pas encore définie
+                if language and not existing.language:
+                    existing.language = language
+                    existing.language_confidence = language_confidence
+                    existing.language_detected_at = datetime.utcnow()
+                # Mettre à jour CMS si pas encore défini
+                if cms and not existing.cms:
+                    existing.cms = cms
+                    existing.cms_version = cms_version
+                    existing.cms_detected_at = datetime.utcnow()
+                # Mettre à jour SIRET si pas encore défini
+                if (siret or siren) and not existing.siret and not existing.siren:
+                    existing.siret = siret
+                    existing.siren = siren
+                    existing.siret_type = siret_type
+                    existing.siret_found_at = datetime.utcnow()
+                    existing.siret_checked = True
             else:
                 new_site = Site(
                     domain=buyer_domain,
                     source_url=f"https://{seller_domain}",
                     purchased_from=seller_domain,
+                    purchased_on_url=found_on_url,
                     purchased_at=datetime.utcnow(),
                     emails=buyer_email,
                     email_source='distributed_crawl' if buyer_email else None,
-                    email_found_at=datetime.utcnow() if buyer_email else None
+                    email_found_at=datetime.utcnow() if buyer_email else None,
+                    # Données enrichies
+                    language=language,
+                    language_confidence=language_confidence,
+                    language_detected_at=datetime.utcnow() if language else None,
+                    cms=cms,
+                    cms_version=cms_version,
+                    cms_detected_at=datetime.utcnow() if cms else None,
+                    siret=siret,
+                    siren=siren,
+                    siret_type=siret_type,
+                    siret_checked=True if (siret or siren) else False,
+                    siret_found_at=datetime.utcnow() if (siret or siren) else None
                 )
                 session.add(new_site)
                 new_buyers += 1
@@ -689,7 +934,7 @@ def get_workers():
     from datetime import datetime
 
     crawl_workers = {
-        'local': {'count': 0, 'workers': [], 'min_required': 0, 'host': 'server-pbn1 (local)'},
+        'local': {'count': 0, 'workers': [], 'min_required': 1, 'host': 'ns3132232 (local)'},
         'remote': {'count': 0, 'workers': [], 'min_required': 8, 'host': 'ns500898 (192.99.44.191)'},
         'remote2': {'count': 0, 'workers': [], 'min_required': 4, 'host': 'prestashop (137.74.26.28)'},
         'remote3': {'count': 0, 'workers': [], 'min_required': 4, 'host': 'betterweb (51.178.78.138)'},
@@ -699,13 +944,13 @@ def get_workers():
     }
 
     try:
-        # Workers locaux via ps aux
+        # Workers locaux via ps aux (cherche crawl_worker.py ET crawl_worker_multi.py)
         local_result = subprocess.run(
             ['ps', 'aux'],
             capture_output=True, text=True, timeout=10
         )
         for line in local_result.stdout.split('\n'):
-            if 'crawl_worker_multi.py' in line and 'python3' in line and 'bash -c' not in line and 'ssh ' not in line and '@' not in line:
+            if ('crawl_worker.py' in line or 'crawl_worker_multi.py' in line) and 'python3' in line and 'bash -c' not in line and 'ssh ' not in line and '@' not in line:
                 parts = line.split()
                 if len(parts) >= 11:
                     crawl_workers['local']['workers'].append({
@@ -716,16 +961,16 @@ def get_workers():
                     })
         crawl_workers['local']['count'] = len(crawl_workers['local']['workers'])
 
-        # Workers distants ns500898 via SSH (avec timeout augmenté)
+        # Workers distants ns500898 via SSH (cherche crawl_worker.py ET crawl_worker_multi.py)
         try:
             remote_result = subprocess.run(
                 ['ssh', '-o', 'ConnectTimeout=30', '-o', 'StrictHostKeyChecking=no', '-o', 'BatchMode=yes',
                  'debian@192.99.44.191',
-                 "ps aux | grep 'python3.*crawl_worker_multi.py' | grep -v grep | grep -v 'bash -c'"],
+                 "ps aux | grep -E 'python3.*(crawl_worker\\.py|crawl_worker_multi\\.py)' | grep -v grep | grep -v 'bash -c'"],
                 capture_output=True, text=True, timeout=60
             )
             for line in remote_result.stdout.strip().split('\n'):
-                if line.strip() and 'crawl_worker_multi.py' in line:
+                if line.strip() and ('crawl_worker.py' in line or 'crawl_worker_multi.py' in line):
                     parts = line.split()
                     if len(parts) >= 11 and parts[1].isdigit():
                         crawl_workers['remote']['workers'].append({
@@ -738,16 +983,16 @@ def get_workers():
         except (subprocess.TimeoutExpired, Exception) as e:
             crawl_workers['remote']['error'] = str(e)
 
-        # Workers distants prestashop via SSH (avec timeout augmenté)
+        # Workers distants prestashop via SSH (cherche crawl_worker.py ET crawl_worker_multi.py)
         try:
             remote2_result = subprocess.run(
                 ['ssh', '-o', 'ConnectTimeout=30', '-o', 'StrictHostKeyChecking=no', '-o', 'BatchMode=yes',
                  'debian@137.74.26.28',
-                 "ps aux | grep 'python3.*crawl_worker_multi.py' | grep -v grep | grep -v 'bash -c'"],
+                 "ps aux | grep -E 'python3.*(crawl_worker\\.py|crawl_worker_multi\\.py)' | grep -v grep | grep -v 'bash -c'"],
                 capture_output=True, text=True, timeout=60
             )
             for line in remote2_result.stdout.strip().split('\n'):
-                if line.strip() and 'crawl_worker_multi.py' in line:
+                if line.strip() and ('crawl_worker.py' in line or 'crawl_worker_multi.py' in line):
                     parts = line.split()
                     if len(parts) >= 11 and parts[1].isdigit():
                         crawl_workers['remote2']['workers'].append({
@@ -760,16 +1005,16 @@ def get_workers():
         except (subprocess.TimeoutExpired, Exception) as e:
             crawl_workers['remote2']['error'] = str(e)
 
-        # Workers distants betterweb via SSH
+        # Workers distants betterweb via SSH (cherche crawl_worker.py ET crawl_worker_multi.py)
         try:
             remote3_result = subprocess.run(
                 ['ssh', '-o', 'ConnectTimeout=30', '-o', 'StrictHostKeyChecking=no', '-o', 'BatchMode=yes',
                  'datch@51.178.78.138',
-                 "ps aux | grep 'python3.*crawl_worker_multi.py' | grep -v grep | grep -v 'bash -c'"],
+                 "ps aux | grep -E 'python3.*(crawl_worker\\.py|crawl_worker_multi\\.py)' | grep -v grep | grep -v 'bash -c'"],
                 capture_output=True, text=True, timeout=60
             )
             for line in remote3_result.stdout.strip().split('\n'):
-                if line.strip() and 'crawl_worker_multi.py' in line:
+                if line.strip() and ('crawl_worker.py' in line or 'crawl_worker_multi.py' in line) and 'bash -c' not in line:
                     parts = line.split()
                     if len(parts) >= 11 and parts[1].isdigit():
                         crawl_workers['remote3']['workers'].append({
@@ -782,16 +1027,16 @@ def get_workers():
         except (subprocess.TimeoutExpired, Exception) as e:
             crawl_workers['remote3']['error'] = str(e)
 
-        # Workers distants wordpress via SSH
+        # Workers distants wordpress via SSH (cherche crawl_worker.py ET crawl_worker_multi.py)
         try:
             remote4_result = subprocess.run(
                 ['ssh', '-o', 'ConnectTimeout=30', '-o', 'StrictHostKeyChecking=no', '-o', 'BatchMode=yes',
                  'debian@137.74.31.238',
-                 "ps aux | grep 'python3.*crawl_worker_multi.py' | grep -v grep | grep -v 'bash -c'"],
+                 "ps aux | grep -E 'python3.*(crawl_worker\\.py|crawl_worker_multi\\.py)' | grep -v grep | grep -v 'bash -c'"],
                 capture_output=True, text=True, timeout=60
             )
             for line in remote4_result.stdout.strip().split('\n'):
-                if line.strip() and 'crawl_worker_multi.py' in line:
+                if line.strip() and ('crawl_worker.py' in line or 'crawl_worker_multi.py' in line):
                     parts = line.split()
                     if len(parts) >= 11 and parts[1].isdigit():
                         crawl_workers['remote4']['workers'].append({
@@ -804,16 +1049,16 @@ def get_workers():
         except (subprocess.TimeoutExpired, Exception) as e:
             crawl_workers['remote4']['error'] = str(e)
 
-        # Workers distants ladd-prod3 via SSH
+        # Workers distants ladd-prod3 via SSH (cherche crawl_worker.py ET crawl_worker_multi.py)
         try:
             remote5_result = subprocess.run(
                 ['ssh', '-o', 'ConnectTimeout=30', '-o', 'StrictHostKeyChecking=no', '-o', 'BatchMode=yes',
                  'apps@server-prod3.ladd.guru',
-                 "ps aux | grep 'python3.*crawl_worker_multi.py' | grep -v grep | grep -v 'bash -c'"],
+                 "ps aux | grep -E 'python3.*(crawl_worker\\.py|crawl_worker_multi\\.py)' | grep -v grep | grep -v 'bash -c'"],
                 capture_output=True, text=True, timeout=60
             )
             for line in remote5_result.stdout.strip().split('\n'):
-                if line.strip() and 'crawl_worker_multi.py' in line:
+                if line.strip() and ('crawl_worker.py' in line or 'crawl_worker_multi.py' in line):
                     parts = line.split()
                     if len(parts) >= 11 and parts[1].isdigit():
                         crawl_workers['remote5']['workers'].append({
@@ -826,16 +1071,16 @@ def get_workers():
         except (subprocess.TimeoutExpired, Exception) as e:
             crawl_workers['remote5']['error'] = str(e)
 
-        # Workers distants ladd-prod6 via SSH (timeout court car serveur souvent inaccessible)
+        # Workers distants ladd-prod6 via SSH (cherche crawl_worker.py ET crawl_worker_multi.py)
         try:
             remote6_result = subprocess.run(
                 ['ssh', '-o', 'ConnectTimeout=5', '-o', 'StrictHostKeyChecking=no', '-o', 'BatchMode=yes',
                  'apps@server-prod6.ladd.guru',
-                 "ps aux | grep 'python3.*crawl_worker_multi.py' | grep -v grep | grep -v 'bash -c'"],
+                 "ps aux | grep -E 'python3.*(crawl_worker\\.py|crawl_worker_multi\\.py)' | grep -v grep | grep -v 'bash -c'"],
                 capture_output=True, text=True, timeout=10
             )
             for line in remote6_result.stdout.strip().split('\n'):
-                if line.strip() and 'crawl_worker_multi.py' in line:
+                if line.strip() and ('crawl_worker.py' in line or 'crawl_worker_multi.py' in line):
                     parts = line.split()
                     if len(parts) >= 11 and parts[1].isdigit():
                         crawl_workers['remote6']['workers'].append({
@@ -867,8 +1112,8 @@ def get_workers():
         for worker_id, worker in workers_data.get('workers', {}).items():
             # Vérifier si le worker est encore actif (heartbeat récent)
             if is_worker_alive(worker):
-                # Limiter à 8 sites pour éviter une réponse trop volumineuse
-                sites = worker.get('sites_in_progress', [])[:8]
+                # Afficher tous les sites (jusqu'à 50 max pour éviter une réponse trop volumineuse)
+                sites = worker.get('sites_in_progress', [])[:50]
                 # Limiter aussi les URLs récentes à 3 par site
                 for site in sites:
                     if 'recent_urls' in site:
@@ -903,6 +1148,260 @@ def get_workers():
     })
 
 
+# ============================================================================
+# GESTION DES WORKERS LOCAUX
+# ============================================================================
+
+def run_ssh_command(server_key, command, timeout=60, background=False):
+    """Exécuter une commande sur un serveur distant via SSH"""
+    import subprocess
+
+    if server_key not in SERVERS_CONFIG:
+        raise ValueError(f"Serveur inconnu: {server_key}")
+
+    server = SERVERS_CONFIG[server_key]
+
+    if server['ssh'] is None:
+        # Commande locale
+        result = subprocess.run(
+            command if isinstance(command, list) else ['bash', '-c', command],
+            capture_output=True, text=True, timeout=timeout
+        )
+    else:
+        # Commande SSH (-f pour forcer la déconnexion si background=True)
+        ssh_cmd = [
+            'ssh',
+            '-o', 'ConnectTimeout=10',
+            '-o', 'StrictHostKeyChecking=no',
+            '-o', 'BatchMode=yes'
+        ]
+        if background:
+            ssh_cmd.append('-f')
+        ssh_cmd.extend([
+            server['ssh'],
+            command if isinstance(command, str) else ' '.join(command)
+        ])
+        result = subprocess.run(ssh_cmd, capture_output=True, text=True, timeout=timeout)
+
+    return result
+
+
+@crawl_api.route('/api/crawl/workers/start', methods=['POST'])
+def start_workers():
+    """
+    Lancer des workers de crawl sur un serveur
+
+    Body JSON:
+    {
+        "server": "local",       // Serveur cible (local, remote, remote2, etc.)
+        "count": 2,              // Nombre de workers à lancer
+        "parallel_sites": 100,   // Sites en parallèle par worker
+        "concurrent": 10         // Requêtes simultanées par site
+    }
+    """
+    import subprocess
+
+    data = request.get_json() or {}
+    server_key = data.get('server', 'local')
+    count = min(data.get('count', 1), 10)  # Max 10 workers
+    parallel_sites = min(data.get('parallel_sites', 100), 500)  # Max 500 sites
+    concurrent = min(data.get('concurrent', 10), 50)  # Max 50 requêtes/site
+
+    if server_key not in SERVERS_CONFIG:
+        return jsonify({'error': f'Serveur inconnu: {server_key}'}), 400
+
+    server = SERVERS_CONFIG[server_key]
+    started = 0
+    pids = []
+
+    try:
+        for i in range(count):
+            worker_id = f"{server['name']}-worker-{i+1}"
+            worker_path = server['worker_path']
+
+            if server['ssh'] is None:
+                # Lancement local
+                cmd = [
+                    'python3', '-u', f'{worker_path}/crawl_worker_multi.py',
+                    '--parallel-sites', str(parallel_sites),
+                    '--concurrent', str(concurrent),
+                    '--worker-id', worker_id
+                ]
+                process = subprocess.Popen(
+                    cmd,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    start_new_session=True
+                )
+                pids.append(process.pid)
+            else:
+                # Lancement distant via SSH avec screen pour détacher proprement
+                screen_name = f"crawl_{worker_id.replace(' ', '_').replace('(', '').replace(')', '')}"
+                remote_cmd = f"screen -dmS {screen_name} bash -c 'cd {worker_path} && python3 -u crawl_worker_multi.py --parallel-sites {parallel_sites} --concurrent {concurrent} --worker-id {worker_id}'"
+                result = run_ssh_command(server_key, remote_cmd, timeout=30)
+                if result.returncode == 0:
+                    pids.append(screen_name)
+                else:
+                    logger.error(f"Erreur lancement distant: {result.stderr}")
+
+            started += 1
+            logger.info(f"🚀 Worker {worker_id} lancé sur {server['name']} (sites: {parallel_sites}, concurrent: {concurrent})")
+
+        return jsonify({
+            'status': 'ok',
+            'server': server_key,
+            'started': started,
+            'pids': pids,
+            'config': {
+                'parallel_sites': parallel_sites,
+                'concurrent': concurrent
+            }
+        })
+
+    except Exception as e:
+        logger.error(f"❌ Erreur lancement workers sur {server_key}: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@crawl_api.route('/api/crawl/workers/stop-all', methods=['POST'])
+def stop_all_workers():
+    """
+    Arrêter tous les workers de crawl sur un serveur
+    """
+    import subprocess
+    import time
+
+    data = request.get_json() or {}
+    server_key = data.get('server', 'local')
+
+    if server_key not in SERVERS_CONFIG:
+        return jsonify({'error': f'Serveur inconnu: {server_key}'}), 400
+
+    server = SERVERS_CONFIG[server_key]
+
+    try:
+        if server['ssh'] is None:
+            # Local
+            result = subprocess.run(['pgrep', '-f', 'crawl_worker_multi.py'], capture_output=True, text=True)
+            pids = [p for p in result.stdout.strip().split('\n') if p]
+
+            for pid in pids:
+                subprocess.run(['kill', '-TERM', pid], check=False)
+
+            time.sleep(0.5)
+
+            for pid in pids:
+                subprocess.run(['kill', '-9', pid], check=False)
+
+            stopped = len(pids)
+        else:
+            # Distant via SSH
+            kill_cmd = "pkill -9 -f crawl_worker_multi.py; pgrep -f crawl_worker_multi.py | wc -l"
+            result = run_ssh_command(server_key, kill_cmd)
+            # Compter combien on a tué (avant - après)
+            stopped = 0 if result.stdout.strip() == '0' else int(result.stdout.strip() or 0)
+            # Relancer pkill pour être sûr
+            run_ssh_command(server_key, "pkill -9 -f crawl_worker_multi.py")
+            stopped = max(stopped, 1)  # Au moins signaler qu'on a essayé
+
+        logger.info(f"🛑 {stopped} worker(s) arrêté(s) sur {server['name']}")
+
+        return jsonify({
+            'status': 'ok',
+            'server': server_key,
+            'stopped': stopped
+        })
+
+    except Exception as e:
+        logger.error(f"❌ Erreur arrêt workers sur {server_key}: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@crawl_api.route('/api/crawl/workers/stop-all-servers', methods=['POST'])
+def stop_all_workers_all_servers():
+    """
+    Arrêter tous les workers sur TOUS les serveurs
+    """
+    import subprocess
+    import time
+
+    results = {}
+    total_stopped = 0
+
+    for server_key, server in SERVERS_CONFIG.items():
+        try:
+            if server['ssh'] is None:
+                # Local
+                result = subprocess.run(['pgrep', '-f', 'crawl_worker_multi.py'], capture_output=True, text=True)
+                pids = [p for p in result.stdout.strip().split('\n') if p]
+                for pid in pids:
+                    subprocess.run(['kill', '-9', pid], check=False)
+                stopped = len(pids)
+            else:
+                # Distant via SSH
+                run_ssh_command(server_key, "pkill -9 -f crawl_worker_multi.py", timeout=30)
+                stopped = 1  # On ne peut pas facilement compter
+
+            results[server_key] = {'stopped': stopped, 'status': 'ok'}
+            total_stopped += stopped
+            logger.info(f"🛑 Workers arrêtés sur {server['name']}")
+
+        except Exception as e:
+            results[server_key] = {'stopped': 0, 'status': 'error', 'error': str(e)}
+            logger.error(f"❌ Erreur arrêt workers sur {server_key}: {e}")
+
+    return jsonify({
+        'status': 'ok',
+        'total_stopped': total_stopped,
+        'servers_count': len(SERVERS_CONFIG),
+        'results': results
+    })
+
+
+@crawl_api.route('/api/crawl/workers/stop/<pid>', methods=['POST'])
+def stop_worker(pid):
+    """
+    Arrêter un worker spécifique par son PID sur un serveur
+    """
+    import subprocess
+    import time
+
+    data = request.get_json() or {}
+    server_key = data.get('server', 'local')
+
+    if server_key not in SERVERS_CONFIG:
+        return jsonify({'error': f'Serveur inconnu: {server_key}'}), 400
+
+    server = SERVERS_CONFIG[server_key]
+
+    try:
+        if server['ssh'] is None:
+            # Local - vérifier que c'est bien un worker crawl
+            result = subprocess.run(['ps', '-p', pid, '-o', 'cmd='], capture_output=True, text=True)
+            if 'crawl_worker' not in result.stdout:
+                return jsonify({'error': 'PID invalide ou pas un worker crawl'}), 400
+
+            subprocess.run(['kill', '-TERM', pid], check=False)
+            time.sleep(0.5)
+            subprocess.run(['kill', '-9', pid], check=False)
+        else:
+            # Distant via SSH
+            kill_cmd = f"kill -9 {pid}"
+            run_ssh_command(server_key, kill_cmd)
+
+        logger.info(f"🛑 Worker PID {pid} arrêté sur {server['name']}")
+
+        return jsonify({
+            'status': 'ok',
+            'server': server_key,
+            'stopped_pid': pid
+        })
+
+    except Exception as e:
+        logger.error(f"❌ Erreur arrêt worker {pid} sur {server_key}: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
 @crawl_api.route('/api/crawl/stats', methods=['GET'])
 def get_crawl_stats():
     """
@@ -913,9 +1412,10 @@ def get_crawl_stats():
 
     try:
         # Stats depuis la DB
-        total_sellers = session.query(Site).filter(Site.purchased_from.is_(None)).count()
+        # Note: Un site peut être vendeur ET acheteur, donc on filtre sur is_link_seller
+        total_sellers = session.query(Site).filter(Site.is_link_seller == True).count()
         sellers_crawled = session.query(Site).filter(
-            Site.purchased_from.is_(None),
+            Site.is_link_seller == True,
             Site.backlinks_crawled == True
         ).count()
         sellers_remaining = total_sellers - sellers_crawled
@@ -1030,9 +1530,8 @@ def get_crawl_daily_stats():
                 sites_email_crawled = emails_day_data.get('sites', 0)
                 pages_crawled += sites_email_crawled  # Ajouter les sites email aux pages
 
-            # Sites vendeurs crawlés ce jour (tous les sites crawlés, pas seulement les vendeurs sans purchased_from)
+            # Sites crawlés ce jour (vendeurs ET acheteurs avec backlinks crawlés)
             sellers_crawled = session.query(Site).filter(
-                Site.is_link_seller == True,
                 Site.backlinks_crawled == True,
                 Site.backlinks_crawled_at >= day,
                 Site.backlinks_crawled_at < next_day
@@ -1045,23 +1544,15 @@ def get_crawl_daily_stats():
                 Site.created_at < next_day
             ).count()
 
-            # Emails trouvés ce jour - inclure aussi les emails de l'extraction distribuée
-            # 1. Emails des nouveaux acheteurs découverts ce jour
-            emails_buyers = session.query(Site).filter(
-                Site.purchased_from.isnot(None),
+            # Emails trouvés ce jour - basé sur email_found_at (date réelle de découverte)
+            emails_found = session.query(Site).filter(
                 Site.emails.isnot(None),
                 Site.emails != '',
+                Site.emails != '[]',
                 Site.emails != 'NO EMAIL FOUND',
-                Site.created_at >= day,
-                Site.created_at < next_day
+                Site.email_found_at >= day,
+                Site.email_found_at < next_day
             ).count()
-
-            # 2. Emails trouvés par l'extraction distribuée (depuis le fichier JSON)
-            emails_data = load_daily_emails()
-            emails_extracted = emails_data.get(day_str, {}).get('emails', 0) if isinstance(emails_data.get(day_str), dict) else 0
-
-            # Total des emails trouvés ce jour
-            emails_found = emails_buyers + emails_extracted
 
             daily_stats.append({
                 'date': day_str,
@@ -1491,6 +1982,337 @@ def get_email_extraction_stats():
 
     except Exception as e:
         logger.error(f"❌ Erreur get_email_extraction_stats: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        session.close()
+
+
+# ============================================================================
+# ENRICHISSEMENT DES ACHETEURS EXISTANTS
+# ============================================================================
+
+@crawl_api.route('/api/crawl/enrich-buyers-task', methods=['GET'])
+def get_enrich_buyers_task():
+    """
+    Obtenir un batch d'acheteurs à enrichir.
+
+    Ces acheteurs existent déjà dans la base mais n'ont pas toutes leurs données
+    (email, langue, CMS, SIRET manquants).
+
+    Query params:
+    - worker_id: Identifiant unique du worker
+    - batch_size: Nombre d'acheteurs à récupérer (défaut: 30)
+    - priority: 'email' pour prioriser ceux sans email, 'language' pour ceux sans langue
+    """
+    from sqlalchemy import or_, case, and_
+
+    worker_id = request.args.get('worker_id', 'unknown')
+    batch_size = int(request.args.get('batch_size', 30))
+    priority = request.args.get('priority', 'email')  # email ou language
+
+    # Limiter la taille du batch
+    batch_size = min(batch_size, 100)
+
+    session = get_session()
+    try:
+        # Ordre de priorité selon le paramètre
+        if priority == 'language':
+            priority_order = case(
+                (Site.language.is_(None), 0),
+                (or_(Site.emails.is_(None), Site.emails == ''), 1),
+                else_=2
+            )
+        else:
+            priority_order = case(
+                (or_(Site.emails.is_(None), Site.emails == ''), 0),
+                (Site.language.is_(None), 1),
+                else_=2
+            )
+
+        # Acheteurs non blacklistés, pas traités récemment
+        lock_threshold = datetime.utcnow() - timedelta(minutes=30)
+
+        # Critères: est acheteur (purchased_from NOT NULL) ET manque des données
+        buyers = session.query(Site).filter(
+            Site.purchased_from.isnot(None),  # C'est un acheteur
+            Site.blacklisted == False,
+            Site.is_active == True,
+            # Manque au moins une donnée importante
+            or_(
+                Site.emails.is_(None),
+                Site.emails == '',
+                Site.language.is_(None),
+                Site.cms.is_(None)
+            ),
+            # Pas traité récemment
+            or_(
+                Site.email_crawl_at.is_(None),
+                Site.email_crawl_at < lock_threshold
+            )
+        ).order_by(
+            priority_order,
+            Site.id
+        ).limit(batch_size * 2).with_for_update(skip_locked=True).all()
+
+        if not buyers:
+            session.commit()
+            return jsonify({
+                'status': 'no_tasks',
+                'message': 'Aucun acheteur à enrichir',
+                'sites': []
+            })
+
+        now = datetime.utcnow()
+        tasks = []
+
+        for buyer in buyers[:batch_size]:
+            # Indiquer ce qui manque
+            missing = []
+            if not buyer.emails:
+                missing.append('email')
+            if not buyer.language:
+                missing.append('language')
+            if not buyer.cms:
+                missing.append('cms')
+            if buyer.domain.endswith('.fr') and not buyer.siret:
+                missing.append('siret')
+
+            tasks.append({
+                'id': buyer.id,
+                'domain': buyer.domain,
+                'purchased_from': buyer.purchased_from,
+                'missing': missing
+            })
+
+            # Marquer comme en cours de traitement
+            buyer.email_crawl_at = now
+
+        safe_commit(session)
+
+        logger.info(f"🔄 Worker {worker_id}: {len(tasks)} acheteurs à enrichir")
+
+        return jsonify({
+            'status': 'ok',
+            'worker_id': worker_id,
+            'count': len(tasks),
+            'sites': tasks
+        })
+
+    except Exception as e:
+        session.rollback()
+        logger.error(f"❌ Erreur get_enrich_buyers_task: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        session.close()
+
+
+@crawl_api.route('/api/crawl/enrich-buyers-results', methods=['POST'])
+def submit_enrich_buyers_results():
+    """
+    Soumettre les résultats d'enrichissement des acheteurs.
+
+    Body JSON:
+    {
+        "worker_id": "xxx",
+        "results": [
+            {
+                "site_id": 123,
+                "domain": "example.com",
+                "emails": "contact@example.com",
+                "language": "fr",
+                "language_confidence": 0.95,
+                "cms": "WordPress",
+                "cms_version": "6.4",
+                "siret": "12345678901234",
+                "siren": "123456789",
+                "text_sample": "..."  // Pour détection langue via Claude si nécessaire
+            }
+        ]
+    }
+    """
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No JSON data'}), 400
+
+    worker_id = data.get('worker_id', 'unknown')
+    results = data.get('results', [])
+
+    if not results:
+        return jsonify({'status': 'ok', 'message': 'No results', 'updated': 0})
+
+    session = get_session()
+    updated_count = 0
+    emails_found = 0
+    languages_found = 0
+
+    try:
+        for result in results:
+            site_id = result.get('site_id')
+            if not site_id:
+                continue
+
+            site = session.query(Site).filter(Site.id == site_id).first()
+            if not site:
+                continue
+
+            now = datetime.utcnow()
+
+            # Email
+            emails = result.get('emails')
+            if emails and emails not in ['', 'NO EMAIL FOUND']:
+                if not site.emails or site.emails == 'NO EMAIL FOUND':
+                    site.emails = emails
+                    site.email_found_at = now
+                    site.email_source = 'enrichment'
+                    emails_found += 1
+
+            # Langue
+            language = result.get('language')
+            language_confidence = result.get('language_confidence')
+            text_sample = result.get('text_sample')
+
+            # Si pas de langue détectée mais texte fourni, utiliser Claude
+            if not language and text_sample:
+                language, language_confidence = detect_language_with_claude(text_sample)
+
+            if language and not site.language:
+                site.language = language
+                site.language_confidence = language_confidence or 0.85
+                site.language_detected_at = now
+                languages_found += 1
+
+            # CMS
+            cms = result.get('cms')
+            cms_version = result.get('cms_version')
+            if cms and not site.cms:
+                site.cms = cms
+                site.cms_version = cms_version
+                site.cms_detected_at = now
+
+            # SIRET (seulement pour .fr)
+            siret = result.get('siret')
+            siren = result.get('siren')
+            if site.domain.endswith('.fr'):
+                if siret and not site.siret:
+                    site.siret = siret
+                    site.siret_type = 'SIRET'
+                    site.siret_found_at = now
+                    site.siret_checked = True
+                elif siren and not site.siren:
+                    site.siren = siren
+                    site.siret_type = 'SIREN'
+                    site.siret_found_at = now
+                    site.siret_checked = True
+
+            site.updated_at = now
+            updated_count += 1
+
+        safe_commit(session)
+
+        logger.info(f"🔄 Worker {worker_id}: {updated_count} acheteurs enrichis "
+                    f"(emails: {emails_found}, langues: {languages_found})")
+
+        return jsonify({
+            'status': 'ok',
+            'updated': updated_count,
+            'emails_found': emails_found,
+            'languages_found': languages_found
+        })
+
+    except Exception as e:
+        session.rollback()
+        logger.error(f"❌ Erreur submit_enrich_buyers_results: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        session.close()
+
+
+@crawl_api.route('/api/crawl/enrich-buyers-stats', methods=['GET'])
+def get_enrich_buyers_stats():
+    """
+    Statistiques sur l'enrichissement des acheteurs.
+    """
+    from sqlalchemy import or_, and_
+
+    session = get_session()
+    try:
+        # Total acheteurs
+        total_buyers = session.query(func.count(Site.id)).filter(
+            Site.purchased_from.isnot(None),
+            Site.blacklisted == False
+        ).scalar() or 0
+
+        # Avec email
+        with_email = session.query(func.count(Site.id)).filter(
+            Site.purchased_from.isnot(None),
+            Site.blacklisted == False,
+            Site.emails.isnot(None),
+            Site.emails != '',
+            Site.emails != 'NO EMAIL FOUND'
+        ).scalar() or 0
+
+        # Avec langue
+        with_language = session.query(func.count(Site.id)).filter(
+            Site.purchased_from.isnot(None),
+            Site.blacklisted == False,
+            Site.language.isnot(None)
+        ).scalar() or 0
+
+        # Avec CMS
+        with_cms = session.query(func.count(Site.id)).filter(
+            Site.purchased_from.isnot(None),
+            Site.blacklisted == False,
+            Site.cms.isnot(None)
+        ).scalar() or 0
+
+        # Acheteurs .fr
+        buyers_fr = session.query(func.count(Site.id)).filter(
+            Site.purchased_from.isnot(None),
+            Site.blacklisted == False,
+            Site.domain.like('%.fr')
+        ).scalar() or 0
+
+        # Acheteurs .fr avec SIRET
+        with_siret = session.query(func.count(Site.id)).filter(
+            Site.purchased_from.isnot(None),
+            Site.blacklisted == False,
+            Site.domain.like('%.fr'),
+            or_(Site.siret.isnot(None), Site.siren.isnot(None))
+        ).scalar() or 0
+
+        # À enrichir (manque email OU langue)
+        to_enrich = session.query(func.count(Site.id)).filter(
+            Site.purchased_from.isnot(None),
+            Site.blacklisted == False,
+            Site.is_active == True,
+            or_(
+                Site.emails.is_(None),
+                Site.emails == '',
+                Site.language.is_(None)
+            )
+        ).scalar() or 0
+
+        return jsonify({
+            'status': 'ok',
+            'totals': {
+                'total_buyers': total_buyers,
+                'with_email': with_email,
+                'with_language': with_language,
+                'with_cms': with_cms,
+                'buyers_fr': buyers_fr,
+                'with_siret': with_siret,
+                'to_enrich': to_enrich
+            },
+            'percentages': {
+                'email': round(with_email / total_buyers * 100, 1) if total_buyers > 0 else 0,
+                'language': round(with_language / total_buyers * 100, 1) if total_buyers > 0 else 0,
+                'cms': round(with_cms / total_buyers * 100, 1) if total_buyers > 0 else 0,
+                'siret_fr': round(with_siret / buyers_fr * 100, 1) if buyers_fr > 0 else 0
+            }
+        })
+
+    except Exception as e:
+        logger.error(f"❌ Erreur get_enrich_buyers_stats: {e}")
         return jsonify({'error': str(e)}), 500
     finally:
         session.close()
