@@ -19,15 +19,13 @@ import asyncio
 import aiohttp
 import argparse
 import time
-from database import get_session, Site, SiteStatus
+from database import get_session, get_engine, Site, SiteStatus, safe_commit
 from datetime import datetime
 from email_finder_async import AsyncEmailFinder
-from validate_emails import EmailValidator
+from validate_emails_async import AsyncEmailValidator
 from typing import List, Optional, Tuple
 import logging
-from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import NullPool
 
 # Configuration du logging
 logging.basicConfig(
@@ -54,7 +52,7 @@ class AnyValidEmailFinder:
         self.max_concurrent = max_concurrent
         self.session = None
         self.email_finder = None
-        self.email_validator = EmailValidator()
+        self.email_validator = AsyncEmailValidator(smtp_timeout=5.0, dns_timeout=3.0)  # Async validator
 
         # Préfixes d'emails génériques à éviter en priorité
         self.generic_prefixes = [
@@ -67,34 +65,94 @@ class AnyValidEmailFinder:
         self.priority_prefixes = [
             'contact', 'info', 'hello', 'bonjour', 'support',
             'admin', 'service', 'commercial', 'vente', 'sales',
-            'direction', 'gerant', 'owner', 'ceo', 'president'
+            'direction', 'gerant', 'owner', 'ceo', 'president',
+            'partenariat', 'partner', 'presse', 'press'
         ]
 
-        # Emails génériques à tester en dernier recours (dans l'ordre de priorité)
+        # Emails génériques à tester en dernier recours - LISTE ÉTENDUE
+        # Triés par taux de succès estimé (basé sur les données du secteur)
         self.generic_emails_to_test = [
+            # Tier 1 - Très haute probabilité (95%+ des sites B2B ont un de ceux-ci)
             'contact',
             'info',
             'hello',
             'bonjour',
-            'commercial',
-            'vente',
-            'sales',
+
+            # Tier 2 - Haute probabilité (versions alternatives contact)
             'support',
             'service',
-            'admin',
+            'aide',
+            'help',
+
+            # Tier 3 - Commercial / Ventes (important pour backlinks!)
+            'commercial',
+            'vente',
+            'ventes',
+            'sales',
+            'business',
+            'devis',
+
+            # Tier 4 - Partenariats (CRITIQUE pour backlinks!)
+            'partenariat',
+            'partenariats',
+            'partner',
+            'partners',
+            'affiliate',
+            'affiliation',
+            'agence',
+            'agences',
+            'agency',
+
+            # Tier 5 - Direction / Leadership
             'direction',
+            'admin',
+            'administration',
+            'gerant',
+            'directeur',
+            'ceo',
+
+            # Tier 6 - Communication / Marketing
             'communication',
+            'com',
             'marketing',
+            'presse',
+            'press',
+            'media',
+            'rp',
+
+            # Tier 7 - RH (souvent répondent aux sollicitations)
+            'rh',
+            'hr',
+            'recrutement',
+            'recruitment',
+            'jobs',
+            'emploi',
+            'carriere',
+
+            # Tier 8 - Autres
             'webmaster',
+            'web',
             'mail',
             'accueil',
-            'reception'
+            'reception',
+            'secretariat',
+            'comptabilite',
+            'facturation',
+            'billing',
+
+            # Tier 9 - Génériques techniques
+            'technique',
+            'tech',
+            'it',
+            'dev',
+            'team',
+            'equipe',
         ]
 
     async def init_session(self):
         """Initialiser la session aiohttp"""
-        connector = aiohttp.TCPConnector(limit=self.max_concurrent, ssl=False)
-        timeout = aiohttp.ClientTimeout(total=30)
+        connector = aiohttp.TCPConnector(limit=self.max_concurrent, ssl=False, ttl_dns_cache=300)
+        timeout = aiohttp.ClientTimeout(total=15, connect=5)  # Timeouts réduits pour plus de vitesse
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         }
@@ -198,9 +256,9 @@ class AnyValidEmailFinder:
 
         return list(all_emails)
 
-    def validate_and_score_emails(self, emails: List[str], is_generic: bool = False) -> List[Tuple[str, int, dict]]:
+    async def validate_and_score_emails(self, emails: List[str], is_generic: bool = False) -> List[Tuple[str, int, dict]]:
         """
-        Valider tous les emails et les scorer
+        Valider tous les emails en parallèle et les scorer
 
         Args:
             emails: Liste d'emails à valider
@@ -210,19 +268,22 @@ class AnyValidEmailFinder:
             Liste de tuples (email, score_total, validation_result)
             Trié par score décroissant
         """
+        if not emails:
+            return []
+
+        # Valider tous les emails en parallèle avec le validateur async
+        validations = await self.email_validator.validate_emails_batch(emails, max_concurrent=50)
+
         results = []
 
-        for email in emails:
+        for validation in validations:
             try:
-                # Valider l'email
-                validation = self.email_validator.validate_email(email)
+                email = validation['email']
 
-                # Ne garder que les emails valides
-                if not validation['valid'] and validation['status'] != 'risky':
-                    logger.info(
-                        f"  ❌ {email[:40]:40} | "
-                        f"INVALIDE - {validation['details']['smtp']['message'] if validation['details']['smtp'] else 'N/A'}"
-                    )
+                # Ne garder que les emails valides ou risky
+                if validation['status'] not in ['valid', 'risky']:
+                    smtp_msg = validation['details'].get('smtp', 'N/A')
+                    logger.debug(f"  ❌ {email[:40]:40} | INVALIDE - {smtp_msg}")
                     continue
 
                 # Score de préfixe (0-100)
@@ -235,8 +296,9 @@ class AnyValidEmailFinder:
                 # 70% validation + 30% préfixe
                 total_score = int(validation_score * 0.7 + prefix_score * 0.3)
 
-                # Si c'est un email générique, on le marque dans la validation
+                # Marquer si c'est un email générique
                 validation['is_generic'] = is_generic
+                validation['valid'] = validation['status'] == 'valid'
 
                 results.append((email, total_score, validation))
 
@@ -245,17 +307,14 @@ class AnyValidEmailFinder:
 
                 logger.info(
                     f"  {status_icon} {email[:40]:40} | "
-                    f"Validation: {validation_score:3}/100 | "
-                    f"Préfixe: {prefix_score:3}/100 | "
-                    f"Total: {total_score:3}/100 | "
-                    f"Status: {validation['status']}{generic_marker}"
+                    f"Val: {validation_score:3} | "
+                    f"Préf: {prefix_score:3} | "
+                    f"Tot: {total_score:3} | "
+                    f"{validation['status']}{generic_marker}"
                 )
 
-                # Petite pause pour ne pas surcharger les serveurs SMTP
-                time.sleep(0.3)
-
             except Exception as e:
-                logger.error(f"  ❌ Erreur validation {email}: {e}")
+                logger.error(f"  ❌ Erreur scoring {validation.get('email', '?')}: {e}")
                 continue
 
         # Trier par score décroissant
@@ -276,12 +335,8 @@ class AnyValidEmailFinder:
         logger.info(f"🔍 Recherche email valide pour: {site_domain}")
         logger.info(f"{'='*80}")
 
-        # Créer une SESSION DÉDIÉE pour ce site (évite les locks)
-        engine = create_engine(
-            'sqlite:///scrap_email.db',
-            connect_args={'timeout': 30, 'check_same_thread': False},
-            poolclass=NullPool
-        )
+        # Créer une SESSION DÉDIÉE pour ce site
+        engine = get_engine()
         Session = sessionmaker(bind=engine)
         session = Session()
 
@@ -301,9 +356,9 @@ class AnyValidEmailFinder:
             if emails_found:
                 logger.info(f"✅ {len(emails_found)} email(s) trouvé(s) sur le site")
 
-                # 2. Valider et scorer tous les emails trouvés
+                # 2. Valider et scorer tous les emails trouvés (async)
                 logger.info("🔍 Validation et scoring des emails trouvés...")
-                scored_emails = self.validate_and_score_emails(emails_found, is_generic=False)
+                scored_emails = await self.validate_and_score_emails(emails_found, is_generic=False)
             else:
                 logger.info(f"❌ Aucun email trouvé sur le site")
 
@@ -316,9 +371,9 @@ class AnyValidEmailFinder:
                 # Générer des emails génériques
                 generic_emails = self.generate_generic_emails(site_domain)
 
-                # Valider les emails génériques
+                # Valider les emails génériques (async)
                 logger.info("🔍 Validation des emails génériques...")
-                scored_emails = self.validate_and_score_emails(generic_emails, is_generic=True)
+                scored_emails = await self.validate_and_score_emails(generic_emails, is_generic=True)
 
             # 4. Vérifier si on a trouvé au moins un email valide
             if not scored_emails:
@@ -326,24 +381,19 @@ class AnyValidEmailFinder:
                 logger.info(f"❌ AUCUN EMAIL VALIDE pour {site_domain}")
                 logger.info(f"{'='*80}")
 
-                site.emails = "NO VALID EMAIL FOUND"
+                site.emails = None  # Ne pas stocker de texte, garder NULL
                 site.email_source = "any_valid_all_failed"
+                site.email_checked = True  # Marquer comme vérifié
                 site.status = SiteStatus.EMAIL_NOT_FOUND
                 site.updated_at = datetime.utcnow()
                 site.retry_count += 1
 
                 # Commit immédiat avec retry
-                for retry in range(3):
-                    try:
-                        session.commit()
-                        break
-                    except Exception as e:
-                        if "locked" in str(e).lower() and retry < 2:
-                            time.sleep(2)
-                            session.rollback()
-                        else:
-                            logger.error(f"Erreur commit: {e}")
-                            session.rollback()
+                try:
+                    safe_commit(session, max_retries=10)
+                except Exception as e:
+                    logger.error(f"Erreur commit: {e}")
+                    session.rollback()
 
                 stats['no_valid_email'] += 1
                 return
@@ -388,18 +438,12 @@ class AnyValidEmailFinder:
             site.retry_count += 1
 
             # Commit immédiat avec retry
-            for retry in range(3):
-                try:
-                    session.commit()
-                    logger.info(f"✅ Email enregistré pour {site_domain}")
-                    break
-                except Exception as e:
-                    if "locked" in str(e).lower() and retry < 2:
-                        time.sleep(2)
-                        session.rollback()
-                    else:
-                        logger.error(f"Erreur commit: {e}")
-                        session.rollback()
+            try:
+                safe_commit(session, max_retries=10)
+                logger.info(f"✅ Email enregistré pour {site_domain}")
+            except Exception as e:
+                logger.error(f"Erreur commit: {e}")
+                session.rollback()
 
             stats['email_found'] += 1
 
@@ -419,38 +463,52 @@ class AnyValidEmailFinder:
                     site.last_error = str(e)[:500]
                     site.updated_at = datetime.utcnow()
                     site.retry_count += 1
-                    session.commit()
+                    safe_commit(session, max_retries=5)
             except:
                 pass
             stats['errors'] += 1
         finally:
             session.close()
-            engine.dispose()
 
-    async def process_batch(self, sites: List[Tuple[int, str]], stats: dict) -> None:
-        """Traiter un lot de sites (chaque site a sa propre session)"""
+    async def process_batch(self, sites: List[Tuple[int, str]], stats: dict, parallel_sites: int = 10) -> None:
+        """
+        Traiter un lot de sites EN PARALLÈLE
 
-        for site_id, site_domain in sites:
-            await self.find_best_email(site_id, site_domain, stats)
+        Args:
+            sites: Liste de tuples (site_id, domain)
+            stats: Dictionnaire de statistiques (thread-safe via asyncio)
+            parallel_sites: Nombre de sites à traiter en parallèle
+        """
+        semaphore = asyncio.Semaphore(parallel_sites)
 
-        logger.info(f"💾 Batch traité")
+        async def process_single_site(site_id: int, site_domain: str):
+            async with semaphore:
+                await self.find_best_email(site_id, site_domain, stats)
 
-    async def process_all(self, limit: int = None, batch_size: int = 50):
+        # Créer toutes les tâches et les exécuter en parallèle
+        tasks = [process_single_site(site_id, site_domain) for site_id, site_domain in sites]
+        await asyncio.gather(*tasks, return_exceptions=True)
+
+        logger.info(f"💾 Batch de {len(sites)} sites traité en parallèle ({parallel_sites} simultanés)")
+
+    async def process_all(self, limit: int = None, batch_size: int = 50, parallel_sites: int = 10):
         """
         Traiter tous les sites sans emails
 
         Args:
             limit: Nombre maximum de sites à traiter (None = tous)
             batch_size: Taille des lots pour le traitement
+            parallel_sites: Nombre de sites à traiter en parallèle dans chaque batch
         """
         start_time = time.time()
 
         print("\n" + "="*80)
-        print("🔍 RECHERCHE D'EMAILS VALIDES (FALLBACK INTELLIGENT)")
+        print("🚀 RECHERCHE D'EMAILS VALIDES - VERSION TURBO PARALLÈLE")
         print("="*80)
         print(f"   Mode 1: Cherche N'IMPORTE QUEL email valide sur le site")
         print(f"   Mode 2: Si rien trouvé → Test emails génériques (contact@, info@, etc.)")
-        print(f"   Concurrence: {self.max_concurrent} requêtes simultanées")
+        print(f"   Concurrence HTTP: {self.max_concurrent} requêtes simultanées")
+        print(f"   Sites en parallèle: {parallel_sites}")
         print(f"   Batch size: {batch_size} sites par lot")
         if limit:
             print(f"   Limite: {limit:,} sites")
@@ -460,26 +518,8 @@ class AnyValidEmailFinder:
         await self.init_session()
 
         try:
-            # Créer une session avec timeout et WAL mode pour éviter les locks
-            engine = create_engine(
-                'sqlite:///scrap_email.db',
-                connect_args={
-                    'timeout': 30,  # Attendre 30s si la DB est locked
-                    'check_same_thread': False,
-                    'isolation_level': None  # Autocommit mode pour éviter les transactions longues
-                },
-                poolclass=NullPool,  # Pas de pool de connexions
-                echo=False
-            )
-
-            # Activer le mode WAL si pas déjà fait
-            try:
-                with engine.connect() as conn:
-                    conn.execute("PRAGMA journal_mode=WAL")
-                    logger.info("✅ Mode WAL activé (lectures/écritures concurrentes)")
-            except Exception as e:
-                logger.warning(f"⚠️  Impossible d'activer WAL: {e}")
-
+            # Utiliser l'engine de database.py (PostgreSQL ou SQLite selon config)
+            engine = get_engine()
             Session = sessionmaker(bind=engine)
             db_session = Session()
 
@@ -533,7 +573,7 @@ class AnyValidEmailFinder:
 
                 batch_start = time.time()
 
-                await self.process_batch(batch, stats)
+                await self.process_batch(batch, stats, parallel_sites=parallel_sites)
 
                 batch_time = time.time() - batch_start
                 speed = len(batch) / batch_time if batch_time > 0 else 0
@@ -578,11 +618,12 @@ class AnyValidEmailFinder:
 async def main():
     """Point d'entrée principal"""
     parser = argparse.ArgumentParser(
-        description="Recherche d'emails valides (fallback intelligent avec emails génériques)"
+        description="Recherche d'emails valides - VERSION TURBO PARALLÈLE"
     )
     parser.add_argument('--limit', type=int, default=None, help='Nombre max de sites à traiter')
-    parser.add_argument('--concurrent', type=int, default=20, help='Nombre de requêtes simultanées')
-    parser.add_argument('--batch-size', type=int, default=50, help='Taille des lots')
+    parser.add_argument('--concurrent', type=int, default=50, help='Nombre de requêtes HTTP simultanées')
+    parser.add_argument('--batch-size', type=int, default=100, help='Taille des lots')
+    parser.add_argument('--parallel-sites', type=int, default=20, help='Nombre de sites traités en parallèle')
 
     args = parser.parse_args()
 
@@ -590,7 +631,8 @@ async def main():
 
     await finder.process_all(
         limit=args.limit,
-        batch_size=args.batch_size
+        batch_size=args.batch_size,
+        parallel_sites=args.parallel_sites
     )
 
 
